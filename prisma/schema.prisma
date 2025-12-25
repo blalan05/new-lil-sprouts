@@ -1,0 +1,431 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MemberRelationship {
+  PARENT
+  GRANDPARENT
+  AUNT_UNCLE
+  SIBLING
+  BABYSITTER
+  NANNY
+  OTHER
+}
+
+enum SessionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum RecurrencePattern {
+  ONCE // One-time/impromptu session
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+// Service model - replaces ServiceType enum to allow per-service pricing and configuration
+model Service {
+  id                String   @id @default(uuid())
+  name              String   // Display name, e.g., "Childcare", "Piano Lesson"
+  code              String   @unique // Code for backward compatibility, e.g., "CHILDCARE", "PIANO_LESSON"
+  description       String?
+  defaultHourlyRate Float?   // Default hourly rate for this service
+  pricingType       String   @default("FLAT") // FLAT, PER_CHILD, etc.
+  isActive          Boolean  @default(true)
+  requiresChildren  Boolean  @default(false) // Whether this service requires children to be selected
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  familyServices FamilyService[]
+  careSchedules  CareSchedule[]
+  careSessions   CareSession[]
+
+  @@index([code])
+  @@index([isActive])
+}
+
+enum DayOfWeek {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
+enum ReportType {
+  INCIDENT // Minor injuries, accidents
+  ACCIDENT // More serious injuries requiring attention
+  BEHAVIOR // Behavioral notes (positive or concerns)
+  MEAL // Food/feeding updates
+  NAP // Sleep/rest periods
+  ACTIVITY // Activities and play
+  MEDICATION // Medication administered
+  MILESTONE // Developmental milestones
+  GENERAL // General daily updates
+}
+
+enum ReportSeverity {
+  INFO // Informational only
+  MINOR // Minor issue, no action needed
+  MODERATE // Noteworthy, may need follow-up
+  SEVERE // Serious, requires immediate attention
+}
+
+// User model - owner and invited family members can log in
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  username  String   @unique
+  password  String // In production, should be hashed
+  firstName String?
+  lastName  String?
+  phone     String?
+  isOwner   Boolean  @default(false) // true for the nanny/owner
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  familyMember     FamilyMember?
+  unavailabilities Unavailability[]
+  reports          SessionReport[]
+
+  @@index([email])
+  @@index([isOwner])
+}
+
+// Family represents a client family
+model Family {
+  id               String   @id @default(uuid())
+  familyName       String
+  parentFirstName  String
+  parentLastName   String
+  email            String
+  phone            String?
+  address          String?
+  city             String?
+  state            String?
+  zipCode          String?
+  emergencyContact String?
+  emergencyPhone   String?
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  children      Child[]
+  familyMembers FamilyMember[]
+  careSchedules CareSchedule[]
+  careSessions  CareSession[]
+  payments      Payment[]
+  documents     Document[]
+  services      FamilyService[]
+
+  @@index([familyName])
+  @@index([email])
+}
+
+// Many-to-many relationship between Family and Service
+model FamilyService {
+  id        String   @id @default(uuid())
+  familyId  String
+  serviceId String
+  createdAt DateTime @default(now())
+
+  family  Family  @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([familyId, serviceId])
+  @@index([familyId])
+  @@index([serviceId])
+}
+
+// Additional family members/contacts with pickup authorization
+model FamilyMember {
+  id           String             @id @default(uuid())
+  firstName    String
+  lastName     String
+  relationship MemberRelationship
+  email        String?
+  phone        String?
+  canPickup    Boolean            @default(false)
+  allergies    String?
+  notes        String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  // Relations
+  familyId String
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  // Optional link to User account (if they have app access)
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([familyId])
+  @@index([canPickup])
+}
+
+// Recurring schedules (templates for sessions) - supports multiple services
+model CareSchedule {
+  id          String            @id @default(uuid())
+  name        String // e.g., "Regular Mon/Wed/Fri Care" or "Weekly Piano Lessons"
+  recurrence  RecurrencePattern @default(WEEKLY)
+  daysOfWeek  DayOfWeek[] // Which days this schedule applies
+  startTime   String // Time in HH:mm format (e.g., "06:00")
+  endTime     String // Time in HH:mm format (e.g., "14:30")
+  hourlyRate  Float? // Override service default rate if needed
+  isActive    Boolean           @default(true)
+  startDate   DateTime // When this schedule starts
+  endDate     DateTime? // Optional end date
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Relations
+  familyId String
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  children     Child[]       @relation("CareScheduleChildren") // For childcare, can be empty for other services
+  careSessions CareSession[] // Generated sessions from this schedule
+
+  @@index([familyId])
+  @@index([isActive])
+  @@index([serviceId])
+}
+
+// Unavailability periods - when the nanny/owner is not available
+model Unavailability {
+  id        String   @id @default(uuid())
+  startDate DateTime
+  endDate   DateTime
+  allDay    Boolean  @default(true) // If false, specific times apply
+  startTime String? // Time in HH:mm format (only if allDay is false)
+  endTime   String? // Time in HH:mm format (only if allDay is false)
+  reason    String? // vacation, personal, holiday, etc.
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations - tied to the owner/nanny
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([startDate])
+  @@index([endDate])
+  @@index([userId])
+}
+
+// Children being cared for
+model Child {
+  id            String   @id @default(uuid())
+  firstName     String
+  lastName      String
+  dateOfBirth   DateTime
+  gender        Gender?
+  allergies     String?
+  medications   String?
+  specialNeeds  String?
+  schoolName    String?
+  schoolGrade   String?
+  schoolTeacher String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  familyId      String
+  family        Family          @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  careSchedules CareSchedule[]  @relation("CareScheduleChildren")
+  careSessions  CareSession[]
+  reports       SessionReport[]
+
+  @@index([familyId])
+  @@index([lastName, firstName])
+}
+
+// Sessions/appointments - supports multiple service types (childcare, piano lessons, etc.)
+// Sessions/appointments - supports multiple services (childcare, piano lessons, etc.)
+model CareSession {
+  id             String        @id @default(uuid())
+  scheduledStart DateTime
+  scheduledEnd   DateTime
+  actualStart    DateTime?
+  actualEnd      DateTime?
+  status         SessionStatus @default(SCHEDULED)
+  hourlyRate     Float? // Rate for this session (overrides service default if set)
+  notes          String?
+  isConfirmed    Boolean       @default(false) // Whether this session is confirmed
+
+  // Drop-off and pick-up tracking (primarily for childcare)
+  dropOffTime DateTime?
+  dropOffBy   String? // Name of person who dropped off
+  dropOffById String? // ID of family member who dropped off
+  pickUpTime  DateTime?
+  pickUpBy    String? // Name of person who picked up
+  pickUpById  String? // ID of family member who picked up
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  familyId String
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  // Optional link to a recurring schedule
+  scheduleId String?
+  schedule   CareSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+
+  children Child[] // For childcare sessions; can be empty for other services
+  payments Payment[]
+  reports  SessionReport[] // Primarily for childcare, but can be used for lesson notes
+  expenses SessionExpense[] // Expenses incurred during this session
+
+  @@index([familyId])
+  @@index([scheduledStart])
+  @@index([status])
+  @@index([scheduleId])
+  @@index([isConfirmed])
+  @@index([serviceId])
+}
+
+// Expenses incurred during a care session (lunch, trips, supplies, etc.)
+model SessionExpense {
+  id          String   @id @default(uuid())
+  description String   // e.g., "Lunch at McDonald's", "Zoo admission", "Art supplies"
+  amount      Float    // Cost of the expense
+  category    String?  // Optional category: FOOD, ACTIVITY, SUPPLIES, TRANSPORTATION, OTHER
+  notes       String?  // Additional details
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  sessionId String
+  session   CareSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([category])
+}
+
+// Session reports - incidents, activities, meals, etc during care
+model SessionReport {
+  id             String         @id @default(uuid())
+  type           ReportType
+  severity       ReportSeverity @default(INFO)
+  title          String // Brief title/summary
+  description    String // Detailed description
+  timestamp      DateTime       @default(now())
+  actionTaken    String? // What was done in response (for incidents)
+  followUpNeeded Boolean        @default(false)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  // Relations
+  careSessionId String
+  careSession   CareSession @relation(fields: [careSessionId], references: [id], onDelete: Cascade)
+
+  childId String
+  child   Child  @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  // Who created the report (nanny/caregiver)
+  reportedById String?
+  reportedBy   User?   @relation(fields: [reportedById], references: [id], onDelete: SetNull)
+
+  @@index([careSessionId])
+  @@index([childId])
+  @@index([type])
+  @@index([severity])
+  @@index([timestamp])
+}
+
+// Payment tracking for tax purposes
+model Payment {
+  id            String        @id @default(uuid())
+  amount        Float
+  status        PaymentStatus @default(PENDING)
+  dueDate       DateTime?
+  paidDate      DateTime?
+  invoiceNumber String?       @unique
+  method        String? // cash, check, venmo, etc.
+  notes         String?
+  taxYear       Int?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  familyId      String?
+  family        Family?      @relation(fields: [familyId], references: [id], onDelete: SetNull)
+  careSessionId String?
+  careSession   CareSession? @relation(fields: [careSessionId], references: [id], onDelete: SetNull)
+
+  @@index([familyId])
+  @@index([status])
+  @@index([taxYear])
+  @@index([dueDate])
+  @@index([paidDate])
+}
+
+// Application settings (key-value store)
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique // e.g., "defaultHourlyRate"
+  value     String // Stored as string, parsed as needed
+  type      String   @default("string") // "string", "number", "boolean", "json"
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@index([key])
+}
+
+// Document storage for contracts, medical forms, etc.
+model Document {
+  id          String   @id @default(uuid())
+  fileName    String
+  filePath    String
+  fileSize    Int?
+  mimeType    String?
+  description String?
+  category    String? // contract, medical, emergency_contact, tax_document, etc.
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  familyId String?
+  family   Family? @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  @@index([familyId])
+  @@index([category])
+}

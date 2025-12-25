@@ -1,0 +1,185 @@
+/* Mobile-friendly responsive styles */
+
+/* Global mobile adjustments */
+@media (max-width: 768px) {
+  /* Reduce padding on main containers */
+  main {
+    padding: 1rem !important;
+  }
+
+  /* Smaller headings on mobile */
+  h1 {
+    font-size: 1.5rem !important;
+  }
+
+  h2 {
+    font-size: 1.25rem !important;
+  }
+
+  /* Touch-friendly buttons */
+  button,
+  a[role="button"],
+  input[type="submit"],
+  input[type="button"] {
+    min-height: 44px;
+    padding: 0.75rem 1rem !important;
+  }
+
+  /* Better spacing for forms */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+    padding: 0.75rem !important;
+  }
+
+  /* Stack flex containers */
+  .flex-row-mobile {
+    flex-direction: column !important;
+  }
+
+  /* Full width on mobile */
+  .w-full-mobile {
+    width: 100% !important;
+  }
+
+  /* Hide on mobile */
+  .hide-mobile {
+    display: none !important;
+  }
+
+  /* Show only on mobile */
+  .show-mobile {
+    display: block !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .show-mobile {
+    display: none !important;
+  }
+}
+
+/* Table responsiveness */
+@media (max-width: 768px) {
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    display: block;
+    width: 100%;
+  }
+
+  .table-responsive table {
+    min-width: 600px;
+    width: 100%;
+  }
+
+  /* Make table cells more readable on mobile */
+  .table-responsive td,
+  .table-responsive th {
+    padding: 0.5rem !important;
+    font-size: 0.875rem !important;
+  }
+}
+
+/* Modal responsiveness */
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 0.5rem !important;
+  }
+
+  .modal-content {
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 8px 8px 0 0 !important;
+    max-height: 95vh !important;
+    padding: 1.5rem !important;
+  }
+}
+
+/* Grid responsiveness */
+@media (max-width: 768px) {
+  .grid-responsive {
+    grid-template-columns: 1fr !important;
+  }
+
+  .grid-2-mobile {
+    grid-template-columns: repeat(1, 1fr) !important;
+  }
+}
+
+/* Navigation bar mobile */
+@media (max-width: 768px) {
+  nav {
+    padding: 0.75rem 1rem !important;
+  }
+
+  /* Hide desktop navigation on mobile */
+  .desktop-nav {
+    display: none !important;
+  }
+
+  /* Show hamburger menu on mobile */
+  .mobile-menu-toggle {
+    display: block !important;
+  }
+
+  /* Mobile menu overlay animation */
+  .mobile-menu-overlay {
+    animation: fadeIn 0.2s ease-in-out;
+  }
+
+  /* Mobile menu sidebar animation */
+  .mobile-menu-sidebar {
+    animation: slideInLeft 0.3s ease-out;
+  }
+}
+
+@media (min-width: 769px) {
+  /* Hide hamburger menu on desktop */
+  .mobile-menu-toggle {
+    display: none !important;
+  }
+
+  /* Show desktop navigation on desktop */
+  .desktop-nav {
+    display: flex !important;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Calendar/schedule mobile */
+@media (max-width: 768px) {
+  .calendar-controls {
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+
+  .calendar-view-buttons {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .calendar-view-buttons button {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
