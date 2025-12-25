@@ -1,6 +1,19 @@
+// Load .env file FIRST before anything else (PM2 doesn't load it automatically)
+import { config } from "dotenv";
+import { resolve } from "path";
+if (process.env.NODE_ENV === "production") {
+  const envPath = resolve(process.cwd(), ".env");
+  const result = config({ path: envPath });
+  if (result.error) {
+    console.warn(`[DB] Warning: Could not load .env file: ${result.error.message}`);
+  } else {
+    console.log(`[DB] Loaded .env from: ${envPath}`);
+  }
+}
+
 import { PrismaClient } from "@prisma/client";
 import { fileURLToPath } from "url";
-import { dirname, join, resolve } from "path";
+import { dirname, join } from "path";
 import { existsSync } from "fs";
 
 // Resolve SSL certificate path before Prisma Client reads DATABASE_URL
