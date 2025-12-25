@@ -4,18 +4,20 @@ import { dirname, join } from "path";
 import { existsSync } from "fs";
 
 // Resolve SSL certificate path before Prisma Client reads DATABASE_URL
-if (process.env.NODE_ENV === "production" && process.env.DATABASE_URL?.includes("slcert=")) {
+if (process.env.DATABASE_URL?.includes("slcert=")) {
   const certPathMatch = process.env.DATABASE_URL.match(/slcert=([^&]+)/);
   if (certPathMatch) {
     const certPath = certPathMatch[1];
     
     // If it's a relative path, resolve it relative to project root
-    if (certPath.startsWith("../") || certPath.startsWith("./")) {
+    if (certPath.startsWith("../") || certPath.startsWith("./") || !certPath.startsWith("/")) {
       const __filename = fileURLToPath(import.meta.url);
       const __dirname = dirname(__filename);
       // Go up from src/lib to project root
       const projectRoot = join(__dirname, "../..");
       const resolvedCertPath = join(projectRoot, certPath);
+      
+      console.log(`[DB] Resolving SSL certificate path: ${certPath} -> ${resolvedCertPath}`);
       
       // Update the environment variable with the resolved path
       if (existsSync(resolvedCertPath)) {
@@ -25,9 +27,20 @@ if (process.env.NODE_ENV === "production" && process.env.DATABASE_URL?.includes(
           /slcert=[^&]+/,
           `slcert=${urlPath}`
         );
+        console.log(`[DB] SSL certificate found and path updated`);
       } else {
-        console.warn(`⚠️  SSL certificate not found at: ${resolvedCertPath}`);
-        console.warn(`⚠️  Database connection may fail. Please ensure the certificate file is deployed.`);
+        console.error(`❌ SSL certificate not found at: ${resolvedCertPath}`);
+        console.error(`❌ Database connection will fail. Please ensure the certificate file is deployed.`);
+        console.error(`❌ Expected certificate at: ${resolvedCertPath}`);
+        console.error(`❌ Project root: ${projectRoot}`);
+        console.error(`❌ Current working directory: ${process.cwd()}`);
+      }
+    } else {
+      // Absolute path - check if it exists
+      if (!existsSync(certPath)) {
+        console.error(`❌ SSL certificate not found at absolute path: ${certPath}`);
+      } else {
+        console.log(`[DB] Using absolute SSL certificate path: ${certPath}`);
       }
     }
   }
