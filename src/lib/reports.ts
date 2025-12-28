@@ -1,5 +1,6 @@
 import { query } from "@solidjs/router";
 import { db } from "./db";
+import { formatParentNames } from "./families";
 
 export interface YearEndFamilyReport {
   familyId: string;
@@ -35,11 +36,18 @@ export interface YearEndFamilyReport {
     totalAmount: number;
     status: string;
   }>;
+  standaloneExpenses: Array<{
+    amount: number;
+    description: string;
+    category: string | null;
+    expenseDate: Date;
+  }>;
   totalHours: number;
   totalSessions: number;
   totalAmount: number;
   totalPaid: number;
   totalOutstanding: number;
+  totalStandaloneExpenses: number;
 }
 
 // Get year-end report for a specific family
@@ -57,6 +65,16 @@ export const getAllFamiliesForReports = query(async () => {
       familyName: true,
       parentFirstName: true,
       parentLastName: true,
+      familyMembers: {
+        where: {
+          relationship: "PARENT",
+        },
+        select: {
+          firstName: true,
+          lastName: true,
+          relationship: true,
+        },
+      },
     },
     orderBy: {
       familyName: "asc",
@@ -83,6 +101,16 @@ async function generateYearEndReport(familyId: string, year: number): Promise<Ye
         },
         orderBy: {
           firstName: "asc",
+        },
+      },
+      familyMembers: {
+        where: {
+          relationship: "PARENT",
+        },
+        select: {
+          firstName: true,
+          lastName: true,
+          relationship: true,
         },
       },
     },
@@ -194,12 +222,35 @@ async function generateYearEndReport(familyId: string, year: number): Promise<Ye
 
   const totalPaidFromPayments = allPayments.reduce((sum, pay) => sum + pay.amount, 0);
   totalPaid = Math.max(totalPaid, totalPaidFromPayments);
+  
+  // Get standalone expenses for this family in the year
+  const standaloneExpenses = await db.expense.findMany({
+    where: {
+      familyId: family.id,
+      expenseDate: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    select: {
+      amount: true,
+      description: true,
+      category: true,
+      expenseDate: true,
+    },
+  });
+  
+  const totalStandaloneExpenses = standaloneExpenses.reduce((sum, exp) => sum + exp.amount, 0);
   const totalOutstanding = totalAmount - totalPaid;
 
   return {
     familyId: family.id,
     familyName: family.familyName,
-    parentName: `${family.parentFirstName} ${family.parentLastName}`,
+    parentName: formatParentNames(
+      family.parentFirstName,
+      family.parentLastName,
+      family.familyMembers
+    ),
     email: family.email,
     phone: family.phone,
     address: family.address,
@@ -208,11 +259,13 @@ async function generateYearEndReport(familyId: string, year: number): Promise<Ye
     zipCode: family.zipCode,
     children: family.children,
     sessions: sessionReports,
+    standaloneExpenses,
     totalHours,
     totalSessions: sessions.length,
     totalAmount,
     totalPaid,
     totalOutstanding,
+    totalStandaloneExpenses,
   } as YearEndFamilyReport;
 }
 

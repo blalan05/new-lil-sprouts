@@ -1,5 +1,6 @@
 import { action, query, redirect, reload } from "@solidjs/router";
 import { db } from "./db";
+import { datetimeLocalToUTC, parseFormDate } from "./datetime";
 import { getSession } from "./server";
 import { getSettingValue } from "./settings";
 import { calculateServiceRate } from "./services";
@@ -150,8 +151,8 @@ export const createCareSchedule = action(async (formData: FormData) => {
         startTime,
         endTime,
         hourlyRate: finalHourlyRate,
-        startDate: new Date(startDate),
-        endDate: endDate ? new Date(endDate) : null,
+        startDate: parseFormDate(startDate),
+        endDate: endDate ? parseFormDate(endDate) : null,
         notes: notes || null,
         children: {
           connect: childIds.map((id) => ({ id })),
@@ -278,8 +279,8 @@ export const updateCareSchedule = action(async (formData: FormData) => {
         startTime,
         endTime,
         hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
-        startDate: new Date(startDate),
-        endDate: endDate ? new Date(endDate) : null,
+        startDate: parseFormDate(startDate),
+        endDate: endDate ? parseFormDate(endDate) : null,
         notes: notes || null,
         isActive,
         children: {
@@ -313,8 +314,8 @@ export const generateSessionsFromSchedule = action(async (formData: FormData) =>
   "use server";
   try {
     const scheduleId = String(formData.get("scheduleId"));
-    const startDate = new Date(String(formData.get("startDate")));
-    const endDate = new Date(String(formData.get("endDate")));
+    const startDate = parseFormDate(String(formData.get("startDate")));
+    const endDate = parseFormDate(String(formData.get("endDate")));
 
     const schedule = await db.careSchedule.findUnique({
       where: { id: scheduleId },
@@ -435,7 +436,7 @@ export const recordDropOff = action(async (formData: FormData) => {
       data: {
         dropOffBy,
         dropOffById: dropOffById || null,
-        dropOffTime: dropOffTime ? new Date(dropOffTime) : new Date(),
+        dropOffTime: dropOffTime ? datetimeLocalToUTC(dropOffTime) : new Date(),
       },
     });
 
@@ -468,7 +469,7 @@ export const recordPickUp = action(async (formData: FormData) => {
       data: {
         pickUpBy,
         pickUpById: pickUpById || null,
-        pickUpTime: pickUpTime ? new Date(pickUpTime) : new Date(),
+        pickUpTime: pickUpTime ? datetimeLocalToUTC(pickUpTime) : new Date(),
       },
     });
 

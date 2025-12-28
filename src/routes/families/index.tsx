@@ -1,6 +1,6 @@
 import { createAsync, type RouteDefinition, A } from "@solidjs/router";
 import { For, Show, createSignal } from "solid-js";
-import { getFamilies, deleteFamily } from "~/lib/families";
+import { getFamilies, deleteFamily, formatParentNames } from "~/lib/families";
 import { getAllChildren, deleteChild } from "~/lib/children";
 
 export const route = {
@@ -331,7 +331,11 @@ export default function FamiliesPage() {
                       <div>
                         <strong style={{ color: "#4a5568" }}>Parents:</strong>
                         <p style={{ margin: "0.25rem 0 0 0" }}>
-                          {family.parentFirstName} {family.parentLastName}
+                          {formatParentNames(
+                            family.parentFirstName,
+                            family.parentLastName,
+                            family.familyMembers
+                          )}
                         </p>
                       </div>
                       <div>

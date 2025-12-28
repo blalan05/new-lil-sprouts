@@ -2,6 +2,7 @@ import { createAsync, type RouteDefinition, A } from "@solidjs/router";
 import { createSignal, Show, For } from "solid-js";
 import { getUser } from "~/lib";
 import { getAllFamiliesForReports, getYearEndFamilyReport, getAllYearEndReports, type YearEndFamilyReport } from "~/lib/reports";
+import { formatParentNames } from "~/lib/families";
 
 export const route = {
   preload() {
@@ -111,6 +112,22 @@ export default function YearEndReports() {
     csvRows.push(`Total Paid,${formatCurrency(report.totalPaid)}`);
     if (report.totalOutstanding > 0) {
       csvRows.push(`Outstanding Balance,${formatCurrency(report.totalOutstanding)}`);
+    }
+    
+    // Standalone Expenses
+    if (report.standaloneExpenses && report.standaloneExpenses.length > 0) {
+      csvRows.push("");
+      csvRows.push("Standalone Expenses");
+      csvRows.push("Date,Description,Category,Amount");
+      report.standaloneExpenses.forEach(expense => {
+        csvRows.push([
+          formatDate(expense.expenseDate),
+          expense.description,
+          expense.category || "Uncategorized",
+          formatCurrency(expense.amount)
+        ].join(","));
+      });
+      csvRows.push(`Total Standalone Expenses,${formatCurrency(report.totalStandaloneExpenses)}`);
     }
     
     const csvContent = csvRows.join("\n");
@@ -457,7 +474,11 @@ export default function YearEndReports() {
                 <For each={families()}>
                   {(family) => (
                     <option value={family.id}>
-                      {family.familyName} ({family.parentFirstName} {family.parentLastName})
+                      {family.familyName} ({formatParentNames(
+                        family.parentFirstName,
+                        family.parentLastName,
+                        family.familyMembers
+                      )})
                     </option>
                   )}
                 </For>
@@ -707,6 +728,78 @@ export default function YearEndReports() {
                 )}
               </div>
             </div>
+
+            {/* Standalone Expenses Section */}
+            <Show when={report().standaloneExpenses && report().standaloneExpenses.length > 0}>
+              <div style={{ "margin-bottom": "2rem" }}>
+                <h3 style={{ "font-size": "1.25rem", "font-weight": "600", color: "#4a5568", "margin-bottom": "1rem" }}>
+                  Standalone Expenses ({report().standaloneExpenses.length})
+                </h3>
+                <div
+                  style={{
+                    "background-color": "#fff",
+                    "border-radius": "8px",
+                    border: "1px solid #e2e8f0",
+                    overflow: "hidden",
+                  }}
+                >
+                  <table style={{ width: "100%", "border-collapse": "collapse" }}>
+                    <thead>
+                      <tr style={{ "background-color": "#f7fafc", "border-bottom": "2px solid #e2e8f0" }}>
+                        <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748" }}>
+                          Date
+                        </th>
+                        <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748" }}>
+                          Description
+                        </th>
+                        <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748" }}>
+                          Category
+                        </th>
+                        <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "#2d3748" }}>
+                          Amount
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <For each={report().standaloneExpenses}>
+                        {(expense) => (
+                          <tr style={{ "border-bottom": "1px solid #e2e8f0" }}>
+                            <td style={{ padding: "0.75rem" }}>{formatDate(expense.expenseDate)}</td>
+                            <td style={{ padding: "0.75rem" }}>{expense.description}</td>
+                            <td style={{ padding: "0.75rem" }}>
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  padding: "0.25rem 0.75rem",
+                                  "border-radius": "12px",
+                                  "font-size": "0.875rem",
+                                  "font-weight": "600",
+                                  "background-color": "#e6fffa",
+                                  color: "#234e52",
+                                }}
+                              >
+                                {expense.category || "Uncategorized"}
+                              </span>
+                            </td>
+                            <td style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600" }}>
+                              {formatCurrency(expense.amount)}
+                            </td>
+                          </tr>
+                        )}
+                      </For>
+                      <tr style={{ "background-color": "#f7fafc", "font-weight": "700" }}>
+                        <td colSpan={3} style={{ padding: "0.75rem", "text-align": "right" }}>
+                          Total Standalone Expenses:
+                        </td>
+                        <td style={{ padding: "0.75rem", "text-align": "right" }}>
+                          {formatCurrency(report().totalStandaloneExpenses)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </Show>
           </div>
         )}
       </Show>

@@ -147,6 +147,7 @@ model Family {
   payments      Payment[]
   documents     Document[]
   services      FamilyService[]
+  expenses      Expense[]
 
   @@index([familyName])
   @@index([email])
@@ -295,6 +296,13 @@ model CareSession {
   pickUpBy    String? // Name of person who picked up
   pickUpById  String? // ID of family member who picked up
 
+  // Meal counts (primarily for childcare)
+  breakfastCount      Int @default(0)
+  morningSnackCount   Int @default(0)
+  lunchCount          Int @default(0)
+  afternoonSnackCount Int @default(0)
+  dinnerCount         Int @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -338,6 +346,26 @@ model SessionExpense {
 
   @@index([sessionId])
   @@index([category])
+}
+
+// Standalone expenses not linked to a specific session (general business expenses)
+model Expense {
+  id          String   @id @default(uuid())
+  description String   // e.g., "Art supplies", "Gas for car", "Monthly subscription"
+  amount      Float    // Cost of the expense
+  category    String?  // Optional category: FOOD, ACTIVITY, SUPPLIES, TRANSPORTATION, OTHER, BUSINESS
+  expenseDate DateTime @default(now()) // Date the expense occurred
+  notes       String?  // Additional details
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations - optional link to a family (for family-specific expenses)
+  familyId String?
+  family   Family? @relation(fields: [familyId], references: [id], onDelete: SetNull)
+
+  @@index([familyId])
+  @@index([category])
+  @@index([expenseDate])
 }
 
 // Session reports - incidents, activities, meals, etc during care

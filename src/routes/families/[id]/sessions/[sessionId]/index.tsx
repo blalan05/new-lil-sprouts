@@ -1,6 +1,7 @@
 import { createAsync, type RouteDefinition, A, useParams, useSubmission } from "@solidjs/router";
-import { Show, For, createSignal, createMemo } from "solid-js";
-import { getCareSession } from "~/lib/schedule";
+import { Show, For, createSignal, createMemo, createEffect } from "solid-js";
+import { getCareSession, updateCareSession } from "~/lib/schedule";
+import { formatDateLocal, formatDateTimeLocal, formatTimeLocal, utcToDatetimeLocal } from "~/lib/datetime";
 import { recordDropOff, recordPickUp } from "~/lib/care-schedules";
 import { getSessionReports } from "~/lib/session-reports";
 import { getFamilyMembers } from "~/lib/family-members";
@@ -38,36 +39,35 @@ export default function CareSessionDetail() {
   const expenseSubmission = useSubmission(createExpense);
   const updateExpenseSubmission = useSubmission(updateExpense);
   const deleteExpenseSubmission = useSubmission(deleteExpense);
+  const updateSessionSubmission = useSubmission(updateCareSession);
 
   const [showDropOffForm, setShowDropOffForm] = createSignal(false);
   const [showPickUpForm, setShowPickUpForm] = createSignal(false);
   const [showExpenseForm, setShowExpenseForm] = createSignal(false);
   const [editingExpenseId, setEditingExpenseId] = createSignal<string | null>(null);
+  const [editingMeals, setEditingMeals] = createSignal(false);
+  const [breakfastCount, setBreakfastCount] = createSignal(0);
+  const [morningSnackCount, setMorningSnackCount] = createSignal(0);
+  const [lunchCount, setLunchCount] = createSignal(0);
+  const [afternoonSnackCount, setAfternoonSnackCount] = createSignal(0);
+  const [dinnerCount, setDinnerCount] = createSignal(0);
 
-  const formatDate = (date: string | Date) => {
-    return new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
+  // Initialize meal counts when editing starts or session loads
+  createEffect(() => {
+    const currentSession = session();
+    if (currentSession) {
+      setBreakfastCount(currentSession.breakfastCount || 0);
+      setMorningSnackCount(currentSession.morningSnackCount || 0);
+      setLunchCount(currentSession.lunchCount || 0);
+      setAfternoonSnackCount(currentSession.afternoonSnackCount || 0);
+      setDinnerCount(currentSession.dinnerCount || 0);
+    }
+  });
 
-  const formatDateTime = (date: string | Date) => {
-    return new Date(date).toLocaleString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  };
 
-  const formatTime = (date: string | Date) => {
-    return new Date(date).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  };
+  const formatDate = formatDateLocal;
+  const formatDateTime = formatDateTimeLocal;
+  const formatTime = formatTimeLocal;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -327,7 +327,7 @@ export default function CareSessionDetail() {
                       id="dropOffTime"
                       name="dropOffTime"
                       type="datetime-local"
-                      value={new Date().toISOString().slice(0, 16)}
+                      value={utcToDatetimeLocal(new Date())}
                       style={{
                         width: "100%",
                         padding: "0.5rem",
@@ -504,7 +504,7 @@ export default function CareSessionDetail() {
                       id="pickUpTime"
                       name="pickUpTime"
                       type="datetime-local"
-                      value={new Date().toISOString().slice(0, 16)}
+                      value={utcToDatetimeLocal(new Date())}
                       style={{
                         width: "100%",
                         padding: "0.5rem",
@@ -568,6 +568,328 @@ export default function CareSessionDetail() {
                 <span style={{ color: "#2d3748" }}>{session()?.pickUpBy}</span>
               </div>
             </div>
+          </Show>
+        </div>
+
+        {/* Meal Counts */}
+        <div
+          style={{
+            "background-color": "#fff",
+            padding: "1.5rem",
+            "border-radius": "8px",
+            border: "1px solid #e2e8f0",
+            "margin-bottom": "2rem",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              "justify-content": "space-between",
+              "align-items": "center",
+              "margin-bottom": "1rem",
+            }}
+          >
+            <h2 style={{ "font-size": "1.25rem", color: "#2d3748", margin: 0 }}>Meal Counts</h2>
+            <Show when={!editingMeals()}>
+              <button
+                onClick={() => {
+                  const currentSession = session();
+                  if (currentSession) {
+                    setBreakfastCount(currentSession.breakfastCount || 0);
+                    setMorningSnackCount(currentSession.morningSnackCount || 0);
+                    setLunchCount(currentSession.lunchCount || 0);
+                    setAfternoonSnackCount(currentSession.afternoonSnackCount || 0);
+                    setDinnerCount(currentSession.dinnerCount || 0);
+                  }
+                  setEditingMeals(true);
+                }}
+                style={{
+                  padding: "0.5rem 1rem",
+                  "background-color": "#48bb78",
+                  color: "white",
+                  border: "none",
+                  "border-radius": "4px",
+                  cursor: "pointer",
+                  "font-weight": "600",
+                  "font-size": "0.875rem",
+                }}
+              >
+                Edit Meal Counts
+              </button>
+            </Show>
+          </div>
+
+          <Show
+            when={editingMeals()}
+            fallback={
+              <div
+                style={{
+                  display: "grid",
+                  "grid-template-columns": "repeat(auto-fit, minmax(150px, 1fr))",
+                  gap: "1rem",
+                }}
+              >
+                <div
+                  style={{
+                    padding: "1rem",
+                    "background-color": "#f7fafc",
+                    "border-radius": "4px",
+                    border: "1px solid #e2e8f0",
+                  }}
+                >
+                  <div style={{ color: "#718096", "font-size": "0.875rem", "margin-bottom": "0.25rem" }}>
+                    Breakfast
+                  </div>
+                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
+                    {session()?.breakfastCount || 0}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    padding: "1rem",
+                    "background-color": "#f7fafc",
+                    "border-radius": "4px",
+                    border: "1px solid #e2e8f0",
+                  }}
+                >
+                  <div style={{ color: "#718096", "font-size": "0.875rem", "margin-bottom": "0.25rem" }}>
+                    Morning Snack
+                  </div>
+                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
+                    {session()?.morningSnackCount || 0}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    padding: "1rem",
+                    "background-color": "#f7fafc",
+                    "border-radius": "4px",
+                    border: "1px solid #e2e8f0",
+                  }}
+                >
+                  <div style={{ color: "#718096", "font-size": "0.875rem", "margin-bottom": "0.25rem" }}>
+                    Lunch
+                  </div>
+                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
+                    {session()?.lunchCount || 0}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    padding: "1rem",
+                    "background-color": "#f7fafc",
+                    "border-radius": "4px",
+                    border: "1px solid #e2e8f0",
+                  }}
+                >
+                  <div style={{ color: "#718096", "font-size": "0.875rem", "margin-bottom": "0.25rem" }}>
+                    Afternoon Snack
+                  </div>
+                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
+                    {session()?.afternoonSnackCount || 0}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    padding: "1rem",
+                    "background-color": "#f7fafc",
+                    "border-radius": "4px",
+                    border: "1px solid #e2e8f0",
+                  }}
+                >
+                  <div style={{ color: "#718096", "font-size": "0.875rem", "margin-bottom": "0.25rem" }}>
+                    Dinner
+                  </div>
+                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
+                    {session()?.dinnerCount || 0}
+                  </div>
+                </div>
+              </div>
+            }
+          >
+            <form
+              action={updateCareSession}
+              method="post"
+              style={{
+                "background-color": "#f7fafc",
+                padding: "1rem",
+                "border-radius": "4px",
+              }}
+            >
+              <input type="hidden" name="sessionId" value={params.sessionId} />
+              <input type="hidden" name="notes" value={session()?.notes || ""} />
+
+              <div
+                style={{
+                  display: "grid",
+                  "grid-template-columns": "repeat(auto-fit, minmax(150px, 1fr))",
+                  gap: "1rem",
+                  "margin-bottom": "1rem",
+                }}
+              >
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      "margin-bottom": "0.5rem",
+                      "font-weight": "600",
+                      color: "#2d3748",
+                    }}
+                  >
+                    Breakfast
+                  </label>
+                  <input
+                    type="number"
+                    name="breakfastCount"
+                    min="0"
+                    value={breakfastCount()}
+                    onInput={(e) => setBreakfastCount(parseInt(e.currentTarget.value) || 0)}
+                    style={{
+                      width: "100%",
+                      padding: "0.5rem",
+                      border: "1px solid #cbd5e0",
+                      "border-radius": "4px",
+                    }}
+                  />
+                </div>
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      "margin-bottom": "0.5rem",
+                      "font-weight": "600",
+                      color: "#2d3748",
+                    }}
+                  >
+                    Morning Snack
+                  </label>
+                  <input
+                    type="number"
+                    name="morningSnackCount"
+                    min="0"
+                    value={morningSnackCount()}
+                    onInput={(e) => setMorningSnackCount(parseInt(e.currentTarget.value) || 0)}
+                    style={{
+                      width: "100%",
+                      padding: "0.5rem",
+                      border: "1px solid #cbd5e0",
+                      "border-radius": "4px",
+                    }}
+                  />
+                </div>
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      "margin-bottom": "0.5rem",
+                      "font-weight": "600",
+                      color: "#2d3748",
+                    }}
+                  >
+                    Lunch
+                  </label>
+                  <input
+                    type="number"
+                    name="lunchCount"
+                    min="0"
+                    value={lunchCount()}
+                    onInput={(e) => setLunchCount(parseInt(e.currentTarget.value) || 0)}
+                    style={{
+                      width: "100%",
+                      padding: "0.5rem",
+                      border: "1px solid #cbd5e0",
+                      "border-radius": "4px",
+                    }}
+                  />
+                </div>
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      "margin-bottom": "0.5rem",
+                      "font-weight": "600",
+                      color: "#2d3748",
+                    }}
+                  >
+                    Afternoon Snack
+                  </label>
+                  <input
+                    type="number"
+                    name="afternoonSnackCount"
+                    min="0"
+                    value={afternoonSnackCount()}
+                    onInput={(e) => setAfternoonSnackCount(parseInt(e.currentTarget.value) || 0)}
+                    style={{
+                      width: "100%",
+                      padding: "0.5rem",
+                      border: "1px solid #cbd5e0",
+                      "border-radius": "4px",
+                    }}
+                  />
+                </div>
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      "margin-bottom": "0.5rem",
+                      "font-weight": "600",
+                      color: "#2d3748",
+                    }}
+                  >
+                    Dinner
+                  </label>
+                  <input
+                    type="number"
+                    name="dinnerCount"
+                    min="0"
+                    value={dinnerCount()}
+                    onInput={(e) => setDinnerCount(parseInt(e.currentTarget.value) || 0)}
+                    style={{
+                      width: "100%",
+                      padding: "0.5rem",
+                      border: "1px solid #cbd5e0",
+                      "border-radius": "4px",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: "0.5rem", "justify-content": "flex-end" }}>
+                <button
+                  type="submit"
+                  disabled={updateSessionSubmission.pending}
+                  onClick={() => {
+                    // Close edit mode immediately when save button is clicked
+                    setEditingMeals(false);
+                  }}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    "background-color": "#48bb78",
+                    color: "white",
+                    border: "none",
+                    "border-radius": "4px",
+                    cursor: updateSessionSubmission.pending ? "not-allowed" : "pointer",
+                    "font-weight": "600",
+                  }}
+                >
+                  {updateSessionSubmission.pending ? "Saving..." : "Save Meal Counts"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingMeals(false)}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    "background-color": "#edf2f7",
+                    color: "#2d3748",
+                    border: "1px solid #cbd5e0",
+                    "border-radius": "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </Show>
         </div>
 

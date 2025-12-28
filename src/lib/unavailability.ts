@@ -1,5 +1,6 @@
 import { action, query, redirect, reload } from "@solidjs/router";
 import { db } from "./db";
+import { parseFormDate } from "./datetime";
 
 export const getUnavailabilities = query(async (userId?: string) => {
   "use server";
@@ -55,8 +56,8 @@ export const createUnavailability = action(async (formData: FormData) => {
       return new Error("Start and end times are required for specific time blocks");
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const start = parseFormDate(startDate);
+    const end = parseFormDate(endDate);
 
     if (end < start) {
       return new Error("End date must be after start date");
@@ -107,8 +108,8 @@ export const updateUnavailability = action(async (formData: FormData) => {
       return new Error("Start and end times are required for specific time blocks");
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const start = parseFormDate(startDate);
+    const end = parseFormDate(endDate);
 
     if (end < start) {
       return new Error("End date must be after start date");

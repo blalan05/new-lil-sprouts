@@ -98,6 +98,24 @@ export default function Topbar() {
                 Payments
               </A>
               <A
+                href="/expenses"
+                style={{
+                  padding: "0.5rem 1rem",
+                  color: "#fff",
+                  "text-decoration": "none",
+                  "border-radius": "4px",
+                  transition: "background-color 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
+              >
+                Expenses
+              </A>
+              <A
                 href="/reports"
                 style={{
                   padding: "0.5rem 1rem",
@@ -113,25 +131,7 @@ export default function Topbar() {
                   e.currentTarget.style.backgroundColor = "transparent";
                 }}
               >
-                Reports
-              </A>
-              <A
-                href="/services"
-                style={{
-                  padding: "0.5rem 1rem",
-                  color: "#fff",
-                  "text-decoration": "none",
-                  "border-radius": "4px",
-                  transition: "background-color 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-              >
-                Services
+                Settings
               </A>
             </div>
           </div>
@@ -339,6 +339,26 @@ export default function Topbar() {
               Payments
             </A>
             <A
+              href="/expenses"
+              style={{
+                padding: "1rem",
+                color: "#fff",
+                "text-decoration": "none",
+                "border-radius": "4px",
+                transition: "background-color 0.2s",
+                display: "block",
+              }}
+              onClick={() => setMobileMenuOpen(false)}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
+            >
+              Expenses
+            </A>
+            <A
               href="/reports"
               style={{
                 padding: "1rem",
@@ -356,7 +376,7 @@ export default function Topbar() {
                 e.currentTarget.style.backgroundColor = "transparent";
               }}
             >
-              Reports
+              Settings
             </A>
             <div
               style={{
@@ -366,27 +386,6 @@ export default function Topbar() {
               }}
             >
               <Show when={user()}>
-                <A
-                  href="/services"
-                  style={{
-                    padding: "1rem",
-                    color: "#fff",
-                    "text-decoration": "none",
-                    "border-radius": "4px",
-                    transition: "background-color 0.2s",
-                    display: "block",
-                    "margin-bottom": "0.5rem",
-                  }}
-                  onClick={() => setMobileMenuOpen(false)}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                  }}
-                >
-                  Services
-                </A>
                 <A
                   href="/account"
                   style={{

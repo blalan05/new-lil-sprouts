@@ -1,6 +1,29 @@
 import { action, query, redirect, reload } from "@solidjs/router";
 import { db } from "./db";
 
+// Helper function to format parent names
+export function formatParentNames(
+  parentFirstName: string,
+  parentLastName: string,
+  familyMembers?: Array<{ firstName: string; lastName: string; relationship: string }>
+): string {
+  // Find spouse/partner (family member with PARENT relationship)
+  const spouse = familyMembers?.find(
+    (member) => member.relationship === "PARENT"
+  );
+
+  if (spouse && spouse.lastName === parentLastName) {
+    // Same last name - format as "First1 & First2 Last"
+    return `${parentFirstName} & ${spouse.firstName} ${parentLastName}`;
+  } else if (spouse) {
+    // Different last names - format as "First1 Last1 & First2 Last2"
+    return `${parentFirstName} ${parentLastName} & ${spouse.firstName} ${spouse.lastName}`;
+  }
+
+  // No spouse found - just return main parent
+  return `${parentFirstName} ${parentLastName}`;
+}
+
 export const getFamilies = query(async () => {
   "use server";
   const families = await db.family.findMany({
@@ -8,6 +31,16 @@ export const getFamilies = query(async () => {
       children: {
         orderBy: {
           firstName: "asc",
+        },
+      },
+      familyMembers: {
+        where: {
+          relationship: "PARENT", // Only get spouse/partner
+        },
+        select: {
+          firstName: true,
+          lastName: true,
+          relationship: true,
         },
       },
       _count: {
@@ -75,6 +108,16 @@ export const getFamily = query(async (id: string) => {
       children: {
         orderBy: {
           firstName: "asc",
+        },
+      },
+      familyMembers: {
+        where: {
+          relationship: "PARENT", // Only get spouse/partner
+        },
+        select: {
+          firstName: true,
+          lastName: true,
+          relationship: true,
         },
       },
       careSessions: {

@@ -1,4 +1,4 @@
-import { query } from "@solidjs/router";
+import { query, action, reload, redirect } from "@solidjs/router";
 import { db } from "./db";
 
 // Get care sessions for a date range
@@ -175,4 +175,42 @@ export const getUnavailabilitiesForRange = query(
   },
   "unavailabilities-range"
 );
+
+// Update a care session (including meal counts)
+export const updateCareSession = action(async (formData: FormData) => {
+  "use server";
+  try {
+    const sessionId = String(formData.get("sessionId"));
+    const breakfastCount = parseInt(String(formData.get("breakfastCount") || "0"));
+    const morningSnackCount = parseInt(String(formData.get("morningSnackCount") || "0"));
+    const lunchCount = parseInt(String(formData.get("lunchCount") || "0"));
+    const afternoonSnackCount = parseInt(String(formData.get("afternoonSnackCount") || "0"));
+    const dinnerCount = parseInt(String(formData.get("dinnerCount") || "0"));
+    const notes = String(formData.get("notes") || "");
+
+    if (!sessionId) {
+      return new Error("Session ID is required");
+    }
+
+    const updatedSession = await db.careSession.update({
+      where: { id: sessionId },
+      data: {
+        breakfastCount,
+        morningSnackCount,
+        lunchCount,
+        afternoonSnackCount,
+        dinnerCount,
+        notes: notes || null,
+      },
+      select: {
+        familyId: true,
+      },
+    });
+
+    return redirect(`/families/${updatedSession.familyId}/sessions/${sessionId}`);
+  } catch (err) {
+    console.error("Error updating care session:", err);
+    return new Error(err instanceof Error ? err.message : "Failed to update care session");
+  }
+});
 
