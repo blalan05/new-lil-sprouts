@@ -43,6 +43,53 @@ export const getCareSessionsForRange = query(
   "care-sessions-range"
 );
 
+// Get sessions for a specific day
+export const getSessionsForDay = query(async (date: Date) => {
+  "use server";
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const sessions = await db.careSession.findMany({
+    where: {
+      scheduledStart: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+      status: {
+        not: "CANCELLED",
+      },
+    },
+    include: {
+      family: {
+        select: {
+          id: true,
+          familyName: true,
+        },
+      },
+      service: {
+        select: {
+          id: true,
+          name: true,
+          code: true,
+        },
+      },
+      children: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+        },
+      },
+    },
+    orderBy: {
+      scheduledStart: "asc",
+    },
+  });
+  return sessions;
+}, "sessions-for-day");
+
 // Get upcoming care sessions (next 7 days)
 export const getUpcomingSessions = query(async (limit: number = 10) => {
   "use server";

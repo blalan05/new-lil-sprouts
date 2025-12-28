@@ -1,7 +1,7 @@
 import { createAsync, type RouteDefinition, A, useSubmission } from "@solidjs/router";
 import { Show, For, createSignal, createEffect } from "solid-js";
 import { getUser } from "~/lib";
-import { getUpcomingSessions } from "~/lib/schedule";
+import { getUpcomingSessions, getSessionsForDay } from "~/lib/schedule";
 import { getRecentReports } from "~/lib/session-reports";
 import { getFamilies } from "~/lib/families";
 import { getFamily } from "~/lib/families";
@@ -19,6 +19,17 @@ export const route = {
     getDashboardStats();
     getStatsForPeriod("thisWeek");
     getStatsForPeriod("lastWeek");
+    
+    // Preload sessions for yesterday, today, and tomorrow
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    getSessionsForDay(yesterday);
+    getSessionsForDay(today);
+    getSessionsForDay(tomorrow);
   },
 } satisfies RouteDefinition;
 
@@ -39,6 +50,19 @@ export default function Home() {
   const moneyStats = createAsync(() => getStatsForPeriod(moneyPeriod()));
   const [showQuickAddModal, setShowQuickAddModal] = createSignal(false);
   const [selectedFamilyId, setSelectedFamilyId] = createSignal<string>("");
+  const [selectedDate, setSelectedDate] = createSignal<string>("");
+  const [calendarMonth, setCalendarMonth] = createSignal(new Date());
+
+  // Get sessions for yesterday, today, and tomorrow
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const yesterdaySessions = createAsync(() => getSessionsForDay(yesterday));
+  const todaySessions = createAsync(() => getSessionsForDay(today));
+  const tomorrowSessions = createAsync(() => getSessionsForDay(tomorrow));
   
   // Default service ID based on selected family's assigned services
   const selectedFamily = createAsync(() => {
@@ -83,7 +107,7 @@ export default function Home() {
 
   // Get current date and time
   const getCurrentDate = () => {
-    return new Date().toISOString().split("T")[0];
+    return selectedDate() || new Date().toISOString().split("T")[0];
   };
 
   const getCurrentTime = () => {
@@ -96,6 +120,51 @@ export default function Home() {
   const handleCloseModal = () => {
     setShowQuickAddModal(false);
     setSelectedFamilyId("");
+    setSelectedDate("");
+  };
+
+  const handleDateClick = (date: Date) => {
+    const dateStr = date.toISOString().split("T")[0];
+    setSelectedDate(dateStr);
+    setShowQuickAddModal(true);
+  };
+
+  const formatDateForInput = (date: Date) => {
+    return date.toISOString().split("T")[0];
+  };
+
+  // Calendar helpers
+  const getCalendarDays = () => {
+    const month = calendarMonth();
+    const year = month.getFullYear();
+    const monthIndex = month.getMonth();
+    
+    const firstDay = new Date(year, monthIndex, 1);
+    const lastDay = new Date(year, monthIndex + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - startDate.getDay()); // Start from Sunday
+    
+    const days: Date[] = [];
+    const current = new Date(startDate);
+    for (let i = 0; i < 42; i++) {
+      days.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+    return days;
+  };
+
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    );
+  };
+
+  const isCurrentMonth = (date: Date) => {
+    const month = calendarMonth();
+    return date.getMonth() === month.getMonth();
   };
 
   // Watch for successful submission
@@ -111,52 +180,56 @@ export default function Home() {
       style={{
         "max-width": "1200px",
         margin: "0 auto",
-        padding: "2rem",
+        padding: "1.5rem",
       }}
     >
       <header
         style={{
-          "margin-bottom": "2rem",
-          "padding-bottom": "1rem",
-          "border-bottom": "2px solid #e2e8f0",
+          "margin-bottom": "0.75rem",
+          "padding-bottom": "0.5rem",
+          "border-bottom": "1px solid #e2e8f0",
           display: "flex",
           "justify-content": "space-between",
-          "align-items": "flex-start",
+          "align-items": "center",
           "flex-wrap": "wrap",
-          gap: "1rem",
+          gap: "0.75rem",
         }}
         class="flex-row-mobile"
       >
-        <div>
+        <div style={{ display: "flex", "align-items": "center", gap: "0.75rem", "flex-wrap": "wrap" }}>
           <h1
             style={{
               color: "#2d3748",
-              "font-size": "2rem",
-              "margin-bottom": "0.5rem",
+              "font-size": "1.5rem",
+              margin: 0,
+              "font-weight": "700",
             }}
           >
             Dashboard
           </h1>
           <Show when={user()}>
-            <p style={{ color: "#718096", "font-size": "1.1rem" }}>
+            <span style={{ color: "#718096", "font-size": "0.875rem" }}>
               Welcome back, <strong>{user()?.firstName || user()?.username}</strong>
-            </p>
+            </span>
           </Show>
         </div>
         <button
-          onClick={() => setShowQuickAddModal(true)}
+          onClick={() => {
+            setSelectedDate("");
+            setShowQuickAddModal(true);
+          }}
           style={{
-            padding: "0.75rem 1.5rem",
+            padding: "0.5rem 1rem",
             "background-color": "#48bb78",
             color: "white",
             border: "none",
-            "border-radius": "6px",
+            "border-radius": "4px",
             "font-weight": "600",
-            "font-size": "1rem",
+            "font-size": "0.875rem",
             display: "inline-flex",
             "align-items": "center",
-            gap: "0.5rem",
-            "box-shadow": "0 2px 4px rgba(72, 187, 120, 0.3)",
+            gap: "0.375rem",
+            "box-shadow": "0 1px 2px rgba(72, 187, 120, 0.3)",
             transition: "all 0.2s",
             cursor: "pointer",
           }}
@@ -172,24 +245,158 @@ export default function Home() {
           }}
         >
           <span>+</span>
-          <span>Quick Add Session</span>
+          <span>Add Care Session</span>
         </button>
       </header>
 
-      {/* Hours and Money Stats with Period Selectors */}
+      {/* Mini Calendar */}
+      <div
+        style={{
+          "background-color": "#fff",
+          padding: "0.75rem",
+          "border-radius": "8px",
+          border: "1px solid #e2e8f0",
+          "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
+          "margin-bottom": "1rem",
+          "max-width": "350px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            "justify-content": "space-between",
+            "align-items": "center",
+            "margin-bottom": "0.5rem",
+          }}
+        >
+          <button
+            onClick={() => {
+              const newMonth = new Date(calendarMonth());
+              newMonth.setMonth(newMonth.getMonth() - 1);
+              setCalendarMonth(newMonth);
+            }}
+            style={{
+              padding: "0.25rem 0.5rem",
+              "background-color": "#edf2f7",
+              color: "#2d3748",
+              border: "1px solid #cbd5e0",
+              "border-radius": "4px",
+              cursor: "pointer",
+              "font-size": "0.875rem",
+            }}
+          >
+            ←
+          </button>
+          <h3
+            style={{
+              "font-size": "0.875rem",
+              "font-weight": "600",
+              color: "#2d3748",
+              margin: 0,
+            }}
+          >
+            {calendarMonth().toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+          </h3>
+          <button
+            onClick={() => {
+              const newMonth = new Date(calendarMonth());
+              newMonth.setMonth(newMonth.getMonth() + 1);
+              setCalendarMonth(newMonth);
+            }}
+            style={{
+              padding: "0.25rem 0.5rem",
+              "background-color": "#edf2f7",
+              color: "#2d3748",
+              border: "1px solid #cbd5e0",
+              "border-radius": "4px",
+              cursor: "pointer",
+              "font-size": "0.875rem",
+            }}
+          >
+            →
+          </button>
+        </div>
+        <div
+          style={{
+            display: "grid",
+            "grid-template-columns": "repeat(7, 1fr)",
+            gap: "0.25rem",
+          }}
+        >
+          <For each={["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]}>
+            {(day) => (
+              <div
+                style={{
+                  padding: "0.25rem",
+                  "text-align": "center",
+                  "font-size": "0.75rem",
+                  "font-weight": "600",
+                  color: "#718096",
+                }}
+              >
+                {day}
+              </div>
+            )}
+          </For>
+          <For each={getCalendarDays()}>
+            {(day) => {
+              const isCurrentMonthDay = isCurrentMonth(day);
+              const isTodayDay = isToday(day);
+
+              return (
+                <button
+                  onClick={() => handleDateClick(day)}
+                  style={{
+                    padding: "0.5rem",
+                    "background-color": isTodayDay ? "#bee3f8" : isCurrentMonthDay ? "#fff" : "#f7fafc",
+                    color: isCurrentMonthDay ? "#2d3748" : "#a0aec0",
+                    border: isTodayDay ? "2px solid #4299e1" : "1px solid #e2e8f0",
+                    "border-radius": "4px",
+                    cursor: "pointer",
+                    "font-size": "0.75rem",
+                    "font-weight": isTodayDay ? "700" : "400",
+                    transition: "all 0.2s",
+                    "min-height": "32px",
+                    display: "flex",
+                    "align-items": "center",
+                    "justify-content": "center",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (isCurrentMonthDay) {
+                      e.currentTarget.style.backgroundColor = "#edf2f7";
+                      e.currentTarget.style.borderColor = "#cbd5e0";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (isCurrentMonthDay) {
+                      e.currentTarget.style.backgroundColor = isTodayDay ? "#bee3f8" : "#fff";
+                      e.currentTarget.style.borderColor = isTodayDay ? "#4299e1" : "#e2e8f0";
+                    }
+                  }}
+                >
+                  {day.getDate()}
+                </button>
+              );
+            }}
+          </For>
+        </div>
+      </div>
+
+      {/* Yesterday, Today, Tomorrow Sessions */}
       <div
         style={{
           display: "grid",
-          "grid-template-columns": "repeat(auto-fit, minmax(300px, 1fr))",
-          gap: "1.5rem",
-          "margin-bottom": "2rem",
+          "grid-template-columns": "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: "0.75rem",
+          "margin-bottom": "1rem",
         }}
+        class="grid-responsive"
       >
-        {/* Hours Widget */}
+        {/* Yesterday Sessions */}
         <div
           style={{
             "background-color": "#fff",
-            padding: "1.5rem",
+            padding: "1rem",
             "border-radius": "8px",
             border: "1px solid #e2e8f0",
             "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
@@ -200,7 +407,287 @@ export default function Home() {
               display: "flex",
               "justify-content": "space-between",
               "align-items": "center",
-              "margin-bottom": "1rem",
+              "margin-bottom": "0.75rem",
+            }}
+          >
+            <h2 style={{ "font-size": "1.125rem", "font-weight": "600", color: "#2d3748", margin: 0 }}>
+              Yesterday
+            </h2>
+            <span
+              style={{
+                padding: "0.25rem 0.75rem",
+                "border-radius": "12px",
+                "background-color": "#edf2f7",
+                color: "#4a5568",
+                "font-size": "0.875rem",
+                "font-weight": "600",
+              }}
+            >
+              {yesterdaySessions()?.length || 0}
+            </span>
+          </div>
+          <Show
+            when={yesterdaySessions() && yesterdaySessions()!.length > 0}
+            fallback={
+              <p style={{ color: "#a0aec0", "font-size": "0.875rem", "text-align": "center", padding: "0.75rem" }}>
+                No sessions
+              </p>
+            }
+          >
+            <div style={{ display: "flex", "flex-direction": "column", gap: "0.375rem" }}>
+              <For each={yesterdaySessions()}>
+                {(session) => (
+                  <A
+                    href={`/families/${session.family.id}/sessions/${session.id}`}
+                    style={{
+                      padding: "0.5rem 0.75rem",
+                      "background-color": "#f7fafc",
+                      "border-radius": "4px",
+                      border: "1px solid #e2e8f0",
+                      "text-decoration": "none",
+                      color: "inherit",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#edf2f7";
+                      e.currentTarget.style.borderColor = "#cbd5e0";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "#f7fafc";
+                      e.currentTarget.style.borderColor = "#e2e8f0";
+                    }}
+                  >
+                    <div style={{ "font-weight": "600", color: "#2d3748", "margin-bottom": "0.125rem", "font-size": "0.875rem" }}>
+                      {session.family.familyName}
+                    </div>
+                    <div style={{ "font-size": "0.8125rem", color: "#718096" }}>
+                      {new Date(session.scheduledStart).toLocaleTimeString("en-US", {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}{" "}
+                      -{" "}
+                      {new Date(session.scheduledEnd).toLocaleTimeString("en-US", {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </div>
+                    <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}>
+                      {session.service.name}
+                      {session.children.length > 0 && ` • ${session.children.length} child${session.children.length > 1 ? "ren" : ""}`}
+                    </div>
+                  </A>
+                )}
+              </For>
+            </div>
+          </Show>
+        </div>
+
+        {/* Today Sessions */}
+        <div
+          style={{
+            "background-color": "#fff",
+            padding: "1rem",
+            "border-radius": "8px",
+            border: "2px solid #4299e1",
+            "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              "justify-content": "space-between",
+              "align-items": "center",
+              "margin-bottom": "0.75rem",
+            }}
+          >
+            <h2 style={{ "font-size": "1.125rem", "font-weight": "600", color: "#2d3748", margin: 0 }}>
+              Today
+            </h2>
+            <span
+              style={{
+                padding: "0.25rem 0.75rem",
+                "border-radius": "12px",
+                "background-color": "#bee3f8",
+                color: "#2c5282",
+                "font-size": "0.875rem",
+                "font-weight": "600",
+              }}
+            >
+              {todaySessions()?.length || 0}
+            </span>
+          </div>
+          <Show
+            when={todaySessions() && todaySessions()!.length > 0}
+            fallback={
+              <p style={{ color: "#a0aec0", "font-size": "0.875rem", "text-align": "center", padding: "0.75rem" }}>
+                No sessions
+              </p>
+            }
+          >
+            <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem" }}>
+              <For each={todaySessions()}>
+                {(session) => (
+                  <A
+                    href={`/families/${session.family.id}/sessions/${session.id}`}
+                    style={{
+                      padding: "0.5rem",
+                      "background-color": "#f7fafc",
+                      "border-radius": "4px",
+                      border: "1px solid #e2e8f0",
+                      "text-decoration": "none",
+                      color: "inherit",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#edf2f7";
+                      e.currentTarget.style.borderColor = "#cbd5e0";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "#f7fafc";
+                      e.currentTarget.style.borderColor = "#e2e8f0";
+                    }}
+                  >
+                    <div style={{ "font-weight": "600", color: "#2d3748", "margin-bottom": "0.125rem", "font-size": "0.875rem" }}>
+                      {session.family.familyName}
+                    </div>
+                    <div style={{ "font-size": "0.8125rem", color: "#718096" }}>
+                      {new Date(session.scheduledStart).toLocaleTimeString("en-US", {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}{" "}
+                      -{" "}
+                      {new Date(session.scheduledEnd).toLocaleTimeString("en-US", {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </div>
+                    <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}>
+                      {session.service.name}
+                      {session.children.length > 0 && ` • ${session.children.length} child${session.children.length > 1 ? "ren" : ""}`}
+                    </div>
+                  </A>
+                )}
+              </For>
+            </div>
+          </Show>
+        </div>
+
+        {/* Tomorrow Sessions */}
+        <div
+          style={{
+            "background-color": "#fff",
+            padding: "1rem",
+            "border-radius": "8px",
+            border: "1px solid #e2e8f0",
+            "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              "justify-content": "space-between",
+              "align-items": "center",
+              "margin-bottom": "0.75rem",
+            }}
+          >
+            <h2 style={{ "font-size": "1.125rem", "font-weight": "600", color: "#2d3748", margin: 0 }}>
+              Tomorrow
+            </h2>
+            <span
+              style={{
+                padding: "0.25rem 0.75rem",
+                "border-radius": "12px",
+                "background-color": "#edf2f7",
+                color: "#4a5568",
+                "font-size": "0.875rem",
+                "font-weight": "600",
+              }}
+            >
+              {tomorrowSessions()?.length || 0}
+            </span>
+          </div>
+          <Show
+            when={tomorrowSessions() && tomorrowSessions()!.length > 0}
+            fallback={
+              <p style={{ color: "#a0aec0", "font-size": "0.875rem", "text-align": "center", padding: "0.75rem" }}>
+                No sessions
+              </p>
+            }
+          >
+            <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem" }}>
+              <For each={tomorrowSessions()}>
+                {(session) => (
+                  <A
+                    href={`/families/${session.family.id}/sessions/${session.id}`}
+                    style={{
+                      padding: "0.5rem",
+                      "background-color": "#f7fafc",
+                      "border-radius": "4px",
+                      border: "1px solid #e2e8f0",
+                      "text-decoration": "none",
+                      color: "inherit",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#edf2f7";
+                      e.currentTarget.style.borderColor = "#cbd5e0";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "#f7fafc";
+                      e.currentTarget.style.borderColor = "#e2e8f0";
+                    }}
+                  >
+                    <div style={{ "font-weight": "600", color: "#2d3748", "margin-bottom": "0.125rem", "font-size": "0.875rem" }}>
+                      {session.family.familyName}
+                    </div>
+                    <div style={{ "font-size": "0.8125rem", color: "#718096" }}>
+                      {new Date(session.scheduledStart).toLocaleTimeString("en-US", {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}{" "}
+                      -{" "}
+                      {new Date(session.scheduledEnd).toLocaleTimeString("en-US", {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </div>
+                    <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}>
+                      {session.service.name}
+                      {session.children.length > 0 && ` • ${session.children.length} child${session.children.length > 1 ? "ren" : ""}`}
+                    </div>
+                  </A>
+                )}
+              </For>
+            </div>
+          </Show>
+        </div>
+      </div>
+
+      {/* Hours and Money Stats with Period Selectors */}
+      <div
+        style={{
+          display: "grid",
+          "grid-template-columns": "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: "0.75rem",
+          "margin-bottom": "1rem",
+        }}
+      >
+        {/* Hours Widget */}
+        <div
+          style={{
+            "background-color": "#fff",
+            padding: "0.75rem",
+            "border-radius": "8px",
+            border: "1px solid #e2e8f0",
+            "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              "justify-content": "space-between",
+              "align-items": "center",
+              "margin-bottom": "0.5rem",
             }}
           >
             <div style={{ "font-size": "1rem", "font-weight": "600", color: "#2d3748" }}>Hours</div>
@@ -282,7 +769,7 @@ export default function Home() {
         <div
           style={{
             "background-color": "#fff",
-            padding: "1.5rem",
+            padding: "0.75rem",
             "border-radius": "8px",
             border: "1px solid #e2e8f0",
             "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
@@ -293,7 +780,7 @@ export default function Home() {
               display: "flex",
               "justify-content": "space-between",
               "align-items": "center",
-              "margin-bottom": "1rem",
+              "margin-bottom": "0.5rem",
             }}
           >
             <div style={{ "font-size": "1rem", "font-weight": "600", color: "#2d3748" }}>Money</div>
@@ -377,9 +864,9 @@ export default function Home() {
         <div
           style={{
             display: "grid",
-            "grid-template-columns": "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: "1rem",
-            "margin-bottom": "2rem",
+            "grid-template-columns": "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: "0.75rem",
+            "margin-bottom": "1rem",
           }}
         >
 
@@ -387,19 +874,19 @@ export default function Home() {
             <div
               style={{
                 "background-color": "#fff",
-                padding: "1.5rem",
+                padding: "1rem",
                 "border-radius": "8px",
                 border: "1px solid #e2e8f0",
                 "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
               }}
             >
-              <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.5rem" }}>
+              <div style={{ "font-size": "0.8125rem", color: "#718096", "margin-bottom": "0.375rem" }}>
                 Hours This Month
               </div>
-              <div style={{ "font-size": "2rem", "font-weight": "700", color: "#2d3748" }}>
+              <div style={{ "font-size": "1.75rem", "font-weight": "700", color: "#2d3748" }}>
                 {dashboardStats()?.thisMonthHours.toFixed(1) || "0.0"}
               </div>
-              <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.25rem" }}>
+              <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}>
                 ${dashboardStats()?.thisMonthMoney.toFixed(2) || "0.00"} earned
               </div>
             </div>
@@ -407,19 +894,19 @@ export default function Home() {
             <div
               style={{
                 "background-color": "#fff",
-                padding: "1.5rem",
+                padding: "1rem",
                 "border-radius": "8px",
                 border: "1px solid #e2e8f0",
                 "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
               }}
             >
-              <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.5rem" }}>
+              <div style={{ "font-size": "0.8125rem", color: "#718096", "margin-bottom": "0.375rem" }}>
                 Upcoming Sessions
               </div>
-              <div style={{ "font-size": "2rem", "font-weight": "700", color: "#4299e1" }}>
+              <div style={{ "font-size": "1.75rem", "font-weight": "700", color: "#4299e1" }}>
                 {dashboardStats()?.upcomingSessions || 0}
               </div>
-              <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.25rem" }}>
+              <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}>
                 Next 7 days
               </div>
             </div>
@@ -427,19 +914,19 @@ export default function Home() {
             <div
               style={{
                 "background-color": "#fff",
-                padding: "1.5rem",
+                padding: "1rem",
                 "border-radius": "8px",
                 border: "1px solid #e2e8f0",
                 "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
               }}
             >
-              <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.5rem" }}>
+              <div style={{ "font-size": "0.8125rem", color: "#718096", "margin-bottom": "0.375rem" }}>
                 Unpaid Sessions
               </div>
-              <div style={{ "font-size": "2rem", "font-weight": "700", color: "#ed8936" }}>
+              <div style={{ "font-size": "1.75rem", "font-weight": "700", color: "#ed8936" }}>
                 {dashboardStats()?.unpaidSessions || 0}
               </div>
-              <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.25rem" }}>
+              <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}>
                 Awaiting payment
               </div>
             </div>
@@ -447,19 +934,19 @@ export default function Home() {
             <div
               style={{
                 "background-color": "#fff",
-                padding: "1.5rem",
+                padding: "1rem",
                 "border-radius": "8px",
                 border: "1px solid #e2e8f0",
                 "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
               }}
             >
-              <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.5rem" }}>
+              <div style={{ "font-size": "0.8125rem", color: "#718096", "margin-bottom": "0.375rem" }}>
                 Active Families
               </div>
-              <div style={{ "font-size": "2rem", "font-weight": "700", color: "#805ad5" }}>
+              <div style={{ "font-size": "1.75rem", "font-weight": "700", color: "#805ad5" }}>
                 {dashboardStats()?.activeFamilies || 0}
               </div>
-              <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.25rem" }}>
+              <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}>
                 This month
               </div>
             </div>
@@ -468,19 +955,19 @@ export default function Home() {
               <div
                 style={{
                   "background-color": "#fff",
-                  padding: "1.5rem",
+                  padding: "1rem",
                   "border-radius": "8px",
                   border: "1px solid #e2e8f0",
                   "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
                 }}
               >
-                <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.5rem" }}>
+                <div style={{ "font-size": "0.8125rem", color: "#718096", "margin-bottom": "0.375rem" }}>
                   Avg Hourly Rate
                 </div>
-                <div style={{ "font-size": "2rem", "font-weight": "700", color: "#2d3748" }}>
+                <div style={{ "font-size": "1.75rem", "font-weight": "700", color: "#2d3748" }}>
                   ${dashboardStats()?.averageHourlyRate.toFixed(2) || "0.00"}
                 </div>
-                <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.25rem" }}>
+                <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}>
                   This month
                 </div>
               </div>
@@ -493,9 +980,9 @@ export default function Home() {
       <div
         style={{
           display: "grid",
-          "grid-template-columns": "repeat(auto-fit, minmax(300px, 1fr))",
-          gap: "1.5rem",
-          "margin-bottom": "2rem",
+          "grid-template-columns": "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: "0.75rem",
+          "margin-bottom": "1rem",
         }}
         class="grid-responsive"
       >
@@ -503,7 +990,7 @@ export default function Home() {
         <div
           style={{
             "background-color": "#fff",
-            padding: "1.5rem",
+            padding: "0.75rem",
             "border-radius": "8px",
             border: "1px solid #e2e8f0",
             "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
@@ -514,12 +1001,12 @@ export default function Home() {
               display: "flex",
               "justify-content": "space-between",
               "align-items": "center",
-              "margin-bottom": "1rem",
+              "margin-bottom": "0.5rem",
             }}
           >
             <h2
               style={{
-                "font-size": "1.25rem",
+                "font-size": "1.125rem",
                 color: "#2d3748",
                 margin: 0,
               }}
@@ -540,7 +1027,7 @@ export default function Home() {
           <Show
             when={!upcomingSessions.loading && upcomingSessions()}
             fallback={
-              <div style={{ "text-align": "center", padding: "2rem", color: "#718096" }}>
+                <div style={{ "text-align": "center", padding: "1.5rem", color: "#718096" }}>
                 Loading...
               </div>
             }
@@ -548,12 +1035,12 @@ export default function Home() {
             <Show
               when={upcomingSessions()?.length}
               fallback={
-                <div style={{ "text-align": "center", padding: "2rem", color: "#718096" }}>
-                  No upcoming sessions scheduled
-                </div>
+                <div style={{ "text-align": "center", padding: "1.5rem", color: "#718096" }}>
+                No upcoming sessions scheduled
+              </div>
               }
             >
-              <div style={{ display: "flex", "flex-direction": "column", gap: "0.75rem" }}>
+              <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem" }}>
                 <For each={upcomingSessions()}>
                   {(session) => {
                     const sessionDate = new Date(session.scheduledStart);
@@ -574,7 +1061,7 @@ export default function Home() {
                       <A
                         href={`/families/${session.familyId}/sessions/${session.id}`}
                         style={{
-                          padding: "1rem",
+                          padding: "0.75rem",
                           "background-color": "#f7fafc",
                           border: "1px solid #e2e8f0",
                           "border-radius": "6px",
@@ -597,7 +1084,7 @@ export default function Home() {
                             display: "flex",
                             "justify-content": "space-between",
                             "align-items": "start",
-                            "margin-bottom": "0.5rem",
+                            "margin-bottom": "0.375rem",
                           }}
                         >
                           <div style={{ flex: 1 }}>
@@ -693,7 +1180,7 @@ export default function Home() {
         <div
           style={{
             "background-color": "#fff",
-            padding: "1.5rem",
+            padding: "0.75rem",
             "border-radius": "8px",
             border: "1px solid #e2e8f0",
             "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
@@ -704,12 +1191,12 @@ export default function Home() {
               display: "flex",
               "justify-content": "space-between",
               "align-items": "center",
-              "margin-bottom": "1rem",
+              "margin-bottom": "0.5rem",
             }}
           >
             <h2
               style={{
-                "font-size": "1.25rem",
+                "font-size": "1.125rem",
                 color: "#2d3748",
                 margin: 0,
               }}
@@ -730,7 +1217,7 @@ export default function Home() {
           <Show
             when={!recentIncidents.loading && recentIncidents()}
             fallback={
-              <div style={{ "text-align": "center", padding: "2rem", color: "#718096" }}>
+                <div style={{ "text-align": "center", padding: "1.5rem", color: "#718096" }}>
                 Loading...
               </div>
             }
@@ -738,12 +1225,12 @@ export default function Home() {
             <Show
               when={recentIncidents()?.length}
               fallback={
-                <div style={{ "text-align": "center", padding: "2rem", color: "#718096" }}>
-                  No recent incidents or reports
-                </div>
+                <div style={{ "text-align": "center", padding: "1.5rem", color: "#718096" }}>
+                No recent incidents or reports
+              </div>
               }
             >
-              <div style={{ display: "flex", "flex-direction": "column", gap: "0.75rem" }}>
+              <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem" }}>
                 <For each={recentIncidents()}>
                   {(report) => {
                     const severityColors = {
@@ -773,7 +1260,7 @@ export default function Home() {
                       <A
                         href={`/families/${report.careSession.family.id}/sessions/${report.careSessionId}`}
                         style={{
-                          padding: "1rem",
+                          padding: "0.75rem",
                           "background-color": "#f7fafc",
                           border: "1px solid #e2e8f0",
                           "border-radius": "6px",
@@ -796,7 +1283,7 @@ export default function Home() {
                             display: "flex",
                             "justify-content": "space-between",
                             "align-items": "start",
-                            "margin-bottom": "0.5rem",
+                            "margin-bottom": "0.375rem",
                           }}
                         >
                           <div style={{ flex: 1 }}>

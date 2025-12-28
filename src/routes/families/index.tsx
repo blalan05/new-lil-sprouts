@@ -1,5 +1,5 @@
-import { createAsync, type RouteDefinition, A } from "@solidjs/router";
-import { For, Show, createSignal } from "solid-js";
+import { createAsync, type RouteDefinition, A, useNavigate } from "@solidjs/router";
+import { For, Show, createSignal, createEffect, onCleanup } from "solid-js";
 import { getFamilies, deleteFamily, formatParentNames } from "~/lib/families";
 import { getAllChildren, deleteChild } from "~/lib/children";
 
@@ -13,11 +13,14 @@ export const route = {
 type ViewType = "families" | "children";
 
 export default function FamiliesPage() {
+  const navigate = useNavigate();
   const [view, setView] = createSignal<ViewType>("families");
   const families = createAsync(() => getFamilies());
   const children = createAsync(() => getAllChildren());
   const [searchTerm, setSearchTerm] = createSignal("");
   const [filterFamily, setFilterFamily] = createSignal<string>("");
+  const [openDropdown, setOpenDropdown] = createSignal<string | null>(null);
+  const [dropdownPosition, setDropdownPosition] = createSignal<{ top: number; right: number } | null>(null);
 
   const filteredFamilies = () => {
     const term = searchTerm().toLowerCase();
@@ -89,50 +92,82 @@ export default function FamiliesPage() {
     }
   };
 
+  // Close dropdown when clicking outside
+  createEffect(() => {
+    const dropdownId = openDropdown();
+    if (dropdownId !== null) {
+      const handleClickOutside = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        // Check if click is inside any dropdown container or button
+        const container = target.closest('[data-dropdown-container]');
+        const isButton = target.closest('button[data-dropdown-button]');
+        const isDropdown = target.closest('[data-dropdown-menu]');
+        if (!container && !isButton && !isDropdown) {
+          setOpenDropdown(null);
+          setDropdownPosition(null);
+        }
+      };
+      
+      // Add listener after current event loop to avoid immediate trigger
+      const timeoutId = setTimeout(() => {
+        window.addEventListener('click', handleClickOutside, true);
+      }, 10);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        window.removeEventListener('click', handleClickOutside, true);
+      };
+    } else {
+      setDropdownPosition(null);
+    }
+  });
+
   return (
     <main
       style={{
         "max-width": "1400px",
         margin: "0 auto",
-        padding: "2rem",
+        padding: "1.5rem",
       }}
     >
-      <header
-        style={{
-          display: "flex",
-          "justify-content": "space-between",
-          "align-items": "center",
-          "margin-bottom": "2rem",
-        }}
-      >
-        <div>
-          <A
-            href="/"
-            style={{
-              color: "#4299e1",
-              "text-decoration": "none",
-              "margin-bottom": "0.5rem",
-              display: "inline-block",
-            }}
-          >
-            ← Back to Dashboard
-          </A>
-          <h1 style={{ color: "#2d3748", "font-size": "2rem" }}>
-            {view() === "families" ? "Manage Families" : "All Children"}
-          </h1>
-        </div>
-        <div style={{ display: "flex", gap: "1rem", "align-items": "center" }}>
+      <header style={{ "margin-bottom": "1rem" }}>
+        <div
+          style={{
+            display: "flex",
+            "justify-content": "space-between",
+            "align-items": "center",
+            "flex-wrap": "wrap",
+            gap: "0.75rem",
+          }}
+        >
+          <div style={{ display: "flex", "align-items": "center", gap: "1rem", "flex-wrap": "wrap" }}>
+            <A
+              href="/"
+              style={{
+                color: "#4299e1",
+                "text-decoration": "none",
+                display: "inline-block",
+              }}
+            >
+              ← Back to Dashboard
+            </A>
+            <h1 style={{ color: "#2d3748", "font-size": "1.5rem", margin: 0, "font-weight": "700" }}>
+              {view() === "families" ? "Manage Families" : "All Children"}
+            </h1>
+          </div>
+        <div style={{ display: "flex", gap: "0.75rem", "align-items": "center" }}>
           {view() === "families" ? (
             <A
               href="/families/new"
               style={{
-                padding: "0.75rem 1.5rem",
+                padding: "0.5rem 1rem",
                 "background-color": "#48bb78",
                 color: "white",
                 border: "none",
                 "border-radius": "4px",
                 "text-decoration": "none",
                 "font-weight": "600",
+                "font-size": "0.875rem",
                 display: "inline-block",
               }}
             >
@@ -142,19 +177,21 @@ export default function FamiliesPage() {
             <A
               href="/families"
               style={{
-                padding: "0.75rem 1.5rem",
+                padding: "0.5rem 1rem",
                 "background-color": "#48bb78",
                 color: "white",
                 border: "none",
                 "border-radius": "4px",
                 "text-decoration": "none",
                 "font-weight": "600",
+                "font-size": "0.875rem",
                 display: "inline-block",
               }}
             >
               + Add Child (via Families)
             </A>
           )}
+        </div>
         </div>
       </header>
 
@@ -163,9 +200,9 @@ export default function FamiliesPage() {
         style={{
           display: "flex",
           gap: "0.5rem",
-          "margin-bottom": "1.5rem",
+          "margin-bottom": "1rem",
           "background-color": "#fff",
-          padding: "0.5rem",
+          padding: "0.375rem",
           "border-radius": "8px",
           border: "1px solid #e2e8f0",
           width: "fit-content",
@@ -204,10 +241,10 @@ export default function FamiliesPage() {
       <div
         style={{
           "background-color": "#fff",
-          padding: "1.5rem",
+          padding: "1rem",
           "border-radius": "8px",
           border: "1px solid #e2e8f0",
-          "margin-bottom": "2rem",
+          "margin-bottom": "1rem",
         }}
       >
         {view() === "families" ? (
@@ -218,10 +255,10 @@ export default function FamiliesPage() {
             onInput={(e) => setSearchTerm(e.currentTarget.value)}
             style={{
               width: "100%",
-              padding: "0.75rem",
+              padding: "0.5rem 0.75rem",
               border: "1px solid #cbd5e0",
               "border-radius": "4px",
-              "font-size": "1rem",
+              "font-size": "0.875rem",
             }}
           />
         ) : (
@@ -269,214 +306,259 @@ export default function FamiliesPage() {
         <Show
           when={!families.loading && families()}
           fallback={
-            <div style={{ "text-align": "center", padding: "3rem" }}>Loading families...</div>
+            <div style={{ "text-align": "center", padding: "2rem" }}>Loading families...</div>
           }
         >
         <Show
           when={filteredFamilies()?.length}
           fallback={
-            <div
-              style={{
-                "text-align": "center",
-                padding: "3rem",
-                "background-color": "#f7fafc",
-                "border-radius": "8px",
-              }}
-            >
-              <p style={{ color: "#718096", "font-size": "1.1rem" }}>
-                No families found. Click "Add New Family" to get started.
-              </p>
-            </div>
+              <div
+                style={{
+                  "text-align": "center",
+                  padding: "2rem",
+                  "background-color": "#f7fafc",
+                  "border-radius": "8px",
+                }}
+              >
+                <p style={{ color: "#718096", "font-size": "0.875rem" }}>
+                  No families found. Click "Add New Family" to get started.
+                </p>
+              </div>
           }
         >
-          <div
-            style={{
-              display: "grid",
-              gap: "1rem",
-            }}
-          >
-            <For each={filteredFamilies()}>
-              {(family) => (
-                <div
-                  style={{
-                    "background-color": "#fff",
-                    padding: "1.5rem",
-                    "border-radius": "8px",
-                    border: "1px solid #e2e8f0",
-                    "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
-                    display: "grid",
-                    "grid-template-columns": "1fr auto",
-                    gap: "1rem",
-                    "align-items": "start",
-                  }}
-                >
-                  <div>
-                    <h3
-                      style={{
-                        "font-size": "1.25rem",
-                        "margin-bottom": "0.5rem",
-                        color: "#2d3748",
-                      }}
-                    >
-                      {family.familyName}
-                    </h3>
-                    <div
-                      style={{
-                        display: "grid",
-                        "grid-template-columns": "repeat(auto-fit, minmax(200px, 1fr))",
-                        gap: "1rem",
-                        "margin-bottom": "1rem",
-                      }}
-                    >
-                      <div>
-                        <strong style={{ color: "#4a5568" }}>Parents:</strong>
-                        <p style={{ margin: "0.25rem 0 0 0" }}>
+          <div style={{ "background-color": "#fff", "border-radius": "8px", border: "1px solid #e2e8f0", overflow: "hidden" }}>
+            <div style={{ overflow: "auto" }}>
+              <table style={{ width: "100%", "border-collapse": "collapse" }}>
+                <thead>
+                  <tr style={{ "background-color": "#f7fafc", borderBottom: "2px solid #e2e8f0" }}>
+                    <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Last</th>
+                    <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Parents</th>
+                    <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Children Names</th>
+                    <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Amount Owed</th>
+                    <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Watched Since</th>
+                    <th style={{ padding: "0.75rem", "text-align": "center", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <For each={filteredFamilies()}>
+                    {(family, index) => (
+                      <tr 
+                        style={{ 
+                          borderBottom: "1px solid #e2e8f0",
+                          cursor: "pointer",
+                          transition: "background-color 0.2s",
+                          "background-color": index() % 2 === 0 ? "#fff" : "#f7fafc",
+                        }}
+                        onClick={() => navigate(`/families/${family.id}`)}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "#edf2f7";
+                        }}
+                        onMouseLeave={(e) => {
+                          const bgColor = index() % 2 === 0 ? "#fff" : "#f7fafc";
+                          e.currentTarget.style.backgroundColor = bgColor;
+                        }}
+                      >
+                        <td style={{ padding: "0.75rem", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>
+                          {family.familyName}
+                        </td>
+                        <td style={{ padding: "0.75rem", color: "#4a5568", "font-size": "0.875rem" }}>
                           {formatParentNames(
                             family.parentFirstName,
                             family.parentLastName,
                             family.familyMembers
                           )}
-                        </p>
-                      </div>
-                      <div>
-                        <strong style={{ color: "#4a5568" }}>Email:</strong>
-                        <p style={{ margin: "0.25rem 0 0 0" }}>{family.email}</p>
-                      </div>
-                      <Show when={family.phone}>
-                        <div>
-                          <strong style={{ color: "#4a5568" }}>Phone:</strong>
-                          <p style={{ margin: "0.25rem 0 0 0" }}>{family.phone}</p>
-                        </div>
-                      </Show>
-                      <div>
-                        <strong style={{ color: "#4a5568" }}>Children:</strong>
-                        <p style={{ margin: "0.25rem 0 0 0" }}>{family.children?.length || 0}</p>
-                      </div>
-                      <Show when={(family as any).amountOwed !== undefined}>
-                        <div>
-                          <strong style={{ color: "#4a5568" }}>Amount Owed:</strong>
-                          <p style={{ margin: "0.25rem 0 0 0" }}>
+                        </td>
+                        <td style={{ padding: "0.75rem", color: "#4a5568", "font-size": "0.875rem" }}>
+                          <div style={{ display: "flex", "flex-wrap": "wrap", gap: "0.25rem" }}>
+                            <For each={family.children}>
+                              {(child) => (
+                                <A
+                                  href={`/families/${family.id}/children/${child.id}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  style={{
+                                    color: "#4299e1",
+                                    "text-decoration": "none",
+                                    "font-size": "0.8125rem",
+                                  }}
+                                >
+                                  {child.firstName} {child.lastName}
+                                  {child.allergies && " ⚠️"}
+                                </A>
+                              )}
+                            </For>
+                            {(!family.children || family.children.length === 0) && (
+                              <span style={{ color: "#a0aec0", "font-size": "0.8125rem" }}>None</span>
+                            )}
+                          </div>
+                        </td>
+                        <td style={{ padding: "0.75rem", "text-align": "right", "font-size": "0.875rem" }}>
+                          <Show
+                            when={(family as any).amountOwed !== undefined}
+                            fallback={<span style={{ color: "#a0aec0" }}>$0.00</span>}
+                          >
                             <span
                               style={{
                                 "font-weight": "700",
                                 color: (family as any).amountOwed > 0 ? "#c53030" : "#276749",
-                                "font-size": "1.125rem",
                               }}
                             >
                               ${((family as any).amountOwed || 0).toFixed(2)}
                             </span>
                             {(family as any).unpaidSessionCount > 0 && (
-                              <span style={{ color: "#718096", "font-size": "0.875rem", "margin-left": "0.5rem" }}>
-                                ({(family as any).unpaidSessionCount} unpaid session{(family as any).unpaidSessionCount !== 1 ? "s" : ""})
-                              </span>
+                              <div style={{ color: "#718096", "font-size": "0.75rem", "margin-top": "0.125rem" }}>
+                                ({(family as any).unpaidSessionCount} unpaid)
+                              </div>
                             )}
-                          </p>
-                        </div>
-                      </Show>
-                    </div>
-                    <Show when={family.children && family.children.length > 0}>
-                      <div style={{ "margin-top": "1rem", "padding-top": "1rem", "border-top": "1px solid #e2e8f0" }}>
-                        <strong style={{ color: "#4a5568", "margin-bottom": "0.5rem", display: "block" }}>Children:</strong>
-                        <div style={{ display: "flex", "flex-wrap": "wrap", gap: "0.5rem" }}>
-                          <For each={family.children}>
-                            {(child) => (
-                              <A
-                                href={`/families/${family.id}/children/${child.id}`}
-                                style={{
-                                  padding: "0.375rem 0.75rem",
-                                  "background-color": "#edf2f7",
-                                  color: "#2d3748",
-                                  border: "1px solid #cbd5e0",
-                                  "border-radius": "4px",
-                                  "text-decoration": "none",
-                                  "font-size": "0.875rem",
-                                  display: "inline-block",
-                                }}
-                              >
-                                {child.firstName} {child.lastName}
-                                {child.allergies && " ⚠️"}
-                              </A>
-                            )}
-                          </For>
-                        </div>
-                      </div>
-                    </Show>
-                    <Show when={family.address}>
-                      <div style={{ "margin-top": "0.5rem" }}>
-                        <strong style={{ color: "#4a5568" }}>Address:</strong>
-                        <p style={{ margin: "0.25rem 0 0 0", color: "#718096" }}>
-                          {family.address}
-                          {family.city && `, ${family.city}`}
-                          {family.state && `, ${family.state}`}
-                          {family.zipCode && ` ${family.zipCode}`}
-                        </p>
-                      </div>
-                    </Show>
-                    <Show when={family.emergencyContact || family.emergencyPhone}>
-                      <div style={{ "margin-top": "0.5rem" }}>
-                        <strong style={{ color: "#4a5568" }}>Emergency Contact:</strong>
-                        <p style={{ margin: "0.25rem 0 0 0", color: "#718096" }}>
-                          {family.emergencyContact}
-                          {family.emergencyPhone && ` - ${family.emergencyPhone}`}
-                        </p>
-                      </div>
-                    </Show>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "0.5rem",
-                      "flex-direction": "column",
-                    }}
-                  >
-                    <A
-                      href={`/families/${family.id}`}
-                      style={{
-                        padding: "0.5rem 1rem",
-                        "background-color": "#4299e1",
-                        color: "white",
-                        border: "none",
-                        "border-radius": "4px",
-                        "text-decoration": "none",
-                        "text-align": "center",
-                        "font-size": "0.875rem",
-                      }}
-                    >
-                      View Details
-                    </A>
-                    <A
-                      href={`/families/${family.id}/edit`}
-                      style={{
-                        padding: "0.5rem 1rem",
-                        "background-color": "#edf2f7",
-                        color: "#2d3748",
-                        border: "1px solid #cbd5e0",
-                        "border-radius": "4px",
-                        "text-decoration": "none",
-                        "text-align": "center",
-                        "font-size": "0.875rem",
-                      }}
-                    >
-                      Edit
-                    </A>
-                    <button
-                      onClick={() => handleDeleteFamily(family.id, family.familyName)}
-                      style={{
-                        padding: "0.5rem 1rem",
-                        "background-color": "#fff5f5",
-                        color: "#c53030",
-                        border: "1px solid #feb2b2",
-                        "border-radius": "4px",
-                        cursor: "pointer",
-                        "font-size": "0.875rem",
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              )}
-            </For>
+                          </Show>
+                        </td>
+                        <td style={{ padding: "0.75rem", color: "#718096", "font-size": "0.875rem" }}>
+                          {formatDate(family.createdAt)}
+                        </td>
+                        <td style={{ padding: "0.75rem", "text-align": "center" }} onClick={(e) => e.stopPropagation()}>
+                          <div style={{ position: "relative", display: "inline-block" }} data-dropdown-container>
+                            <button
+                              data-dropdown-button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const isOpen = openDropdown() === family.id;
+                                if (!isOpen) {
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  setDropdownPosition({
+                                    top: rect.bottom + window.scrollY + 4,
+                                    right: window.innerWidth - rect.right + window.scrollX,
+                                  });
+                                  setOpenDropdown(family.id);
+                                } else {
+                                  setOpenDropdown(null);
+                                  setDropdownPosition(null);
+                                }
+                              }}
+                              style={{
+                                padding: "0.25rem 0.5rem",
+                                "background-color": "#edf2f7",
+                                color: "#2d3748",
+                                border: "1px solid #cbd5e0",
+                                "border-radius": "4px",
+                                cursor: "pointer",
+                                "font-size": "0.75rem",
+                                display: "flex",
+                                "align-items": "center",
+                                gap: "0.25rem",
+                              }}
+                            >
+                              Actions
+                              <span style={{ "font-size": "0.625rem" }}>▼</span>
+                            </button>
+                            <Show when={openDropdown() === family.id && dropdownPosition()}>
+                              {(pos) => (
+                                <div
+                                  data-dropdown-menu
+                                  onClick={(e) => e.stopPropagation()}
+                                  style={{
+                                    position: "fixed",
+                                    top: `${pos().top}px`,
+                                    right: `${pos().right}px`,
+                                    "background-color": "#fff",
+                                    border: "1px solid #e2e8f0",
+                                    "border-radius": "4px",
+                                    "box-shadow": "0 4px 6px rgba(0, 0, 0, 0.1)",
+                                    "z-index": 1000,
+                                    "min-width": "120px",
+                                  }}
+                                >
+                                <A
+                                  href={`/families/${family.id}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenDropdown(null);
+                                  }}
+                                  style={{
+                                    display: "flex",
+                                    "align-items": "center",
+                                    gap: "0.5rem",
+                                    padding: "0.5rem 0.75rem",
+                                    color: "#2d3748",
+                                    "text-decoration": "none",
+                                    "font-size": "0.875rem",
+                                    transition: "background-color 0.2s",
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = "#f7fafc";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = "transparent";
+                                  }}
+                                >
+                                  <span>👁️</span>
+                                  <span>View</span>
+                                </A>
+                                <A
+                                  href={`/families/${family.id}/edit`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenDropdown(null);
+                                  }}
+                                  style={{
+                                    display: "flex",
+                                    "align-items": "center",
+                                    gap: "0.5rem",
+                                    padding: "0.5rem 0.75rem",
+                                    color: "#2d3748",
+                                    "text-decoration": "none",
+                                    "font-size": "0.875rem",
+                                    transition: "background-color 0.2s",
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = "#f7fafc";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = "transparent";
+                                  }}
+                                >
+                                  <span>✏️</span>
+                                  <span>Edit</span>
+                                </A>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenDropdown(null);
+                                    handleDeleteFamily(family.id, family.familyName);
+                                  }}
+                                  style={{
+                                    display: "flex",
+                                    "align-items": "center",
+                                    gap: "0.5rem",
+                                    width: "100%",
+                                    padding: "0.5rem 0.75rem",
+                                    "background-color": "transparent",
+                                    color: "#c53030",
+                                    border: "none",
+                                    "text-align": "left",
+                                    cursor: "pointer",
+                                    "font-size": "0.875rem",
+                                    transition: "background-color 0.2s",
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = "#fff5f5";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = "transparent";
+                                  }}
+                                >
+                                  <span>🗑️</span>
+                                  <span>Delete</span>
+                                </button>
+                                </div>
+                              )}
+                            </Show>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </For>
+                </tbody>
+              </table>
+            </div>
           </div>
         </Show>
         </Show>
@@ -486,7 +568,7 @@ export default function FamiliesPage() {
         <Show
           when={!children.loading && children()}
           fallback={
-            <div style={{ "text-align": "center", padding: "3rem" }}>Loading children...</div>
+            <div style={{ "text-align": "center", padding: "2rem" }}>Loading children...</div>
           }
         >
           <Show
@@ -495,252 +577,225 @@ export default function FamiliesPage() {
               <div
                 style={{
                   "text-align": "center",
-                  padding: "3rem",
+                  padding: "2rem",
                   "background-color": "#f7fafc",
                   "border-radius": "8px",
                 }}
               >
-                <p style={{ color: "#718096", "font-size": "1.1rem" }}>
+                <p style={{ color: "#718096", "font-size": "0.875rem" }}>
                   No children found. Add children through the Families page.
                 </p>
               </div>
             }
           >
-            <div
-              style={{
-                display: "grid",
-                gap: "1rem",
-              }}
-            >
-              <For each={filteredChildren()}>
-                {(child) => (
-                  <div
-                    style={{
-                      "background-color": "#fff",
-                      padding: "1.5rem",
-                      "border-radius": "8px",
-                      border: "1px solid #e2e8f0",
-                      "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "grid",
-                        "grid-template-columns": "1fr auto",
-                        gap: "1rem",
-                        "align-items": "start",
-                      }}
-                    >
-                      <div>
-                        <div
-                          style={{
-                            display: "flex",
-                            "align-items": "center",
-                            gap: "0.5rem",
-                            "margin-bottom": "0.5rem",
+            <div style={{ "background-color": "#fff", "border-radius": "8px", border: "1px solid #e2e8f0", overflow: "hidden" }}>
+              <div style={{ overflow: "auto" }}>
+                <table style={{ width: "100%", "border-collapse": "collapse" }}>
+                  <thead>
+                    <tr style={{ "background-color": "#f7fafc", borderBottom: "2px solid #e2e8f0" }}>
+                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Last</th>
+                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>First</th>
+                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Age/Birthday</th>
+                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Gender</th>
+                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Watched Since</th>
+                      <th style={{ padding: "0.75rem", "text-align": "center", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <For each={filteredChildren()}>
+                      {(child, index) => (
+                        <tr 
+                          style={{ 
+                            borderBottom: "1px solid #e2e8f0",
+                            cursor: "pointer",
+                            transition: "background-color 0.2s",
+                            "background-color": index() % 2 === 0 ? "#fff" : "#f7fafc",
+                          }}
+                          onClick={() => navigate(`/families/${child.familyId}/children/${child.id}`)}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = "#edf2f7";
+                          }}
+                          onMouseLeave={(e) => {
+                            const bgColor = index() % 2 === 0 ? "#fff" : "#f7fafc";
+                            e.currentTarget.style.backgroundColor = bgColor;
                           }}
                         >
-                          <h3
-                            style={{
-                              "font-size": "1.25rem",
-                              margin: "0",
-                              color: "#2d3748",
-                            }}
-                          >
-                            {child.firstName} {child.lastName}
-                          </h3>
-                          <Show when={child.allergies}>
-                            <span
-                              style={{
-                                padding: "0.25rem 0.5rem",
-                                "border-radius": "4px",
-                                "background-color": "#fed7d7",
-                                color: "#c53030",
-                                "font-size": "0.75rem",
-                                "font-weight": "600",
-                              }}
-                            >
-                              ⚠️ Allergies
-                            </span>
-                          </Show>
-                          <Show when={child.medications}>
-                            <span
-                              style={{
-                                padding: "0.25rem 0.5rem",
-                                "border-radius": "4px",
-                                "background-color": "#feebc8",
-                                color: "#7c2d12",
-                                "font-size": "0.75rem",
-                                "font-weight": "600",
-                              }}
-                            >
-                              💊 Medications
-                            </span>
-                          </Show>
-                          <Show when={child.specialNeeds}>
-                            <span
-                              style={{
-                                padding: "0.25rem 0.5rem",
-                                "border-radius": "4px",
-                                "background-color": "#bee3f8",
-                                color: "#2c5282",
-                                "font-size": "0.75rem",
-                                "font-weight": "600",
-                              }}
-                            >
-                              ♿ Special Needs
-                            </span>
-                          </Show>
-                        </div>
-                        <div
-                          style={{
-                            display: "grid",
-                            "grid-template-columns": "repeat(auto-fit, minmax(200px, 1fr))",
-                            gap: "1rem",
-                            "margin-bottom": "1rem",
-                          }}
-                        >
-                          <div>
-                            <strong style={{ color: "#4a5568" }}>Family:</strong>
-                            <p style={{ margin: "0.25rem 0 0 0" }}>
-                              <A
-                                href={`/families/${child.familyId}`}
+                          <td style={{ padding: "0.75rem", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>
+                            {child.lastName}
+                          </td>
+                          <td style={{ padding: "0.75rem", color: "#4a5568", "font-size": "0.875rem" }}>
+                            <div style={{ display: "flex", "align-items": "center", gap: "0.25rem" }}>
+                              <span>{child.firstName}</span>
+                              <Show when={child.allergies}>
+                                <span style={{ color: "#c53030" }} title="Has allergies">⚠️</span>
+                              </Show>
+                              <Show when={child.medications}>
+                                <span style={{ color: "#7c2d12" }} title="Has medications">💊</span>
+                              </Show>
+                              <Show when={child.specialNeeds}>
+                                <span style={{ color: "#2c5282" }} title="Has special needs">♿</span>
+                              </Show>
+                            </div>
+                          </td>
+                          <td style={{ padding: "0.75rem", color: "#4a5568", "font-size": "0.875rem" }}>
+                            {calculateAge(child.dateOfBirth)} ({formatDate(child.dateOfBirth)})
+                          </td>
+                          <td style={{ padding: "0.75rem", color: "#4a5568", "font-size": "0.875rem" }}>
+                            {child.gender
+                              ?.replace(/_/g, " ")
+                              .toLowerCase()
+                              .replace(/\b\w/g, (l: string) => l.toUpperCase()) || "-"}
+                          </td>
+                          <td style={{ padding: "0.75rem", color: "#718096", "font-size": "0.875rem" }}>
+                            {formatDate(child.createdAt)}
+                          </td>
+                          <td style={{ padding: "0.75rem", "text-align": "center" }} onClick={(e) => e.stopPropagation()}>
+                            <div style={{ position: "relative", display: "inline-block" }} data-dropdown-container>
+                              <button
+                                data-dropdown-button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const isOpen = openDropdown() === child.id;
+                                  if (!isOpen) {
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    setDropdownPosition({
+                                      top: rect.bottom + window.scrollY + 4,
+                                      right: window.innerWidth - rect.right + window.scrollX,
+                                    });
+                                    setOpenDropdown(child.id);
+                                  } else {
+                                    setOpenDropdown(null);
+                                    setDropdownPosition(null);
+                                  }
+                                }}
                                 style={{
-                                  color: "#4299e1",
-                                  "text-decoration": "none",
+                                  padding: "0.25rem 0.5rem",
+                                  "background-color": "#edf2f7",
+                                  color: "#2d3748",
+                                  border: "1px solid #cbd5e0",
+                                  "border-radius": "4px",
+                                  cursor: "pointer",
+                                  "font-size": "0.75rem",
+                                  display: "flex",
+                                  "align-items": "center",
+                                  gap: "0.25rem",
                                 }}
                               >
-                                {child.family?.familyName}
-                              </A>
-                            </p>
-                          </div>
-                          <div>
-                            <strong style={{ color: "#4a5568" }}>Age:</strong>
-                            <p style={{ margin: "0.25rem 0 0 0" }}>
-                              {calculateAge(child.dateOfBirth)} years old
-                            </p>
-                          </div>
-                          <div>
-                            <strong style={{ color: "#4a5568" }}>Date of Birth:</strong>
-                            <p style={{ margin: "0.25rem 0 0 0" }}>
-                              {formatDate(child.dateOfBirth)}
-                            </p>
-                          </div>
-                          <Show when={child.gender}>
-                            <div>
-                              <strong style={{ color: "#4a5568" }}>Gender:</strong>
-                              <p style={{ margin: "0.25rem 0 0 0" }}>
-                                {child.gender
-                                  ?.replace(/_/g, " ")
-                                  .toLowerCase()
-                                  .replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                              </p>
-                            </div>
-                          </Show>
-                          <Show when={child.schoolName}>
-                            <div>
-                              <strong style={{ color: "#4a5568" }}>School:</strong>
-                              <p style={{ margin: "0.25rem 0 0 0" }}>{child.schoolName}</p>
-                            </div>
-                          </Show>
-                          <Show when={child.schoolGrade}>
-                            <div>
-                              <strong style={{ color: "#4a5568" }}>Grade:</strong>
-                              <p style={{ margin: "0.25rem 0 0 0" }}>{child.schoolGrade}</p>
-                            </div>
-                          </Show>
-                        </div>
-                        <Show when={child.allergies || child.medications || child.specialNeeds}>
-                          <div
-                            style={{
-                              padding: "0.75rem",
-                              "background-color": "#fff5f5",
-                              border: "1px solid #feb2b2",
-                              "border-radius": "4px",
-                              "margin-top": "0.5rem",
-                            }}
-                          >
-                            <Show when={child.allergies}>
-                              <div style={{ "font-size": "0.875rem", "margin-bottom": "0.25rem" }}>
-                                <strong style={{ color: "#c53030" }}>Allergies:</strong>{" "}
-                                <span style={{ color: "#742a2a" }}>{child.allergies}</span>
-                              </div>
+                                Actions
+                                <span style={{ "font-size": "0.625rem" }}>▼</span>
+                              </button>
+                              <Show when={openDropdown() === child.id && dropdownPosition()}>
+                                {(pos) => (
+                                  <div
+                                    data-dropdown-menu
+                                    onClick={(e) => e.stopPropagation()}
+                                    style={{
+                                      position: "fixed",
+                                      top: `${pos().top}px`,
+                                      right: `${pos().right}px`,
+                                      "background-color": "#fff",
+                                      border: "1px solid #e2e8f0",
+                                      "border-radius": "4px",
+                                      "box-shadow": "0 4px 6px rgba(0, 0, 0, 0.1)",
+                                      "z-index": 1000,
+                                      "min-width": "120px",
+                                    }}
+                                  >
+                                  <A
+                                    href={`/families/${child.familyId}/children/${child.id}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenDropdown(null);
+                                    }}
+                                    style={{
+                                      display: "flex",
+                                      "align-items": "center",
+                                      gap: "0.5rem",
+                                      padding: "0.5rem 0.75rem",
+                                      color: "#2d3748",
+                                      "text-decoration": "none",
+                                      "font-size": "0.875rem",
+                                      transition: "background-color 0.2s",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.backgroundColor = "#f7fafc";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.backgroundColor = "transparent";
+                                    }}
+                                  >
+                                    <span>👁️</span>
+                                    <span>View</span>
+                                  </A>
+                                  <A
+                                    href={`/families/${child.familyId}/children/${child.id}/edit`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenDropdown(null);
+                                    }}
+                                    style={{
+                                      display: "flex",
+                                      "align-items": "center",
+                                      gap: "0.5rem",
+                                      padding: "0.5rem 0.75rem",
+                                      color: "#2d3748",
+                                      "text-decoration": "none",
+                                      "font-size": "0.875rem",
+                                      transition: "background-color 0.2s",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.backgroundColor = "#f7fafc";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.backgroundColor = "transparent";
+                                    }}
+                                  >
+                                    <span>✏️</span>
+                                    <span>Edit</span>
+                                  </A>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenDropdown(null);
+                                      handleDeleteChild(child.id, `${child.firstName} ${child.lastName}`);
+                                    }}
+                                    style={{
+                                      display: "flex",
+                                      "align-items": "center",
+                                      gap: "0.5rem",
+                                      width: "100%",
+                                      padding: "0.5rem 0.75rem",
+                                      "background-color": "transparent",
+                                      color: "#c53030",
+                                      border: "none",
+                                      "text-align": "left",
+                                      cursor: "pointer",
+                                      "font-size": "0.875rem",
+                                      transition: "background-color 0.2s",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.backgroundColor = "#fff5f5";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.backgroundColor = "transparent";
+                                    }}
+                                  >
+                                    <span>🗑️</span>
+                                    <span>Delete</span>
+                                  </button>
+                                </div>
+                              )}
                             </Show>
-                            <Show when={child.medications}>
-                              <div style={{ "font-size": "0.875rem", "margin-bottom": "0.25rem" }}>
-                                <strong style={{ color: "#c53030" }}>Medications:</strong>{" "}
-                                <span style={{ color: "#742a2a" }}>{child.medications}</span>
-                              </div>
-                            </Show>
-                            <Show when={child.specialNeeds}>
-                              <div style={{ "font-size": "0.875rem" }}>
-                                <strong style={{ color: "#c53030" }}>Special Needs:</strong>{" "}
-                                <span style={{ color: "#742a2a" }}>{child.specialNeeds}</span>
-                              </div>
-                            </Show>
                           </div>
-                        </Show>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "0.5rem",
-                          "flex-direction": "column",
-                        }}
-                      >
-                        <A
-                          href={`/families/${child.familyId}/children/${child.id}`}
-                          style={{
-                            padding: "0.5rem 1rem",
-                            "background-color": "#4299e1",
-                            color: "white",
-                            border: "none",
-                            "border-radius": "4px",
-                            "text-decoration": "none",
-                            "text-align": "center",
-                            "font-size": "0.875rem",
-                          }}
-                        >
-                          View Details
-                        </A>
-                        <A
-                          href={`/families/${child.familyId}/children/${child.id}/edit`}
-                          style={{
-                            padding: "0.5rem 1rem",
-                            "background-color": "#edf2f7",
-                            color: "#2d3748",
-                            border: "1px solid #cbd5e0",
-                            "border-radius": "4px",
-                            "text-decoration": "none",
-                            "text-align": "center",
-                            "font-size": "0.875rem",
-                          }}
-                        >
-                          Edit
-                        </A>
-                        <button
-                          onClick={() =>
-                            handleDeleteChild(child.id, `${child.firstName} ${child.lastName}`)
-                          }
-                          style={{
-                            padding: "0.5rem 1rem",
-                            "background-color": "#fff5f5",
-                            color: "#c53030",
-                            border: "1px solid #feb2b2",
-                            "border-radius": "4px",
-                            cursor: "pointer",
-                            "font-size": "0.875rem",
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </For>
+                        </td>
+                      </tr>
+                    )}
+                  </For>
+                </tbody>
+              </table>
             </div>
-          </Show>
+          </div>
+        </Show>
         </Show>
       </Show>
     </main>

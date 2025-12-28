@@ -132,45 +132,59 @@ export default function ExpensesPage() {
   };
 
   return (
-    <div style={{ padding: "2rem", "max-width": "1400px", margin: "0 auto" }}>
-      <div
-        style={{
-          display: "flex",
-          "justify-content": "space-between",
-          "align-items": "center",
-          "margin-bottom": "2rem",
-          "flex-wrap": "wrap",
-          gap: "1rem",
-        }}
-      >
-        <h1 style={{ "font-size": "2rem", "font-weight": "700", color: "#2d3748", margin: 0 }}>
-          Expenses
-        </h1>
-        <button
-          onClick={() => setShowNewExpense(true)}
+    <div style={{ padding: "1.5rem", "max-width": "1400px", margin: "0 auto" }}>
+      <header style={{ "margin-bottom": "0.75rem" }}>
+        <div
           style={{
-            "background-color": "#4299e1",
-            color: "white",
-            border: "none",
-            padding: "0.75rem 1.5rem",
-            "border-radius": "6px",
-            cursor: "pointer",
-            "font-weight": "600",
-            "font-size": "1rem",
+            display: "flex",
+            "justify-content": "space-between",
+            "align-items": "center",
+            "flex-wrap": "wrap",
+            gap: "0.75rem",
           }}
+          class="flex-row-mobile"
         >
-          + Add Expense
-        </button>
-      </div>
+          <div style={{ display: "flex", "align-items": "center", gap: "0.75rem", "flex-wrap": "wrap" }}>
+            <A
+              href="/"
+              style={{
+                color: "#4299e1",
+                "text-decoration": "none",
+                display: "inline-block",
+              }}
+            >
+              ← Back to Dashboard
+            </A>
+            <h1 style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748", margin: 0 }}>
+              Expenses
+            </h1>
+          </div>
+          <button
+            onClick={() => setShowNewExpense(true)}
+            style={{
+              "background-color": "#4299e1",
+              color: "white",
+              border: "none",
+              padding: "0.5rem 1rem",
+              "border-radius": "4px",
+              cursor: "pointer",
+              "font-weight": "600",
+              "font-size": "0.875rem",
+            }}
+          >
+            + Add Expense
+          </button>
+        </div>
+      </header>
 
       {/* Filters */}
       <div
         style={{
           "background-color": "#fff",
-          padding: "1.5rem",
+          padding: "0.75rem",
           "border-radius": "8px",
           border: "1px solid #e2e8f0",
-          "margin-bottom": "1.5rem",
+          "margin-bottom": "1rem",
         }}
       >
         <div
@@ -240,10 +254,10 @@ export default function ExpensesPage() {
       <div
         style={{
           "background-color": "#fff",
-          padding: "1.5rem",
+          padding: "0.75rem",
           "border-radius": "8px",
           border: "1px solid #e2e8f0",
-          "margin-bottom": "1.5rem",
+          "margin-bottom": "1rem",
         }}
       >
         <div style={{ display: "flex", gap: "2rem", "flex-wrap": "wrap" }}>
@@ -276,7 +290,7 @@ export default function ExpensesPage() {
             <tr style={{ "background-color": "#f7fafc", "border-bottom": "2px solid #e2e8f0" }}>
               <th
                 style={{
-                  padding: "1rem",
+                  padding: "0.75rem",
                   "text-align": "left",
                   "font-weight": "600",
                   color: "#2d3748",
@@ -288,7 +302,7 @@ export default function ExpensesPage() {
               </th>
               <th
                 style={{
-                  padding: "1rem",
+                  padding: "0.75rem",
                   "text-align": "left",
                   "font-weight": "600",
                   color: "#2d3748",
@@ -300,7 +314,7 @@ export default function ExpensesPage() {
               </th>
               <th
                 style={{
-                  padding: "1rem",
+                  padding: "0.75rem",
                   "text-align": "left",
                   "font-weight": "600",
                   color: "#2d3748",
@@ -312,7 +326,7 @@ export default function ExpensesPage() {
               </th>
               <th
                 style={{
-                  padding: "1rem",
+                  padding: "0.75rem",
                   "text-align": "left",
                   "font-weight": "600",
                   color: "#2d3748",
@@ -324,7 +338,7 @@ export default function ExpensesPage() {
               </th>
               <th
                 style={{
-                  padding: "1rem",
+                  padding: "0.75rem",
                   "text-align": "right",
                   "font-weight": "600",
                   color: "#2d3748",
@@ -336,7 +350,7 @@ export default function ExpensesPage() {
               </th>
               <th
                 style={{
-                  padding: "1rem",
+                  padding: "0.75rem",
                   "text-align": "center",
                   "font-weight": "600",
                   color: "#2d3748",
@@ -468,13 +482,14 @@ export default function ExpensesPage() {
             "align-items": "center",
             "justify-content": "center",
             zIndex: 1000,
+            padding: "1.5rem",
           }}
           onClick={() => setShowNewExpense(false)}
         >
           <div
             style={{
               "background-color": "#fff",
-              padding: "2rem",
+              padding: "1.5rem",
               "border-radius": "8px",
               "max-width": "500px",
               width: "90%",
@@ -483,7 +498,7 @@ export default function ExpensesPage() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 style={{ "margin-top": 0, "margin-bottom": "1.5rem" }}>Add New Expense</h2>
+            <h2 style={{ "margin-top": 0, "margin-bottom": "1rem", "font-size": "1.25rem" }}>Add New Expense</h2>
             <form
               action={createStandaloneExpense}
               method="post"
@@ -617,7 +632,7 @@ export default function ExpensesPage() {
                   </For>
                 </select>
               </div>
-              <div style={{ "margin-bottom": "1.5rem" }}>
+              <div style={{ "margin-bottom": "1rem" }}>
                 <label
                   style={{
                     display: "block",
@@ -692,13 +707,14 @@ export default function ExpensesPage() {
                 "align-items": "center",
                 "justify-content": "center",
                 zIndex: 1000,
+                padding: "1.5rem",
               }}
               onClick={() => setEditingExpense(null)}
             >
               <div
                 style={{
                   "background-color": "#fff",
-                  padding: "2rem",
+                  padding: "1.5rem",
                   "border-radius": "8px",
                   "max-width": "500px",
                   width: "90%",
@@ -707,7 +723,7 @@ export default function ExpensesPage() {
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <h2 style={{ "margin-top": 0, "margin-bottom": "1.5rem" }}>Edit Expense</h2>
+                <h2 style={{ "margin-top": 0, "margin-bottom": "1rem", "font-size": "1.25rem" }}>Edit Expense</h2>
                 <form
                   action={updateStandaloneExpense}
                   method="post"
@@ -846,7 +862,7 @@ export default function ExpensesPage() {
                       </For>
                     </select>
                   </div>
-                  <div style={{ "margin-bottom": "1.5rem" }}>
+                  <div style={{ "margin-bottom": "1rem" }}>
                     <label
                       style={{
                         display: "block",

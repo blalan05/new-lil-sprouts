@@ -10,6 +10,7 @@ export default function Topbar() {
   return (
     <>
       <nav
+        class="no-print"
         style={{
           "background-color": "#2d3748",
           color: "#fff",

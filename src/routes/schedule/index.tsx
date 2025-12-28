@@ -1,8 +1,10 @@
-import { createAsync, type RouteDefinition, A } from "@solidjs/router";
-import { createSignal, Show, For, createMemo, createResource } from "solid-js";
+import { createAsync, type RouteDefinition, A, useSubmission } from "@solidjs/router";
+import { createSignal, Show, For, createMemo, createResource, createEffect } from "solid-js";
 import { getCareSessionsForRange, getUnavailabilitiesForRange } from "~/lib/schedule";
 import { getUpcomingUnavailabilities, deleteUnavailability } from "~/lib/unavailability";
 import { getServices } from "~/lib/services";
+import { createCareSchedule } from "~/lib/care-schedules";
+import { getFamilies, getFamily } from "~/lib/families";
 
 export const route = {
   preload() {
@@ -12,6 +14,8 @@ export const route = {
     getCareSessionsForRange(startOfMonth, endOfMonth);
     getUnavailabilitiesForRange(startOfMonth, endOfMonth);
     getUpcomingUnavailabilities();
+    getFamilies();
+    getServices();
   },
 } satisfies RouteDefinition;
 
@@ -84,6 +88,77 @@ export default function SchedulePage() {
   });
   const upcomingUnavailabilities = createAsync(() => getUpcomingUnavailabilities());
   const [showUnavailabilityPanel, setShowUnavailabilityPanel] = createSignal(false);
+  const [showAddSessionModal, setShowAddSessionModal] = createSignal(false);
+  const [selectedDate, setSelectedDate] = createSignal<string>("");
+  const [selectedFamilyId, setSelectedFamilyId] = createSignal<string>("");
+  const families = createAsync(() => getFamilies());
+  const submission = useSubmission(createCareSchedule);
+  
+  const selectedFamily = createAsync(() => {
+    const id = selectedFamilyId();
+    return id ? getFamily(id) : null;
+  });
+  
+  const [serviceId, setServiceId] = createSignal<string>("");
+  
+  const defaultServiceId = () => {
+    const family = selectedFamily();
+    if (family?.services && family.services.length > 0) {
+      return family.services[0].service.id;
+    }
+    const allServices = services();
+    if (allServices && allServices.length > 0) {
+      return allServices[0].id;
+    }
+    return "";
+  };
+  
+  createEffect(() => {
+    const family = selectedFamily();
+    const allServices = services();
+    const currentServiceId = serviceId();
+    
+    if (allServices && allServices.length > 0) {
+      const defaultId = defaultServiceId();
+      if (!currentServiceId || currentServiceId === "" || (family && defaultId && defaultId !== currentServiceId)) {
+        if (defaultId) {
+          setServiceId(defaultId);
+        } else if (allServices.length > 0) {
+          setServiceId(allServices[0].id);
+        }
+      }
+    }
+  });
+  
+  const getCurrentDate = () => {
+    return selectedDate() || new Date().toISOString().split("T")[0];
+  };
+  
+  const getCurrentTime = () => {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, "0");
+    const minutes = now.getMinutes().toString().padStart(2, "0");
+    return `${hours}:${minutes}`;
+  };
+  
+  const handleCloseModal = () => {
+    setShowAddSessionModal(false);
+    setSelectedFamilyId("");
+    setSelectedDate("");
+  };
+  
+  const handleDateClick = (date: Date) => {
+    const dateStr = date.toISOString().split("T")[0];
+    setSelectedDate(dateStr);
+    setShowAddSessionModal(true);
+  };
+  
+  createEffect(() => {
+    if (submission.result && !(submission.result instanceof Error)) {
+      handleCloseModal();
+      window.location.reload();
+    }
+  });
 
   const navigateDate = (direction: "prev" | "next") => {
     const date = new Date(currentDate());
@@ -158,17 +233,6 @@ export default function SchedulePage() {
       }}
     >
       <header style={{ "margin-bottom": "2rem" }}>
-        <A
-          href="/"
-          style={{
-            color: "#4299e1",
-            "text-decoration": "none",
-            "margin-bottom": "0.5rem",
-            display: "inline-block",
-          }}
-        >
-          ← Back to Dashboard
-        </A>
         <div
           style={{
             display: "flex",
@@ -180,7 +244,19 @@ export default function SchedulePage() {
           }}
           class="flex-row-mobile"
         >
-          <h1 style={{ color: "#2d3748", "font-size": "2rem", margin: 0 }}>Schedule</h1>
+          <div style={{ display: "flex", "align-items": "center", gap: "1rem", "flex-wrap": "wrap" }}>
+            <A
+              href="/"
+              style={{
+                color: "#4299e1",
+                "text-decoration": "none",
+                display: "inline-block",
+              }}
+            >
+              ← Back to Dashboard
+            </A>
+            <h1 style={{ color: "#2d3748", "font-size": "2rem", margin: 0 }}>Schedule</h1>
+          </div>
           <div style={{ display: "flex", gap: "0.5rem", "flex-wrap": "wrap" }} class="calendar-view-buttons">
             <button
               onClick={() => setShowUnavailabilityPanel(!showUnavailabilityPanel())}
@@ -195,6 +271,28 @@ export default function SchedulePage() {
               }}
             >
               {showUnavailabilityPanel() ? "Hide" : "Show"} Unavailability
+            </button>
+            <button
+              onClick={() => {
+                setSelectedDate("");
+                setShowAddSessionModal(true);
+              }}
+              style={{
+                padding: "0.5rem 1rem",
+                "background-color": "#48bb78",
+                color: "white",
+                border: "none",
+                "border-radius": "4px",
+                cursor: "pointer",
+                "font-size": "0.875rem",
+                "font-weight": "600",
+                display: "inline-flex",
+                "align-items": "center",
+                gap: "0.375rem",
+              }}
+            >
+              <span>+</span>
+              <span>Add Care Session</span>
             </button>
             <A
               href="/unavailability/new"
@@ -496,6 +594,7 @@ export default function SchedulePage() {
             currentDate={currentDate()}
             sessions={sessions() || []}
             unavailabilities={unavailabilities() || []}
+            onDateClick={handleDateClick}
           />
         )}
         {view() === "week" && (
@@ -526,6 +625,395 @@ export default function SchedulePage() {
             onSortDirectionChange={setSortDirection}
           />
         )}
+      </Show>
+
+      {/* Add Care Session Modal */}
+      <Show when={showAddSessionModal()}>
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            "background-color": "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            "align-items": "center",
+            "justify-content": "center",
+            "z-index": 1000,
+            padding: "2rem",
+          }}
+          class="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              handleCloseModal();
+            }
+          }}
+        >
+          <div
+            style={{
+              "background-color": "#fff",
+              "border-radius": "8px",
+              padding: "2rem",
+              "max-width": "500px",
+              width: "100%",
+              "max-height": "90vh",
+              overflow: "auto",
+              "box-shadow": "0 10px 25px rgba(0, 0, 0, 0.2)",
+            }}
+            class="modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: "flex",
+                "justify-content": "space-between",
+                "align-items": "center",
+                "margin-bottom": "1.5rem",
+              }}
+            >
+              <h2 style={{ color: "#2d3748", "font-size": "1.5rem", margin: 0 }}>
+                Add Care Session
+              </h2>
+              <button
+                onClick={handleCloseModal}
+                style={{
+                  background: "none",
+                  border: "none",
+                  "font-size": "1.5rem",
+                  color: "#718096",
+                  cursor: "pointer",
+                  padding: "0.25rem 0.5rem",
+                  "line-height": 1,
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <form
+              action={createCareSchedule}
+              method="post"
+            >
+              <input type="hidden" name="recurrence" value="ONCE" />
+
+              <div style={{ "margin-bottom": "1.5rem" }}>
+                <label
+                  for="serviceId"
+                  style={{
+                    display: "block",
+                    "margin-bottom": "0.5rem",
+                    "font-weight": "600",
+                    color: "#2d3748",
+                  }}
+                >
+                  Service *
+                </label>
+                <Show
+                  when={services()}
+                  fallback={
+                    <div style={{ padding: "0.75rem", color: "#718096" }}>Loading services...</div>
+                  }
+                >
+                  <select
+                    id="serviceId"
+                    name="serviceId"
+                    required
+                    value={serviceId()}
+                    onChange={(e) => setServiceId(e.currentTarget.value)}
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      border: "1px solid #cbd5e0",
+                      "border-radius": "4px",
+                      "font-size": "1rem",
+                      "margin-bottom": "1.5rem",
+                    }}
+                  >
+                    <Show
+                      when={selectedFamily()?.services && selectedFamily()!.services.length > 0}
+                      fallback={
+                        <>
+                          <option value="">Select a service...</option>
+                          <For each={services()}>
+                            {(service) => (
+                              <option value={service.id}>
+                                {service.name}
+                                {service.defaultHourlyRate &&
+                                  ` ($${service.defaultHourlyRate}/hr${service.pricingType === "PER_CHILD" ? " per child" : ""})`}
+                              </option>
+                            )}
+                          </For>
+                        </>
+                      }
+                    >
+                      <For each={selectedFamily()?.services || []}>
+                        {(fs) => (
+                          <option value={fs.service.id}>
+                            {fs.service.name}
+                            {fs.service.defaultHourlyRate &&
+                              ` ($${fs.service.defaultHourlyRate}/hr${fs.service.pricingType === "PER_CHILD" ? " per child" : ""})`}
+                          </option>
+                        )}
+                      </For>
+                    </Show>
+                  </select>
+                  <Show when={selectedFamilyId() && (!selectedFamily()?.services || selectedFamily()!.services.length === 0)}>
+                    <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "#718096" }}>
+                      No services assigned to this family. <A href={`/families/${selectedFamilyId()}/edit`} style={{ color: "#4299e1" }}>Assign services</A> to default this selection.
+                    </p>
+                  </Show>
+                </Show>
+              </div>
+
+              <div style={{ "margin-bottom": "1.5rem" }}>
+                <label
+                  for="familyId"
+                  style={{
+                    display: "block",
+                    "margin-bottom": "0.5rem",
+                    "font-weight": "600",
+                    color: "#2d3748",
+                  }}
+                >
+                  Family *
+                </label>
+                <select
+                  id="familyId"
+                  name="familyId"
+                  required
+                  value={selectedFamilyId()}
+                  onChange={(e) => setSelectedFamilyId(e.currentTarget.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    border: "1px solid #cbd5e0",
+                    "border-radius": "4px",
+                    "font-size": "1rem",
+                  }}
+                >
+                  <option value="">Select a family...</option>
+                  <For each={families()}>
+                    {(family) => (
+                      <option value={family.id}>{family.familyName}</option>
+                    )}
+                  </For>
+                </select>
+              </div>
+
+              <Show when={selectedFamilyId() && selectedFamily()}>
+                {(family) => (
+                  <Show 
+                    when={(() => {
+                      const selectedService = services()?.find((s) => s.id === serviceId());
+                      return !selectedService?.requiresChildren || family().children.length > 0;
+                    })()}
+                  >
+                    <div style={{ "margin-bottom": "1.5rem" }}>
+                      <label
+                        style={{
+                          display: "block",
+                          "margin-bottom": "0.5rem",
+                          "font-weight": "600",
+                          color: "#2d3748",
+                        }}
+                      >
+                        {(() => {
+                          const selectedService = services()?.find((s) => s.id === serviceId());
+                          return selectedService?.requiresChildren ? "Children *" : "Student (optional)";
+                        })()}
+                      </label>
+                      <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem" }}>
+                        <For each={family().children}>
+                          {(child) => (
+                            <label
+                              style={{
+                                display: "flex",
+                                "align-items": "center",
+                                gap: "0.5rem",
+                                cursor: "pointer",
+                                padding: "0.5rem",
+                                "border-radius": "4px",
+                                transition: "background-color 0.2s",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = "#f7fafc";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = "transparent";
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                name="childIds"
+                                value={child.id}
+                                style={{
+                                  width: "1.25rem",
+                                  height: "1.25rem",
+                                  cursor: "pointer",
+                                }}
+                              />
+                              <span>
+                                {child.firstName} {child.lastName}
+                                {child.allergies && " ⚠️"}
+                              </span>
+                            </label>
+                          )}
+                        </For>
+                      </div>
+                    </div>
+                  </Show>
+                )}
+              </Show>
+
+              <div style={{ "margin-bottom": "1.5rem" }}>
+                <label
+                  for="startDate"
+                  style={{
+                    display: "block",
+                    "margin-bottom": "0.5rem",
+                    "font-weight": "600",
+                    color: "#2d3748",
+                  }}
+                >
+                  Date *
+                </label>
+                <input
+                  id="startDate"
+                  name="startDate"
+                  type="date"
+                  required
+                  value={getCurrentDate()}
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    border: "1px solid #cbd5e0",
+                    "border-radius": "4px",
+                    "font-size": "1rem",
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  "grid-template-columns": "1fr 1fr",
+                  gap: "1rem",
+                  "margin-bottom": "1.5rem",
+                }}
+              >
+                <div>
+                  <label
+                    for="startTime"
+                    style={{
+                      display: "block",
+                      "margin-bottom": "0.5rem",
+                      "font-weight": "600",
+                      color: "#2d3748",
+                    }}
+                  >
+                    Start Time *
+                  </label>
+                  <input
+                    id="startTime"
+                    name="startTime"
+                    type="time"
+                    required
+                    value={getCurrentTime()}
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      border: "1px solid #cbd5e0",
+                      "border-radius": "4px",
+                      "font-size": "1rem",
+                    }}
+                  />
+                </div>
+                <div>
+                  <label
+                    for="endTime"
+                    style={{
+                      display: "block",
+                      "margin-bottom": "0.5rem",
+                      "font-weight": "600",
+                      color: "#2d3748",
+                    }}
+                  >
+                    End Time *
+                  </label>
+                  <input
+                    id="endTime"
+                    name="endTime"
+                    type="time"
+                    required
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      border: "1px solid #cbd5e0",
+                      "border-radius": "4px",
+                      "font-size": "1rem",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <Show when={submission.result instanceof Error}>
+                <div
+                  style={{
+                    padding: "1rem",
+                    "background-color": "#fff5f5",
+                    border: "1px solid #feb2b2",
+                    "border-radius": "4px",
+                    color: "#c53030",
+                    "margin-bottom": "1rem",
+                  }}
+                >
+                  {submission.result.message}
+                </div>
+              </Show>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: "1rem",
+                  "justify-content": "flex-end",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  style={{
+                    padding: "0.75rem 1.5rem",
+                    "background-color": "#edf2f7",
+                    color: "#2d3748",
+                    border: "1px solid #cbd5e0",
+                    "border-radius": "4px",
+                    cursor: "pointer",
+                    "font-weight": "600",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submission.pending}
+                  style={{
+                    padding: "0.75rem 1.5rem",
+                    "background-color": "#48bb78",
+                    color: "white",
+                    border: "none",
+                    "border-radius": "4px",
+                    cursor: submission.pending ? "not-allowed" : "pointer",
+                    opacity: submission.pending ? "0.6" : "1",
+                    "font-weight": "600",
+                  }}
+                >
+                  {submission.pending ? "Creating..." : "Create Session"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       </Show>
     </main>
   );
@@ -858,6 +1346,7 @@ function MonthView(props: {
   currentDate: Date;
   sessions: any[];
   unavailabilities: any[];
+  onDateClick?: (date: Date) => void;
 }) {
   const year = props.currentDate.getFullYear();
   const month = props.currentDate.getMonth();
@@ -929,19 +1418,20 @@ function MonthView(props: {
           borderBottom: "2px solid #e2e8f0",
         }}
       >
-        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-          <div
-            key={day}
-            style={{
-              padding: "0.75rem",
-              "text-align": "center",
-              "font-weight": "600",
-              color: "#4a5568",
-            }}
-          >
-            {day}
-          </div>
-        ))}
+        <For each={["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]}>
+          {(day) => (
+            <div
+              style={{
+                padding: "0.75rem",
+                "text-align": "center",
+                "font-weight": "600",
+                color: "#4a5568",
+              }}
+            >
+              {day}
+            </div>
+          )}
+        </For>
       </div>
       <div style={{ display: "grid", "grid-template-columns": "repeat(7, 1fr)" }}>
         <For each={days}>
@@ -953,12 +1443,23 @@ function MonthView(props: {
 
             return (
               <div
+                onClick={() => props.onDateClick?.(day)}
                 style={{
                   minHeight: "120px",
                   border: "1px solid #e2e8f0",
                   padding: "0.5rem",
                   "background-color": isCurrentMonthDay ? "#fff" : "#f7fafc",
                   position: "relative",
+                  cursor: props.onDateClick ? "pointer" : "default",
+                  transition: "background-color 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  if (isCurrentMonthDay && props.onDateClick) {
+                    e.currentTarget.style.backgroundColor = "#f7fafc";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = isCurrentMonthDay ? "#fff" : "#f7fafc";
                 }}
               >
                 <div
@@ -1004,6 +1505,7 @@ function MonthView(props: {
                       return (
                         <A
                           href={`/families/${session.familyId}/sessions/${session.id}`}
+                          onClick={(e) => e.stopPropagation()}
                           style={{
                             padding: "0.25rem 0.5rem",
                             "background-color": isConfirmed ? statusColors.bg : "transparent",

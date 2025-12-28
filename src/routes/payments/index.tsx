@@ -195,46 +195,45 @@ export default function PaymentsPage() {
       style={{
         "max-width": "1200px",
         margin: "0 auto",
-        padding: "2rem",
+        padding: "1.5rem",
       }}
     >
-      <header style={{ "margin-bottom": "2rem" }}>
-        <A
-          href="/"
-          style={{
-            color: "#4299e1",
-            "text-decoration": "none",
-            "margin-bottom": "0.5rem",
-            display: "inline-block",
-          }}
-        >
-          ← Back to Dashboard
-        </A>
+      <header style={{ "margin-bottom": "0.75rem" }}>
         <div
           style={{
             display: "flex",
             "justify-content": "space-between",
-            "align-items": "flex-start",
+            "align-items": "center",
             "flex-wrap": "wrap",
-            gap: "1rem",
+            gap: "0.75rem",
           }}
           class="flex-row-mobile"
         >
-          <div>
-            <h1 style={{ color: "#2d3748", "font-size": "2rem" }}>Payments</h1>
-            <p style={{ color: "#718096", margin: "0.5rem 0 0 0" }}>
-              View received payments and record new payments
-            </p>
+          <div style={{ display: "flex", "align-items": "center", gap: "0.75rem", "flex-wrap": "wrap" }}>
+            <A
+              href="/"
+              style={{
+                color: "#4299e1",
+                "text-decoration": "none",
+                display: "inline-block",
+              }}
+            >
+              ← Back to Dashboard
+            </A>
+            <h1 style={{ color: "#2d3748", "font-size": "1.5rem", margin: 0, "font-weight": "700" }}>
+              Payments
+            </h1>
           </div>
           <button
             onClick={() => setShowRecordPayment(!showRecordPayment())}
             style={{
-              padding: "0.75rem 1.5rem",
+              padding: "0.5rem 1rem",
               "background-color": "#48bb78",
               color: "white",
               border: "none",
-              "border-radius": "6px",
+              "border-radius": "4px",
               "font-weight": "600",
+              "font-size": "0.875rem",
               cursor: "pointer",
             }}
           >
@@ -247,10 +246,10 @@ export default function PaymentsPage() {
       <div
         style={{
           "background-color": "#fff",
-          padding: "1.5rem",
+          padding: "0.75rem",
           "border-radius": "8px",
           border: "1px solid #e2e8f0",
-          "margin-bottom": "2rem",
+          "margin-bottom": "1rem",
         }}
       >
         <div
@@ -258,9 +257,9 @@ export default function PaymentsPage() {
             display: "flex",
             "justify-content": "space-between",
             "align-items": "center",
-            "margin-bottom": "1.5rem",
+            "margin-bottom": "0.5rem",
             "flex-wrap": "wrap",
-            gap: "1rem",
+            gap: "0.75rem",
           }}
         >
           <div style={{ display: "flex", gap: "1rem", "align-items": "center", "flex-wrap": "wrap" }}>
@@ -335,7 +334,7 @@ export default function PaymentsPage() {
           <Show
             when={filteredAndSortedPayments().length > 0}
             fallback={
-              <div style={{ "text-align": "center", padding: "3rem", color: "#718096" }}>
+              <div style={{ "text-align": "center", padding: "2rem", color: "#718096" }}>
                 No payments found for {selectedYear()}.
               </div>
             }
@@ -521,7 +520,7 @@ export default function PaymentsPage() {
             "align-items": "center",
             "justify-content": "center",
             "z-index": 1000,
-            padding: "2rem",
+            padding: "1.5rem",
           }}
           class="modal-overlay"
           onClick={(e) => {
@@ -534,7 +533,7 @@ export default function PaymentsPage() {
             style={{
               "background-color": "#fff",
               "border-radius": "8px",
-              padding: "2rem",
+              padding: "1.5rem",
               "max-width": "900px",
               width: "100%",
               "max-height": "90vh",
@@ -549,10 +548,10 @@ export default function PaymentsPage() {
                 display: "flex",
                 "justify-content": "space-between",
                 "align-items": "center",
-                "margin-bottom": "1.5rem",
+                "margin-bottom": "1rem",
               }}
             >
-              <h2 style={{ color: "#2d3748", "font-size": "1.5rem", margin: 0 }}>
+              <h2 style={{ color: "#2d3748", "font-size": "1.25rem", margin: 0 }}>
                 Record Payment
               </h2>
               <button
@@ -579,7 +578,7 @@ export default function PaymentsPage() {
         <input type="hidden" name="paidDate" value={new Date().toISOString()} />
 
         {/* Family Selection */}
-        <div style={{ "margin-bottom": "2rem" }}>
+        <div style={{ "margin-bottom": "1rem" }}>
           <label
             for="familySelect"
             style={{
@@ -614,7 +613,7 @@ export default function PaymentsPage() {
         {/* Unpaid Sessions */}
         <Show when={selectedFamilyId() && unpaidSessions() && unpaidSessions()!.length > 0}>
           {(sessions) => (
-            <div style={{ "margin-bottom": "2rem" }}>
+            <div style={{ "margin-bottom": "1rem" }}>
               <div
                 style={{
                   display: "flex",
@@ -657,7 +656,7 @@ export default function PaymentsPage() {
                 fallback={
                   <div
                     style={{
-                      padding: "2rem",
+                      padding: "1rem",
                       "text-align": "center",
                       "background-color": "#f7fafc",
                       "border-radius": "4px",
@@ -826,14 +825,14 @@ export default function PaymentsPage() {
               padding: "1.5rem",
               "background-color": "#f7fafc",
               "border-radius": "4px",
-              "margin-bottom": "2rem",
+              "margin-bottom": "1rem",
             }}
           >
-            <h3 style={{ color: "#2d3748", "font-size": "1.125rem", "margin-bottom": "1rem" }}>
+            <h3 style={{ color: "#2d3748", "font-size": "1rem", "margin-bottom": "0.5rem" }}>
               Payment Summary
             </h3>
 
-            <div style={{ display: "grid", gap: "1rem", "margin-bottom": "1.5rem" }}>
+            <div style={{ display: "grid", gap: "0.75rem", "margin-bottom": "1rem" }}>
               <div>
                 <label
                   for="tips"
@@ -934,7 +933,7 @@ export default function PaymentsPage() {
 
             <div
               style={{
-                padding: "1rem",
+                padding: "0.75rem",
                 "background-color": "#fff",
                 "border-radius": "4px",
                 border: "2px solid #48bb78",
@@ -961,12 +960,12 @@ export default function PaymentsPage() {
         <Show when={submission.result && submission.result instanceof Error}>
           <div
             style={{
-              padding: "1rem",
+              padding: "0.75rem",
               "background-color": "#fff5f5",
               border: "1px solid #feb2b2",
               "border-radius": "4px",
               color: "#c53030",
-              "margin-bottom": "1rem",
+              "margin-bottom": "0.75rem",
             }}
           >
             {submission.result.message}

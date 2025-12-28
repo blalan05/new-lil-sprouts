@@ -131,6 +131,38 @@ export default function Reports() {
             </p>
           </A>
 
+          {/* Calendar Report */}
+          <A
+            href="/reports/calendar"
+            style={{
+              "background-color": "#fff",
+              padding: "2rem",
+              "border-radius": "8px",
+              border: "1px solid #e2e8f0",
+              "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
+              "text-decoration": "none",
+              color: "inherit",
+              display: "block",
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+            }}
+          >
+            <div style={{ "font-size": "2rem", "margin-bottom": "1rem" }}>📅</div>
+            <h2 style={{ "font-size": "1.25rem", "font-weight": "600", color: "#2d3748", "margin-bottom": "0.5rem" }}>
+              Calendar View Report
+            </h2>
+            <p style={{ color: "#718096", "font-size": "0.875rem", "line-height": "1.5" }}>
+              View all care sessions in a calendar format for any month. Perfect for printing to show how busy you were.
+            </p>
+          </A>
+
           {/* Income Report */}
           <A
             href="/reports/income"

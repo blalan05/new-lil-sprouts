@@ -85,6 +85,18 @@ export default function NewCareSchedule() {
           <form
             action={createCareSchedule}
             method="post"
+            onSubmit={(e) => {
+              // Custom validation: if service requires children, at least one must be selected
+              if (requiresChildren()) {
+                const form = e.currentTarget;
+                const checkedBoxes = form.querySelectorAll('input[name="childIds"][type="checkbox"]:checked');
+                if (checkedBoxes.length === 0) {
+                  e.preventDefault();
+                  alert("Please select at least one child for this service.");
+                  return false;
+                }
+              }
+            }}
             style={{
               "background-color": "#fff",
               padding: "2rem",
@@ -673,6 +685,11 @@ export default function NewCareSchedule() {
             >
               <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
                 Children
+                <Show when={requiresChildren()}>
+                  <span style={{ color: "#e53e3e", "font-size": "0.875rem", "margin-left": "0.5rem" }}>
+                    * (at least one required)
+                  </span>
+                </Show>
               </legend>
 
               <Show
@@ -699,6 +716,17 @@ export default function NewCareSchedule() {
                   </div>
                 }
               >
+                {/* Hidden input for validation - only required when service requires children */}
+                <Show when={requiresChildren()}>
+                  <input
+                    type="hidden"
+                    name="childIds"
+                    value=""
+                    required={true}
+                    data-validate-children="true"
+                    style={{ display: "none" }}
+                  />
+                </Show>
                 <div style={{ display: "grid", gap: "0.75rem" }}>
                   <For each={familyData().children}>
                     {(child) => (
@@ -718,11 +746,19 @@ export default function NewCareSchedule() {
                           type="checkbox"
                           name="childIds"
                           value={child.id}
-                          required={requiresChildren()}
                           style={{
                             width: "1.25rem",
                             height: "1.25rem",
                             cursor: "pointer",
+                          }}
+                          onChange={(e) => {
+                            // Remove the hidden required input when at least one child is selected
+                            if (e.currentTarget.checked && requiresChildren()) {
+                              const hiddenInput = document.querySelector('input[data-validate-children="true"]') as HTMLInputElement;
+                              if (hiddenInput) {
+                                hiddenInput.removeAttribute("required");
+                              }
+                            }
                           }}
                         />
                         <div style={{ flex: "1" }}>
