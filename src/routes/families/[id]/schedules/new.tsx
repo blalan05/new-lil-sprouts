@@ -43,6 +43,16 @@ export default function NewCareSchedule() {
 
   const isRecurring = () => recurrence() !== "ONCE";
 
+  // Get the selected service to check if it requires children
+  const selectedService = () => {
+    const id = serviceId();
+    const allServices = services();
+    if (!id || !allServices) return null;
+    return allServices.find((s) => s.id === id);
+  };
+
+  const requiresChildren = () => selectedService()?.requiresChildren ?? false;
+
   return (
     <main
       style={{
@@ -708,7 +718,7 @@ export default function NewCareSchedule() {
                           type="checkbox"
                           name="childIds"
                           value={child.id}
-                          required={serviceType() === "CHILDCARE"}
+                          required={requiresChildren()}
                           style={{
                             width: "1.25rem",
                             height: "1.25rem",
