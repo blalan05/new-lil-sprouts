@@ -2,12 +2,12 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma-client"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum MemberRelationship {
@@ -58,8 +58,8 @@ model Service {
   pricingType       String   @default("FLAT") // FLAT, PER_CHILD, etc.
   isActive          Boolean  @default(true)
   requiresChildren  Boolean  @default(false) // Whether this service requires children to be selected
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime @updatedAt @db.Timestamptz(3)
 
   // Relations
   familyServices FamilyService[]
@@ -109,8 +109,8 @@ model User {
   lastName  String?
   phone     String?
   isOwner   Boolean  @default(false) // true for the nanny/owner
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   // Relations
   familyMember     FamilyMember?
@@ -136,8 +136,8 @@ model Family {
   emergencyContact String?
   emergencyPhone   String?
   notes            String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime @updatedAt @db.Timestamptz(3)
 
   // Relations
   children      Child[]
@@ -158,7 +158,7 @@ model FamilyService {
   id        String   @id @default(uuid())
   familyId  String
   serviceId String
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   family  Family  @relation(fields: [familyId], references: [id], onDelete: Cascade)
   service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
@@ -179,8 +179,8 @@ model FamilyMember {
   canPickup    Boolean            @default(false)
   allergies    String?
   notes        String?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  createdAt    DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime           @updatedAt @db.Timestamptz(3)
 
   // Relations
   familyId String
@@ -204,11 +204,11 @@ model CareSchedule {
   endTime     String // Time in HH:mm format (e.g., "14:30")
   hourlyRate  Float? // Override service default rate if needed
   isActive    Boolean           @default(true)
-  startDate   DateTime // When this schedule starts
-  endDate     DateTime? // Optional end date
+  startDate   DateTime          @db.Timestamptz(3) // When this schedule starts
+  endDate     DateTime?         @db.Timestamptz(3) // Optional end date
   notes       String?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  createdAt   DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime          @updatedAt @db.Timestamptz(3)
 
   // Relations
   familyId String
@@ -228,15 +228,15 @@ model CareSchedule {
 // Unavailability periods - when the nanny/owner is not available
 model Unavailability {
   id        String   @id @default(uuid())
-  startDate DateTime
-  endDate   DateTime
+  startDate DateTime @db.Timestamptz(3)
+  endDate   DateTime @db.Timestamptz(3)
   allDay    Boolean  @default(true) // If false, specific times apply
   startTime String? // Time in HH:mm format (only if allDay is false)
   endTime   String? // Time in HH:mm format (only if allDay is false)
   reason    String? // vacation, personal, holiday, etc.
   notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   // Relations - tied to the owner/nanny
   userId String?
@@ -252,7 +252,7 @@ model Child {
   id            String   @id @default(uuid())
   firstName     String
   lastName      String
-  dateOfBirth   DateTime
+  dateOfBirth   DateTime @db.Timestamptz(3)
   gender        Gender?
   allergies     String?
   medications   String?
@@ -261,8 +261,8 @@ model Child {
   schoolGrade   String?
   schoolTeacher String?
   notes         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(3)
 
   // Relations
   familyId      String
@@ -279,20 +279,20 @@ model Child {
 // Sessions/appointments - supports multiple services (childcare, piano lessons, etc.)
 model CareSession {
   id             String        @id @default(uuid())
-  scheduledStart DateTime
-  scheduledEnd   DateTime
-  actualStart    DateTime?
-  actualEnd      DateTime?
+  scheduledStart DateTime      @db.Timestamptz(3)
+  scheduledEnd   DateTime      @db.Timestamptz(3)
+  actualStart    DateTime?     @db.Timestamptz(3)
+  actualEnd      DateTime?     @db.Timestamptz(3)
   status         SessionStatus @default(SCHEDULED)
   hourlyRate     Float? // Rate for this session (overrides service default if set)
   notes          String?
   isConfirmed    Boolean       @default(false) // Whether this session is confirmed
 
   // Drop-off and pick-up tracking (primarily for childcare)
-  dropOffTime DateTime?
+  dropOffTime DateTime? @db.Timestamptz(3)
   dropOffBy   String? // Name of person who dropped off
   dropOffById String? // ID of family member who dropped off
-  pickUpTime  DateTime?
+  pickUpTime  DateTime? @db.Timestamptz(3)
   pickUpBy    String? // Name of person who picked up
   pickUpById  String? // ID of family member who picked up
 
@@ -303,8 +303,8 @@ model CareSession {
   afternoonSnackCount Int @default(0)
   dinnerCount         Int @default(0)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   // Relations
   familyId String
@@ -337,8 +337,8 @@ model SessionExpense {
   amount      Float    // Cost of the expense
   category    String?  // Optional category: FOOD, ACTIVITY, SUPPLIES, TRANSPORTATION, OTHER
   notes       String?  // Additional details
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
 
   // Relations
   sessionId String
@@ -354,10 +354,10 @@ model Expense {
   description String   // e.g., "Art supplies", "Gas for car", "Monthly subscription"
   amount      Float    // Cost of the expense
   category    String?  // Optional category: FOOD, ACTIVITY, SUPPLIES, TRANSPORTATION, OTHER, BUSINESS
-  expenseDate DateTime @default(now()) // Date the expense occurred
+  expenseDate DateTime @default(now()) @db.Timestamptz(3) // Date the expense occurred
   notes       String?  // Additional details
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
 
   // Relations - optional link to a family (for family-specific expenses)
   familyId String?
@@ -375,11 +375,11 @@ model SessionReport {
   severity       ReportSeverity @default(INFO)
   title          String // Brief title/summary
   description    String // Detailed description
-  timestamp      DateTime       @default(now())
+  timestamp      DateTime       @default(now()) @db.Timestamptz(3)
   actionTaken    String? // What was done in response (for incidents)
   followUpNeeded Boolean        @default(false)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  createdAt      DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime       @updatedAt @db.Timestamptz(3)
 
   // Relations
   careSessionId String
@@ -404,14 +404,14 @@ model Payment {
   id            String        @id @default(uuid())
   amount        Float
   status        PaymentStatus @default(PENDING)
-  dueDate       DateTime?
-  paidDate      DateTime?
+  dueDate       DateTime?     @db.Timestamptz(3)
+  paidDate      DateTime?     @db.Timestamptz(3)
   invoiceNumber String?       @unique
   method        String? // cash, check, venmo, etc.
   notes         String?
   taxYear       Int?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  createdAt     DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime      @updatedAt @db.Timestamptz(3)
 
   // Relations
   familyId      String?
@@ -432,8 +432,8 @@ model Setting {
   key       String   @unique // e.g., "defaultHourlyRate"
   value     String // Stored as string, parsed as needed
   type      String   @default("string") // "string", "number", "boolean", "json"
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([key])
 }
@@ -447,8 +447,8 @@ model Document {
   mimeType    String?
   description String?
   category    String? // contract, medical, emergency_contact, tax_document, etc.
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
 
   // Relations
   familyId String?

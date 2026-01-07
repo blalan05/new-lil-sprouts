@@ -6,6 +6,9 @@ dist
 .vinxi
 app.config.timestamp_*.js
 
+# Prisma
+src/generated/
+
 # Environment
 .env
 .env*.local

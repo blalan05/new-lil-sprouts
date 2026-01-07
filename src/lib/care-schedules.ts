@@ -4,7 +4,7 @@ import { datetimeLocalToUTC, parseFormDate } from "./datetime";
 import { getSession } from "./server";
 import { getSettingValue } from "./settings";
 import { calculateServiceRate } from "./services";
-import type { DayOfWeek, RecurrencePattern } from "@prisma/client";
+import type { DayOfWeek, RecurrencePattern } from "../generated/prisma-client/client.js";
 
 export const getCareSchedules = query(async (familyId: string) => {
   "use server";
@@ -16,6 +16,13 @@ export const getCareSchedules = query(async (familyId: string) => {
           id: true,
           firstName: true,
           lastName: true,
+        },
+      },
+      service: {
+        select: {
+          id: true,
+          name: true,
+          code: true,
         },
       },
       _count: {
@@ -296,9 +303,15 @@ export const updateCareSchedule = action(async (formData: FormData) => {
   }
 });
 
-export const deleteCareSchedule = action(async (id: string) => {
+export const deleteCareSchedule = action(async (formData: FormData) => {
   "use server";
   try {
+    const id = String(formData.get("id"));
+    
+    if (!id) {
+      return new Error("Schedule ID is required");
+    }
+    
     await db.careSchedule.delete({
       where: { id },
     });
@@ -321,6 +334,7 @@ export const generateSessionsFromSchedule = action(async (formData: FormData) =>
       where: { id: scheduleId },
       include: {
         children: true,
+        service: true,
       },
     });
 
@@ -428,7 +442,7 @@ export const recordDropOff = action(async (formData: FormData) => {
     }
 
     if (!dropOffBy) {
-      return new Error("Drop-off person name is required");
+      return new Error("Drop-off person is required");
     }
 
     await db.careSession.update({
@@ -437,6 +451,8 @@ export const recordDropOff = action(async (formData: FormData) => {
         dropOffBy,
         dropOffById: dropOffById || null,
         dropOffTime: dropOffTime ? datetimeLocalToUTC(dropOffTime) : new Date(),
+        status: "IN_PROGRESS",
+        isConfirmed: true,
       },
     });
 
@@ -461,7 +477,7 @@ export const recordPickUp = action(async (formData: FormData) => {
     }
 
     if (!pickUpBy) {
-      return new Error("Pick-up person name is required");
+      return new Error("Pick-up person is required");
     }
 
     await db.careSession.update({
@@ -470,6 +486,8 @@ export const recordPickUp = action(async (formData: FormData) => {
         pickUpBy,
         pickUpById: pickUpById || null,
         pickUpTime: pickUpTime ? datetimeLocalToUTC(pickUpTime) : new Date(),
+        status: "COMPLETED",
+        isConfirmed: true,
       },
     });
 

@@ -6,13 +6,16 @@ import { getSessionExpenseTotal } from "./expenses";
 export const getUnpaidSessions = query(async (familyId: string) => {
   "use server";
   
+  console.log("[getUnpaidSessions] ========== START ==========");
+  console.log("[getUnpaidSessions] familyId:", familyId);
+  
   // Get all confirmed sessions for the family
   const allSessions = await db.careSession.findMany({
     where: {
       familyId,
       isConfirmed: true,
       status: {
-        in: ["SCHEDULED", "COMPLETED"],
+        in: ["SCHEDULED", "IN_PROGRESS", "COMPLETED"],
       },
     },
     include: {
@@ -40,13 +43,27 @@ export const getUnpaidSessions = query(async (familyId: string) => {
     },
   });
 
+  console.log("[getUnpaidSessions] allSessions count:", allSessions.length);
+  allSessions.forEach((s, i) => {
+    console.log(`[getUnpaidSessions] Session ${i}:`, {
+      id: s.id,
+      status: s.status,
+      isConfirmed: s.isConfirmed,
+      scheduledStart: s.scheduledStart,
+      paymentsCount: s.payments.length
+    });
+  });
+
   // Filter out sessions that already have a PAID payment
   const unpaidSessions = allSessions.filter(
     (session) => session.payments.length === 0
   );
 
+  console.log("[getUnpaidSessions] unpaidSessions count:", unpaidSessions.length);
+  console.log("[getUnpaidSessions] ========== END ==========");
+
   return unpaidSessions;
-}, "unpaid-sessions");
+}, "unpaidSessions");
 
 // Create a payment for multiple sessions
 export const createPayment = action(async (formData: FormData) => {

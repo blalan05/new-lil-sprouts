@@ -34,6 +34,29 @@ export default function CareSessionDetail() {
   const expenses = createAsync(() => getSessionExpenses(params.sessionId!));
   const expenseTotal = createAsync(() => getSessionExpenseTotal(params.sessionId!));
   const familyMembers = createAsync(() => getFamilyMembers(params.id!));
+  
+  // Create combined list of primary parent + family members for drop-off/pickup
+  const allPeople = createMemo(() => {
+    const people = [];
+    
+    // Add primary parent
+    if (session()?.family?.parentFirstName && session()?.family?.parentLastName) {
+      people.push({
+        id: 'primary-parent',
+        firstName: session()!.family.parentFirstName,
+        lastName: session()!.family.parentLastName,
+        relationship: 'PARENT',
+      });
+    }
+    
+    // Add family members
+    if (familyMembers()) {
+      people.push(...familyMembers()!);
+    }
+    
+    return people;
+  });
+  
   const dropOffSubmission = useSubmission(recordDropOff);
   const pickUpSubmission = useSubmission(recordPickUp);
   const expenseSubmission = useSubmission(createExpense);
@@ -68,6 +91,21 @@ export default function CareSessionDetail() {
   const formatDate = formatDateLocal;
   const formatDateTime = formatDateTimeLocal;
   const formatTime = formatTimeLocal;
+
+  const formatStatus = (status: string) => {
+    switch (status) {
+      case "SCHEDULED":
+        return "Scheduled";
+      case "IN_PROGRESS":
+        return "In Progress";
+      case "COMPLETED":
+        return "Completed";
+      case "CANCELLED":
+        return "Cancelled";
+      default:
+        return status;
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -140,17 +178,57 @@ export default function CareSessionDetail() {
                 {session()?.scheduledStart && formatDateTime(session()!.scheduledStart)}
               </p>
             </div>
-            <span
-              style={{
-                padding: "0.5rem 1.5rem",
-                "border-radius": "9999px",
-                "background-color": getStatusColor(session()?.status || "").bg,
-                color: getStatusColor(session()?.status || "").color,
-                "font-weight": "600",
-              }}
-            >
-              {session()?.status}
-            </span>
+            <div style={{ display: "flex", "align-items": "center", gap: "1rem" }}>
+              <A
+                href={`/families/${params.id}/sessions/${params.sessionId}/edit`}
+                style={{
+                  padding: "0.5rem 1rem",
+                  "background-color": "#4299e1",
+                  color: "#fff",
+                  border: "none",
+                  "border-radius": "4px",
+                  "text-decoration": "none",
+                  "font-weight": "600",
+                  "font-size": "0.875rem",
+                }}
+              >
+                Edit Session
+              </A>
+              <button
+                onClick={async () => {
+                  if (confirm("Are you sure you want to delete this session?")) {
+                    const formData = new FormData();
+                    formData.append("id", params.sessionId!);
+                    const { deleteCareSession } = await import("~/lib/schedule");
+                    await deleteCareSession(formData);
+                    window.location.href = `/families/${params.id}`;
+                  }
+                }}
+                style={{
+                  padding: "0.5rem 1rem",
+                  "background-color": "#f56565",
+                  color: "#fff",
+                  border: "none",
+                  "border-radius": "4px",
+                  cursor: "pointer",
+                  "font-weight": "600",
+                  "font-size": "0.875rem",
+                }}
+              >
+                Delete Session
+              </button>
+              <span
+                style={{
+                  padding: "0.5rem 1.5rem",
+                  "border-radius": "9999px",
+                  "background-color": getStatusColor(session()?.status || "").bg,
+                  color: getStatusColor(session()?.status || "").color,
+                  "font-weight": "600",
+                }}
+              >
+                {formatStatus(session()?.status || "")}
+              </span>
+            </div>
           </div>
         </header>
 
@@ -194,9 +272,9 @@ export default function CareSessionDetail() {
               </div>
             </Show>
             <div>
-              <strong style={{ color: "#4a5568" }}>Confirmed:</strong>
+              <strong style={{ color: "#4a5568" }}>Status:</strong>
               <p style={{ margin: "0.25rem 0 0 0" }}>
-                {session()?.isConfirmed ? "✓ Yes" : "⚠ Pending"}
+                {session()?.isConfirmed ? "✓ Confirmed" : "⚠️ Not Confirmed"}
               </p>
             </div>
           </div>
@@ -300,7 +378,7 @@ export default function CareSessionDetail() {
                       }}
                     >
                       <option value="">Select person...</option>
-                      <For each={familyMembers()}>
+                      <For each={allPeople()}>
                         {(member) => (
                           <option value={`${member.firstName} ${member.lastName}`}>
                             {member.firstName} {member.lastName} ({member.relationship})
@@ -383,7 +461,7 @@ export default function CareSessionDetail() {
               <div style={{ "margin-bottom": "0.5rem" }}>
                 <strong style={{ color: "#276749" }}>Time:</strong>{" "}
                 <span style={{ color: "#2d3748" }}>
-                  {session()?.dropOffTime && formatDateTime(session()!.dropOffTime)}
+                  {session()?.dropOffTime ? formatDateTime(session()!.dropOffTime!) : "N/A"}
                 </span>
               </div>
               <div>
@@ -476,11 +554,10 @@ export default function CareSessionDetail() {
                       }}
                     >
                       <option value="">Select person...</option>
-                      <For each={familyMembers()}>
+                      <For each={allPeople()}>
                         {(member) => (
                           <option value={`${member.firstName} ${member.lastName}`}>
                             {member.firstName} {member.lastName} ({member.relationship})
-                            {member.canPickup ? " ✓" : ""}
                           </option>
                         )}
                       </For>
@@ -560,7 +637,7 @@ export default function CareSessionDetail() {
               <div style={{ "margin-bottom": "0.5rem" }}>
                 <strong style={{ color: "#2c5282" }}>Time:</strong>{" "}
                 <span style={{ color: "#2d3748" }}>
-                  {session()?.pickUpTime && formatDateTime(session()!.pickUpTime)}
+                  {session()?.pickUpTime ? formatDateTime(session()!.pickUpTime!) : "N/A"}
                 </span>
               </div>
               <div>

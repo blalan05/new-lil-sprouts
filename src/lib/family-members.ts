@@ -1,6 +1,6 @@
 import { action, query, redirect, reload } from "@solidjs/router";
 import { db } from "./db";
-import type { MemberRelationship } from "@prisma/client";
+import type { MemberRelationship } from "../generated/prisma-client/client.js";
 
 export const getFamilyMembers = query(async (familyId: string) => {
   "use server";

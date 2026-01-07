@@ -1,6 +1,6 @@
 import { action, query, redirect, reload } from "@solidjs/router";
 import { db } from "./db";
-import type { ReportType, ReportSeverity } from "@prisma/client";
+import type { ReportType, ReportSeverity } from "../generated/prisma-client/client.js";
 
 export const getSessionReports = query(async (careSessionId: string) => {
   "use server";

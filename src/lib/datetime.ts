@@ -1,11 +1,18 @@
 /**
  * Utility functions for handling dates and times with proper timezone support
+ * 
+ * IMPORTANT: PostgreSQL columns are TIMESTAMPTZ (with timezone)
+ * - When saving: We convert user's local datetime to UTC Date object
+ * - When reading: PostgreSQL returns UTC, we convert to local for display
  */
 
 /**
- * Converts a datetime-local string (from HTML input) to a Date object in UTC
+ * Converts a datetime-local string (from HTML input) to a UTC Date object
  * datetime-local inputs return strings like "2024-01-15T14:30" (no timezone)
- * We need to interpret this as the user's local time and convert to UTC for storage
+ * We interpret this as the user's LOCAL time and return a Date in UTC
+ * 
+ * Example: User enters "2024-01-15T14:30" in PST (UTC-8)
+ *   -> Returns Date object representing "2024-01-15T22:30:00.000Z"
  */
 export function datetimeLocalToUTC(datetimeLocal: string): Date {
   if (!datetimeLocal) {
@@ -13,22 +20,34 @@ export function datetimeLocalToUTC(datetimeLocal: string): Date {
   }
   
   // datetime-local format: "YYYY-MM-DDTHH:mm"
-  // Parse it as local time and convert to UTC
+  // The Date constructor with a string interprets it as LOCAL time when no timezone is specified
+  // But we need to be explicit about the conversion
+  
   const [datePart, timePart] = datetimeLocal.split("T");
   const [year, month, day] = datePart.split("-").map(Number);
   const [hours, minutes] = timePart.split(":").map(Number);
   
-  // Create date in local timezone
+  // Create a Date object in the user's LOCAL timezone
+  // This uses the browser's/server's timezone offset
   const localDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
   
-  // Return as-is (JavaScript Date objects are stored internally as UTC)
-  // When sent to PostgreSQL, Prisma will handle the conversion correctly
+  // JavaScript Date objects are ALWAYS stored internally as UTC milliseconds since epoch
+  // When we use new Date(year, month, day, hours, minutes), it:
+  // 1. Takes these as LOCAL time values
+  // 2. Converts to UTC internally based on the system's timezone
+  // 3. When sent to PostgreSQL with TIMESTAMPTZ, it preserves the UTC value
+  
+  // So this actually IS returning UTC - the Date object's internal representation
+  // is UTC milliseconds since epoch
   return localDate;
 }
 
 /**
  * Converts a UTC Date from the database to a datetime-local string for HTML inputs
- * This ensures the displayed time matches what the user expects in their local timezone
+ * PostgreSQL TIMESTAMPTZ returns dates in UTC, we convert to local for display
+ * 
+ * Example: Database has "2024-01-15T22:30:00.000Z"
+ *   -> User in PST sees "2024-01-15T14:30" in the input field
  */
 export function utcToDatetimeLocal(utcDate: Date | string): string {
   if (!utcDate) {
@@ -37,7 +56,7 @@ export function utcToDatetimeLocal(utcDate: Date | string): string {
   
   const date = typeof utcDate === "string" ? new Date(utcDate) : utcDate;
   
-  // Get local date components
+  // Get local date components (automatically converts from UTC to local)
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -118,3 +137,22 @@ export function parseFormDate(dateString: string): Date {
   return new Date(year, month - 1, day, 0, 0, 0, 0);
 }
 
+/**
+ * Gets the start of day in UTC for a given local date
+ * Useful for date range queries
+ */
+export function startOfDayUTC(date: Date | string): Date {
+  const d = typeof date === "string" ? new Date(date) : new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/**
+ * Gets the end of day in UTC for a given local date
+ * Useful for date range queries
+ */
+export function endOfDayUTC(date: Date | string): Date {
+  const d = typeof date === "string" ? new Date(date) : new Date(date);
+  d.setHours(23, 59, 59, 999);
+  return d;
+}

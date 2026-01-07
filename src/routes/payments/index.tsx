@@ -28,9 +28,33 @@ export default function PaymentsPage() {
     return getPayments(year);
   });
   const [selectedFamilyId, setSelectedFamilyId] = createSignal<string>("");
-  const unpaidSessions = createAsync(() => {
+  const unpaidSessions = createAsync(async () => {
     const familyId = selectedFamilyId();
-    return familyId ? getUnpaidSessions(familyId) : Promise.resolve([]);
+    console.log("[Frontend] selectedFamilyId:", familyId);
+    if (!familyId) {
+      console.log("[Frontend] No familyId, returning empty array");
+      return [];
+    }
+    console.log("[Frontend] Calling getUnpaidSessions...");
+    const result = await getUnpaidSessions(familyId);
+    console.log("[Frontend] getUnpaidSessions returned:", result);
+    console.log("[Frontend] result type:", typeof result);
+    console.log("[Frontend] result is array:", Array.isArray(result));
+    console.log("[Frontend] result length:", result?.length);
+    console.log("[Frontend] result stringified:", JSON.stringify(result));
+    return result;
+  });
+  
+  // Debug: Log when unpaidSessions changes
+  createEffect(() => {
+    const sessions = unpaidSessions();
+    console.log("[Frontend] unpaidSessions() reactive value:", sessions);
+    console.log("[Frontend] unpaidSessions() length:", sessions?.length);
+    console.log("[Frontend] unpaidSessions() type:", typeof sessions);
+    console.log("[Frontend] unpaidSessions() is array:", Array.isArray(sessions));
+    if (sessions && sessions.length > 0) {
+      console.log("[Frontend] First session:", sessions[0]);
+    }
   });
   const [selectedSessionIds, setSelectedSessionIds] = createSignal<string[]>([]);
   const [tips, setTips] = createSignal<string>("0");
@@ -611,8 +635,24 @@ export default function PaymentsPage() {
         </div>
 
         {/* Unpaid Sessions */}
-        <Show when={selectedFamilyId() && unpaidSessions() && unpaidSessions()!.length > 0}>
-          {(sessions) => (
+        <Show when={selectedFamilyId()}>
+          <Show 
+            when={unpaidSessions() && unpaidSessions()!.length > 0}
+            fallback={
+              <div
+                style={{
+                  padding: "1rem",
+                  "text-align": "center",
+                  "background-color": "#f7fafc",
+                  "border-radius": "4px",
+                  color: "#718096",
+                  "margin-bottom": "1rem",
+                }}
+              >
+                No unpaid confirmed sessions found for this family.
+              </div>
+            }
+          >
             <div style={{ "margin-bottom": "1rem" }}>
               <div
                 style={{
@@ -630,7 +670,7 @@ export default function PaymentsPage() {
                 >
                   Select Unpaid Sessions *
                 </label>
-                <Show when={sessions().length > 0}>
+                <Show when={unpaidSessions() && unpaidSessions()!.length > 0}>
                   <button
                     type="button"
                     onClick={toggleAllSessions}
@@ -644,30 +684,14 @@ export default function PaymentsPage() {
                       "font-size": "0.875rem",
                     }}
                   >
-                    {selectedSessionIds().length === sessions().length
+                    {selectedSessionIds().length === unpaidSessions()!.length
                       ? "Deselect All"
                       : "Select All"}
                   </button>
                 </Show>
               </div>
 
-              <Show
-                when={sessions().length > 0}
-                fallback={
-                  <div
-                    style={{
-                      padding: "1rem",
-                      "text-align": "center",
-                      "background-color": "#f7fafc",
-                      "border-radius": "4px",
-                      color: "#718096",
-                    }}
-                  >
-                    No unpaid confirmed sessions found for this family.
-                  </div>
-                }
-              >
-                <div
+              <div
                   style={{
                     "max-height": "400px",
                     overflow: "auto",
@@ -690,8 +714,8 @@ export default function PaymentsPage() {
                           <input
                             type="checkbox"
                             checked={
-                              sessions().length > 0 &&
-                              selectedSessionIds().length === sessions().length
+                              unpaidSessions() && unpaidSessions()!.length > 0 &&
+                              selectedSessionIds().length === unpaidSessions()!.length
                             }
                             onChange={toggleAllSessions}
                             style={{
@@ -749,7 +773,7 @@ export default function PaymentsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      <For each={sessions()}>
+                      <For each={unpaidSessions()}>
                         {(session) => {
                           const startTime = new Date(session.scheduledStart);
                           const endTime = new Date(session.scheduledEnd);
@@ -795,7 +819,7 @@ export default function PaymentsPage() {
                               <td style={{ padding: "0.75rem" }}>
                                 {session.children && session.children.length > 0 
                                   ? session.children.map((c: any) => c.firstName).join(", ")
-                                  : session.service?.requiresChildren ? "No children" : "N/A"}
+                                  : "N/A"}
                               </td>
                               <td style={{ padding: "0.75rem", "text-align": "right" }}>
                                 {formatDuration(startTime, endTime)}
@@ -813,9 +837,8 @@ export default function PaymentsPage() {
                     </tbody>
                   </table>
                 </div>
-              </Show>
             </div>
-          )}
+          </Show>
         </Show>
 
         {/* Payment Details */}
@@ -968,7 +991,7 @@ export default function PaymentsPage() {
               "margin-bottom": "0.75rem",
             }}
           >
-            {submission.result.message}
+            {submission.result?.message}
           </div>
         </Show>
 

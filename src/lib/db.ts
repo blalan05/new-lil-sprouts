@@ -11,9 +11,9 @@ if (process.env.NODE_ENV === "production") {
   }
 }
 
-import { PrismaClient } from "@prisma/client";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+import { PrismaClient } from "../generated/prisma-client/client.js";
+import { Pool } from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { existsSync } from "fs";
 
 // Resolve SSL certificate path before Prisma Client reads DATABASE_URL
@@ -118,7 +118,15 @@ const prismaClientSingleton = () => {
   const maskedUrl = dbUrl.replace(/:([^:@]+)@/, ":****@"); // Mask password
   console.log(`[DB] Connecting to database: ${maskedUrl.split("?")[0]}...`);
   
+  // Create PostgreSQL connection pool
+  const pool = new Pool({ connectionString: dbUrl });
+  
+  // Create Prisma adapter for PostgreSQL
+  const adapter = new PrismaPg(pool);
+  
+  // Create Prisma Client with adapter (Prisma v7 requirement)
   return new PrismaClient({
+    adapter,
     log: process.env.NODE_ENV === "production" ? ["error", "warn"] : ["query", "error", "warn"],
   });
 };

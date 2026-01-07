@@ -120,6 +120,32 @@ export const getFamily = query(async (id: string) => {
           relationship: true,
         },
       },
+      careSchedules: {
+        include: {
+          children: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          service: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+            },
+          },
+          _count: {
+            select: {
+              careSessions: true,
+            },
+          },
+        },
+        orderBy: {
+          startDate: "desc",
+        },
+      },
       careSessions: {
         include: {
           children: true,
