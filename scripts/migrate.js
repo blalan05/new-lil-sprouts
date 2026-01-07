@@ -23,15 +23,32 @@ console.log('Running Prisma migration...\n');
 
 // Get command from arguments (default to 'status')
 const command = process.argv[2] || 'status';
-const args = ['migrate', command, ...process.argv.slice(3)];
+const additionalArgs = process.argv.slice(3);
 
-// Run prisma command with environment variables
-const prisma = spawn('prisma', args, {
+// Build the prisma command with explicit schema path
+const args = [
+  'migrate',
+  command,
+  '--schema=./prisma/schema.prisma',
+  ...additionalArgs
+];
+
+// Run prisma command with DATABASE_URL in environment
+const prisma = spawn('npx', ['prisma', ...args], {
   stdio: 'inherit',
-  env: process.env,
-  shell: true
+  env: {
+    ...process.env,
+    DATABASE_URL: process.env.DATABASE_URL
+  },
+  shell: true,
+  cwd: join(__dirname, '..')
 });
 
 prisma.on('close', (code) => {
-  process.exit(code);
+  process.exit(code || 0);
+});
+
+prisma.on('error', (err) => {
+  console.error('Failed to start Prisma process:', err);
+  process.exit(1);
 });
