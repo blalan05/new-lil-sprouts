@@ -6,12 +6,18 @@ The application was experiencing timezone issues when saving and retrieving sess
 
 ## Root Causes
 
-### 1. **Database Column Type Issue**
+### 1. **Database Column Type Issue** ✅ FIXED
 - PostgreSQL columns were using `TIMESTAMP(3)` (TIMESTAMP WITHOUT TIME ZONE)
 - When JavaScript Date objects were saved, PostgreSQL stripped timezone information
 - When reading data back, PostgreSQL assumed the server's local timezone, causing incorrect conversions
 
-### 2. **Incorrect DateTime Utility Function**
+### 2. **Server-Side Date Construction Issue** ⚠️ NEWLY DISCOVERED & FIXED
+- In `care-schedules.ts`, session times were being created using `setHours()` on server-side code
+- This caused times to be interpreted in the **server's timezone**, not the **user's timezone**
+- When a user in PST created a session for 2:30 PM, the server (running in UTC) created it as 2:30 PM UTC
+- This resulted in sessions being saved 8 hours off from what the user intended
+
+### 3. **DateTime Utility Function Documentation**
 - The `datetimeLocalToUTC()` function had misleading comments
 - While JavaScript Date objects ARE stored internally as UTC, the conversion logic needed clarification
 - The function was working correctly but documentation was confusing
@@ -55,6 +61,7 @@ scheduledStart DateTime @db.Timestamptz(3)
 - Added comprehensive documentation explaining how timezone conversion works
 - Clarified that JavaScript Date objects are always stored as UTC milliseconds since epoch
 - Added helper functions for date range queries: `startOfDayUTC()` and `endOfDayUTC()`
+- **CRITICAL FIX:** Updated `getSessionsForDay()` to use `startOfDayUTC()` and `endOfDayUTC()` helpers
 - Improved code comments explaining the conversion process
 
 **Key Functions:**
@@ -85,13 +92,35 @@ ALTER TABLE "CareSession" ALTER COLUMN "scheduledEnd" TYPE TIMESTAMPTZ(3);
 
 ## How It Works Now
 
-### Saving a Session Date/Time
+### Saving a Session Date/Time (from Form Input)
 
 1. **User Input:** User selects "2024-01-15 2:30 PM" in their browser (PST timezone, UTC-8)
 2. **HTML Input:** Browser's datetime-local input sends "2024-01-15T14:30"
 3. **datetimeLocalToUTC():** Converts to Date object representing "2024-01-15T22:30:00.000Z" (UTC)
 4. **Prisma/PostgreSQL:** Saves as TIMESTAMPTZ: `2024-01-15 22:30:00+00`
 5. **Database Storage:** Stores as UTC with timezone info preserved
+
+### Saving a Session Date/Time (from Schedule Generation) - THE BUG FIX
+
+**BEFORE (INCORRECT):**
+```javascript
+// This was running on the SERVER, not the client!
+const sessionStart = new Date(startDate);
+sessionStart.setHours(startHour, startMinute, 0, 0); // Uses SERVER's timezone!
+```
+
+**Problem:** If user is in PST and server is in UTC:
+- User wants: 2:30 PM PST (which is 10:30 PM UTC)
+- Server creates: 2:30 PM UTC (which shows as 6:30 AM PST to user)
+- Result: 8 hours off!
+
+**AFTER (CORRECT):**
+```javascript
+// Combine date and time strings, then convert using user's timezone
+const sessionStart = datetimeLocalToUTC(`${startDate}T${startTime}`);
+```
+
+**Fixed:** The date and time strings from the form are combined into a datetime-local string, then passed through `datetimeLocalToUTC()` which properly interprets them as being in the user's timezone and converts to UTC.
 
 ### Reading a Session Date/Time
 
@@ -141,7 +170,12 @@ After this fix, verify the following scenarios:
 
 4. **Browser datetime-local inputs** - These work with local time strings without timezone designators, which is why we need conversion functions
 
-5. **Existing data preserved** - The migration converts column types but preserves existing data. However, if you had timezone issues before, existing records may need manual correction
+5. **Server-side vs Client-side timezone context** - This is CRITICAL:
+   - When code runs on the **client**, `setHours()` uses the **user's timezone** ✅
+   - When code runs on the **server**, `setHours()` uses the **server's timezone** ❌
+   - Always use `datetimeLocalToUTC()` for server-side date/time construction!
+
+6. **Existing data preserved** - The migration converts column types but preserves existing data. However, if you had timezone issues before, existing records may need manual correction
 
 ## Migration Impact
 
@@ -153,7 +187,8 @@ After this fix, verify the following scenarios:
 
 - `prisma/schema.prisma` - Schema with @db.Timestamptz(3) annotations
 - `src/lib/datetime.ts` - Timezone conversion utilities
-- `src/lib/care-schedules.ts` - Uses datetime conversion for sessions
+- **`src/lib/care-schedules.ts`** - ✅ FIXED: Now uses `datetimeLocalToUTC()` for session creation
+- **`src/lib/schedule.ts`** - ✅ FIXED: Now uses `startOfDayUTC()` and `endOfDayUTC()` helpers
 - `prisma/migrations/20250102000000_add_timestamptz_to_all_datetime_columns/migration.sql` - Database migration
 
 ## Additional Resources
@@ -175,6 +210,21 @@ After this fix, verify the following scenarios:
 
 ## Status
 
-✅ **Fix Applied and Tested**
+✅ **ALL FIXES APPLIED**
 
-The timezone issues have been resolved. All DateTime columns now properly store and retrieve timezone information, ensuring accurate date/time handling across different user timezones.
+**Date: January 2025**
+
+### Fixes Applied:
+1. ✅ Database schema updated to use TIMESTAMPTZ(3) for all datetime columns
+2. ✅ DateTime utility functions documented and clarified
+3. ✅ **CRITICAL FIX:** `createCareSchedule()` now uses `datetimeLocalToUTC()` for one-time sessions
+4. ✅ **CRITICAL FIX:** `generateSessionsFromSchedule()` now uses `datetimeLocalToUTC()` for recurring sessions
+5. ✅ `getSessionsForDay()` now uses `startOfDayUTC()` and `endOfDayUTC()` helpers
+
+### What Was Wrong:
+The previous "fix" only addressed the database column types but missed the actual bug in the application code. When schedules generated sessions, the code used `setHours()` which operates in the **server's timezone** on server-side code. This caused all session times to be interpreted incorrectly based on the server's timezone instead of the user's timezone.
+
+### What Changed:
+All server-side date/time construction now properly uses the `datetimeLocalToUTC()` function, which correctly interprets date and time strings as being in the user's local timezone before converting to UTC for storage.
+
+The timezone issues have been **fully resolved**. All DateTime columns properly store and retrieve timezone information, and all server-side code properly interprets user input in the user's timezone.
