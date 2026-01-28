@@ -1,16 +1,15 @@
-import { action, query, redirect, reload } from "@solidjs/router";
+import { query, action, redirect, reload } from "@solidjs/router";
 import { db } from "./db";
+import { calculateHours, calculateSessionCost, sumMoney, roundMoney } from "./money";
 
 // Helper function to format parent names
 export function formatParentNames(
   parentFirstName: string,
   parentLastName: string,
-  familyMembers?: Array<{ firstName: string; lastName: string; relationship: string }>
+  familyMembers?: Array<{ firstName: string; lastName: string; relationship: string }>,
 ): string {
   // Find spouse/partner (family member with PARENT relationship)
-  const spouse = familyMembers?.find(
-    (member) => member.relationship === "PARENT"
-  );
+  const spouse = familyMembers?.find((member) => member.relationship === "PARENT");
 
   if (spouse && spouse.lastName === parentLastName) {
     // Same last name - format as "First1 & First2 Last"
@@ -78,23 +77,26 @@ export const getFamilies = query(async () => {
       // Filter out sessions that already have a PAID payment
       const trulyUnpaid = unpaidSessions.filter((session) => session.payments.length === 0);
 
-      // Calculate total amount owed
+      // Calculate total amount owed using precise money math
       // Note: hourlyRate is already the total rate (per-child rate * number of children)
-      let amountOwed = 0;
+      const sessionAmounts: number[] = [];
       for (const session of trulyUnpaid) {
-        const startTime = new Date(session.scheduledStart).getTime();
-        const endTime = new Date(session.scheduledEnd).getTime();
-        const hours = (endTime - startTime) / (1000 * 60 * 60);
+        const hours = calculateHours(
+          new Date(session.scheduledStart),
+          new Date(session.scheduledEnd),
+        );
         const rate = session.hourlyRate || 0;
-        amountOwed += hours * rate;
+        const sessionCost = calculateSessionCost(hours, rate);
+        sessionAmounts.push(sessionCost);
       }
+      const amountOwed = roundMoney(sumMoney(sessionAmounts));
 
       return {
         ...family,
         amountOwed,
         unpaidSessionCount: trulyUnpaid.length,
       };
-    })
+    }),
   );
 
   return familiesWithAmountOwed;
@@ -210,22 +212,22 @@ export const createFamily = action(async (formData: FormData) => {
       dateOfBirth: string;
       gender: string;
     }> = [];
-    
+
     let childIndex = 0;
     while (true) {
       const firstName = String(formData.get(`childFirstName_${childIndex}`) || "");
       const lastName = String(formData.get(`childLastName_${childIndex}`) || "");
       const dateOfBirth = String(formData.get(`childDateOfBirth_${childIndex}`) || "");
       const gender = String(formData.get(`childGender_${childIndex}`) || "");
-      
+
       if (!firstName && !lastName && !dateOfBirth) {
         break; // No more children
       }
-      
+
       if (firstName && lastName && dateOfBirth) {
         children.push({ firstName, lastName, dateOfBirth, gender });
       }
-      
+
       childIndex++;
     }
 

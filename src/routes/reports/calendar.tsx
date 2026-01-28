@@ -1,6 +1,7 @@
 import { type RouteDefinition, A, createAsync } from "@solidjs/router";
 import { Show, For, createSignal, createMemo, createEffect } from "solid-js";
 import { getCareSessionsForRange } from "~/lib/schedule";
+import { ensureDate } from "~/lib/datetime";
 
 export const route = {
   preload() {
@@ -15,7 +16,7 @@ export default function CalendarReport() {
   const today = new Date();
   const previousMonth = today.getMonth() === 0 ? 11 : today.getMonth() - 1;
   const previousYear = today.getMonth() === 0 ? today.getFullYear() - 1 : today.getFullYear();
-  
+
   const [selectedYear, setSelectedYear] = createSignal<number>(previousYear);
   const [selectedMonth, setSelectedMonth] = createSignal<number>(previousMonth); // Default to previous month
 
@@ -74,23 +75,20 @@ export default function CalendarReport() {
   const getSessionsForDay = (date: Date) => {
     const allSessions = sessions();
     if (!allSessions || allSessions.length === 0) return [];
-    
+
     // Normalize the target date to local date components
     const targetYear = date.getFullYear();
     const targetMonth = date.getMonth();
     const targetDay = date.getDate();
-    
+
     const daySessions = allSessions.filter((session) => {
-      // Parse the session date - handle both Date objects and ISO strings
-      const sessionDate = typeof session.scheduledStart === 'string' 
-        ? new Date(session.scheduledStart) 
-        : new Date(session.scheduledStart);
-      
+      const sessionDate = ensureDate(session.scheduledStart);
+
       // Check if date is valid
       if (isNaN(sessionDate.getTime())) {
         return false;
       }
-      
+
       // Compare date components directly
       return (
         sessionDate.getFullYear() === targetYear &&
@@ -98,10 +96,10 @@ export default function CalendarReport() {
         sessionDate.getDate() === targetDay
       );
     });
-    
+
     return daySessions.sort((a, b) => {
-      const aTime = new Date(a.scheduledStart).getTime();
-      const bTime = new Date(b.scheduledStart).getTime();
+      const aTime = ensureDate(a.scheduledStart).getTime();
+      const bTime = ensureDate(b.scheduledStart).getTime();
       return aTime - bTime;
     });
   };
@@ -121,8 +119,8 @@ export default function CalendarReport() {
     const allSessions = sessions() || [];
     let total = 0;
     for (const session of allSessions) {
-      const start = new Date(session.scheduledStart).getTime();
-      const end = new Date(session.scheduledEnd).getTime();
+      const start = ensureDate(session.scheduledStart).getTime();
+      const end = ensureDate(session.scheduledEnd).getTime();
       total += (end - start) / (1000 * 60 * 60);
     }
     return total.toFixed(1);
@@ -348,10 +346,11 @@ export default function CalendarReport() {
                       }
                     >
                       <For each={daySessions()}>
-                        {(session) => {
-                          const startTime = new Date(session.scheduledStart);
-                          const endTime = new Date(session.scheduledEnd);
-                          const duration = formatDuration(startTime, endTime);
+                        <For each={getSessionsForDay(day)}>
+                          {(session) => {
+                            const startTime = ensureDate(session.scheduledStart);
+                            const endTime = ensureDate(session.scheduledEnd);
+                            const duration = formatDuration(startTime, endTime);
 
                           return (
                             <div
@@ -399,23 +398,23 @@ export default function CalendarReport() {
             .no-print {
               display: none !important;
             }
-            
+
             /* Optimize for landscape orientation - single page */
             @page {
               size: landscape;
               margin: 0.05in 0.2in;
             }
-            
+
             * {
               box-sizing: border-box;
             }
-            
+
             html, body {
               margin: 0 !important;
               padding: 0 !important;
               height: 100% !important;
             }
-            
+
             /* Container optimization */
             div[style*="max-width"] {
               max-width: 100% !important;
@@ -423,7 +422,7 @@ export default function CalendarReport() {
               margin: 0 !important;
               height: 100% !important;
             }
-            
+
             /* Ultra-compact header for single page - override all inline styles */
             .print-header {
               page-break-after: avoid;
@@ -433,13 +432,13 @@ export default function CalendarReport() {
               height: auto !important;
               text-align: center !important;
             }
-            
+
             /* Hide title in print */
             .print-header h1.print-title,
             .print-title {
               display: none !important;
             }
-            
+
             /* Month name - bigger for print */
             .print-header .print-month,
             .print-month {
@@ -450,7 +449,7 @@ export default function CalendarReport() {
               display: block !important;
               font-weight: 600 !important;
             }
-            
+
             /* Summary - show in print with appropriate size */
             .print-header .print-summary,
             .print-summary {
@@ -460,7 +459,7 @@ export default function CalendarReport() {
               line-height: 1 !important;
               display: block !important;
             }
-            
+
             /* Calendar container - maximize space */
             .calendar-container {
               page-break-inside: avoid;
@@ -471,21 +470,21 @@ export default function CalendarReport() {
               display: flex !important;
               flex-direction: column !important;
             }
-            
+
             /* Day headers - ultra compact */
             .calendar-day-headers {
               padding: 0.08rem 0.06rem !important;
               border-bottom: 1px solid #2d3748 !important;
               flex-shrink: 0 !important;
             }
-            
+
             .calendar-day-header {
               padding: 0.08rem 0.06rem !important;
               font-size: 0.6rem !important;
               font-weight: 700 !important;
               line-height: 1 !important;
             }
-            
+
             /* Calendar grid - ensure proper layout */
             .calendar-grid {
               display: grid !important;
@@ -493,7 +492,7 @@ export default function CalendarReport() {
               flex: 1 !important;
               min-height: 0 !important;
             }
-            
+
             /* Calendar day cells - fit on single page with header */
             /* Landscape: 11in - 0.1in margins = 10.9in usable */
             /* Header ~0.12in + Day headers ~0.12in = 0.24in */
@@ -508,7 +507,7 @@ export default function CalendarReport() {
               display: flex !important;
               flex-direction: column !important;
             }
-            
+
             /* Date numbers - compact */
             .calendar-day-number {
               font-size: 0.7rem !important;
@@ -516,7 +515,7 @@ export default function CalendarReport() {
               line-height: 1 !important;
               flex-shrink: 0 !important;
             }
-            
+
             /* Sessions container */
             .calendar-sessions {
               gap: 0.08rem !important;
@@ -524,12 +523,12 @@ export default function CalendarReport() {
               overflow: hidden !important;
               min-height: 0 !important;
             }
-            
+
             /* Hide "No sessions" text in print */
             .no-sessions-text {
               display: none !important;
             }
-            
+
             /* Session blocks - ultra compact for print */
             .session-block {
               padding: 0.1rem 0.15rem !important;
@@ -538,20 +537,20 @@ export default function CalendarReport() {
               line-height: 1.1 !important;
               border-left-width: 1.5px !important;
             }
-            
+
             .session-family {
               font-size: 0.6rem !important;
               font-weight: 700 !important;
               margin-bottom: 0.03rem !important;
               line-height: 1.1 !important;
             }
-            
+
             .session-children {
               font-size: 0.5rem !important;
               margin-bottom: 0.03rem !important;
               line-height: 1.1 !important;
             }
-            
+
             .session-time {
               font-size: 0.5rem !important;
               line-height: 1.1 !important;
@@ -562,4 +561,3 @@ export default function CalendarReport() {
     </div>
   );
 }
-
