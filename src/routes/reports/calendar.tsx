@@ -155,7 +155,9 @@ export default function CalendarReport() {
             "margin-top": "0.5rem",
           }}
         >
-          <div style={{ display: "flex", gap: "1rem", "align-items": "center", "flex-wrap": "wrap" }}>
+          <div
+            style={{ display: "flex", gap: "1rem", "align-items": "center", "flex-wrap": "wrap" }}
+          >
             <div>
               <label
                 style={{
@@ -234,10 +236,21 @@ export default function CalendarReport() {
 
       {/* Report Header - Always visible */}
       <div style={{ "margin-bottom": "1rem", "text-align": "center" }} class="print-header">
-        <h1 style={{ "font-size": "1.75rem", "font-weight": "700", color: "#2d3748", margin: "0 0 0.5rem 0" }} class="print-title no-print">
+        <h1
+          style={{
+            "font-size": "1.75rem",
+            "font-weight": "700",
+            color: "#2d3748",
+            margin: "0 0 0.5rem 0",
+          }}
+          class="print-title no-print"
+        >
           Care Sessions Calendar
         </h1>
-        <div style={{ "font-size": "1.125rem", color: "#4a5568", "margin-bottom": "0.5rem" }} class="print-month">
+        <div
+          style={{ "font-size": "1.125rem", color: "#4a5568", "margin-bottom": "0.5rem" }}
+          class="print-month"
+        >
           {monthName()}
         </div>
         <div style={{ "font-size": "0.875rem", color: "#718096" }} class="print-summary">
@@ -292,7 +305,10 @@ export default function CalendarReport() {
             </div>
           }
         >
-          <div style={{ display: "grid", "grid-template-columns": "repeat(7, 1fr)" }} class="calendar-grid">
+          <div
+            style={{ display: "grid", "grid-template-columns": "repeat(7, 1fr)" }}
+            class="calendar-grid"
+          >
             <For each={calendarDays()}>
               {(day) => {
                 // Make daySessions reactive to sessions() changes
@@ -302,92 +318,117 @@ export default function CalendarReport() {
                   return getSessionsForDay(day);
                 });
                 const isCurrentMonthDay = isCurrentMonth(day);
-              const isToday =
-                day.getDate() === today.getDate() &&
-                day.getMonth() === today.getMonth() &&
-                day.getFullYear() === today.getFullYear();
+                const isToday =
+                  day.getDate() === today.getDate() &&
+                  day.getMonth() === today.getMonth() &&
+                  day.getFullYear() === today.getFullYear();
 
-              return (
-                <div
-                  style={{
-                    minHeight: "120px",
-                    border: "1px solid #e2e8f0",
-                    padding: "0.5rem",
-                    "background-color": isCurrentMonthDay ? "#fff" : "#f7fafc",
-                    position: "relative",
-                  }}
-                  class="calendar-day-cell"
-                >
+                return (
                   <div
                     style={{
-                      "font-weight": isToday ? "700" : "400",
-                      color: isCurrentMonthDay ? "#2d3748" : "#a0aec0",
-                      "margin-bottom": "0.25rem",
-                      "font-size": isToday ? "1rem" : "0.875rem",
+                      minHeight: "120px",
+                      border: "1px solid #e2e8f0",
+                      padding: "0.5rem",
+                      "background-color": isCurrentMonthDay ? "#fff" : "#f7fafc",
+                      position: "relative",
                     }}
-                    class="calendar-day-number"
+                    class="calendar-day-cell"
                   >
-                    {day.getDate()}
-                  </div>
-                  <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }} class="calendar-sessions">
-                    <Show
-                      when={daySessions().length > 0}
-                      fallback={
-                        <div
-                          style={{
-                            "font-size": "0.75rem",
-                            color: "#a0aec0",
-                            "font-style": "italic",
-                          }}
-                          class="no-sessions-text"
-                        >
-                          No sessions
-                        </div>
-                      }
+                    <div
+                      style={{
+                        "font-weight": isToday ? "700" : "400",
+                        color: isCurrentMonthDay ? "#2d3748" : "#a0aec0",
+                        "margin-bottom": "0.25rem",
+                        "font-size": isToday ? "1rem" : "0.875rem",
+                      }}
+                      class="calendar-day-number"
                     >
-                      <For each={daySessions()}>
+                      {day.getDate()}
+                    </div>
+                    <div
+                      style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}
+                      class="calendar-sessions"
+                    >
+                      <Show
+                        when={daySessions().length > 0}
+                        fallback={
+                          <div
+                            style={{
+                              "font-size": "0.75rem",
+                              color: "#a0aec0",
+                              "font-style": "italic",
+                            }}
+                            class="no-sessions-text"
+                          >
+                            No sessions
+                          </div>
+                        }
+                      >
                         <For each={getSessionsForDay(day)}>
                           {(session) => {
                             const startTime = ensureDate(session.scheduledStart);
                             const endTime = ensureDate(session.scheduledEnd);
                             const duration = formatDuration(startTime, endTime);
 
-                          return (
-                            <div
-                              style={{
-                                padding: "0.25rem 0.375rem",
-                                "background-color": "#bee3f8",
-                                color: "#2c5282",
-                                "border-radius": "4px",
-                                "font-size": "0.7rem",
-                                "line-height": "1.3",
-                                "border-left": "2px solid #2c5282",
-                                "margin-bottom": "0.2rem",
-                              }}
-                              class="session-block"
-                            >
-                              <div style={{ "font-weight": "600", "font-size": "0.7rem", "margin-bottom": "0.125rem" }} class="session-family">
-                                {session.family.familyName}
-                              </div>
-                              <Show when={session.children && session.children.length > 0}>
-                                <div style={{ "font-size": "0.65rem", color: "#4a5568", "margin-bottom": "0.125rem" }} class="session-children">
-                                  {session.children.map((c) => `${c.firstName} ${c.lastName}`).join(", ")}
+                            return (
+                              <div
+                                style={{
+                                  padding: "0.25rem 0.375rem",
+                                  "background-color": "#bee3f8",
+                                  color: "#2c5282",
+                                  "border-radius": "4px",
+                                  "font-size": "0.7rem",
+                                  "line-height": "1.3",
+                                  "border-left": "2px solid #2c5282",
+                                  "margin-bottom": "0.2rem",
+                                }}
+                                class="session-block"
+                              >
+                                <div
+                                  style={{
+                                    "font-weight": "600",
+                                    "font-size": "0.7rem",
+                                    "margin-bottom": "0.125rem",
+                                  }}
+                                  class="session-family"
+                                >
+                                  {session.family.familyName}
                                 </div>
-                              </Show>
-                              <div style={{ "font-size": "0.65rem", color: "#1a365d", "font-weight": "500" }} class="session-time">
-                                {formatTime(startTime)} - {formatTime(endTime)} ({duration})
+                                <Show when={session.children && session.children.length > 0}>
+                                  <div
+                                    style={{
+                                      "font-size": "0.65rem",
+                                      color: "#4a5568",
+                                      "margin-bottom": "0.125rem",
+                                    }}
+                                    class="session-children"
+                                  >
+                                    {session.children
+                                      .map((c) => `${c.firstName} ${c.lastName}`)
+                                      .join(", ")}
+                                  </div>
+                                </Show>
+                                <div
+                                  style={{
+                                    "font-size": "0.65rem",
+                                    color: "#1a365d",
+                                    "font-weight": "500",
+                                  }}
+                                  class="session-time"
+                                >
+                                  {formatTime(startTime)} - {formatTime(endTime)} ({duration})
+                                </div>
                               </div>
-                            </div>
-                          );
-                        }}
-                      </For>
-                    </Show>
+                            );
+                          }}
+                        </For>
+                      </Show>
+                    </div>
                   </div>
-                </div>
-              );
-            }}
-          </For>
-        </div>
+                );
+              }}
+            </For>
+          </div>
         </Show>
       </div>
 

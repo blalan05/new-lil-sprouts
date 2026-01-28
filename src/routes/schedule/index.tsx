@@ -1924,8 +1924,8 @@ function DayView(props: { currentDate: Date; sessions: any[]; unavailabilities: 
 
                       const isConfirmed = session.isConfirmed;
                       const isRecurring = !!session.scheduleId;
-                      const startTime = new Date(session.scheduledStart);
-                      const endTime = new Date(session.scheduledEnd);
+                      const startTime = ensureDate(session.scheduledStart);
+                      const endTime = ensureDate(session.scheduledEnd);
                       const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
                       const height = Math.max(60, (duration / 30) * 60);
 
@@ -1957,15 +1957,7 @@ function DayView(props: { currentDate: Date; sessions: any[]; unavailabilities: 
                             {!isConfirmed && isRecurring && " (Planned)"}
                           </div>
                           <div style={{ "font-size": "0.75rem", "margin-top": "0.25rem" }}>
-                            {startTime.toLocaleTimeString("en-US", {
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })}{" "}
-                            -{" "}
-                            {endTime.toLocaleTimeString("en-US", {
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })}
+                            {formatTimeLocal(startTime)} - {formatTimeLocal(endTime)}
                           </div>
                           <div style={{ "font-size": "0.75rem", "margin-top": "0.25rem" }}>
                             {session.children.map((c: any) => c.firstName).join(", ")}

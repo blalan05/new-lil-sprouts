@@ -1,6 +1,6 @@
 {
   "name": "example-with-prisma",
-  "version": "1.0.3",
+  "version": "1.0.6",
   "type": "module",
   "scripts": {
     "dev": "vinxi dev",
