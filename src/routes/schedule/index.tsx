@@ -18,6 +18,9 @@ export const route = {
     getFamilies();
     getServices();
   },
+  info: {
+    ssr: false, // Disable SSR to prevent timezone mismatch between server and client
+  },
 } satisfies RouteDefinition;
 
 type ViewType = "month" | "week" | "day" | "list";

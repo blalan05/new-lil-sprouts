@@ -4,6 +4,9 @@
  * IMPORTANT: PostgreSQL columns are TIMESTAMPTZ (with timezone)
  * - When saving: We convert user's local datetime to UTC Date object
  * - When reading: PostgreSQL returns UTC, we convert to local for display
+ *
+ * SSR Note: Time formatting functions use browser APIs that depend on client timezone.
+ * Always use ClientOnly wrapper or check for browser environment when rendering times.
  */
 
 /**
@@ -125,6 +128,9 @@ export function formatDateTimeLocal(date: Date | string): string {
 
 /**
  * Formats a time for display in the user's local timezone
+ * Note: This uses browser's timezone. On SSR, it will use server's timezone initially,
+ * then hydrate to client's timezone. This may cause a visual flash.
+ * For critical time displays, consider using ClientOnly component wrapper.
  */
 export function formatTimeLocal(date: Date | string): string {
   if (!date) {
@@ -132,11 +138,27 @@ export function formatTimeLocal(date: Date | string): string {
   }
 
   const d = ensureDate(date);
+
+  // Always format in local timezone - let browser handle it
+  // SSR will show server time briefly, then hydrate to client time
   return d.toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
   });
+}
+
+/**
+ * Get ISO time string for data attributes (timezone-agnostic)
+ * Use this in data-time attributes for client-side formatting
+ */
+export function getISOTime(date: Date | string): string {
+  if (!date) {
+    return "";
+  }
+
+  const d = ensureDate(date);
+  return d.toISOString();
 }
 
 /**

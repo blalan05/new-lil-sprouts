@@ -32,6 +32,9 @@ export const route = {
     getSessionsForDay(today);
     getSessionsForDay(tomorrow);
   },
+  info: {
+    ssr: false, // Disable SSR to prevent timezone mismatch between server and client
+  },
 } satisfies RouteDefinition;
 
 export default function Home() {
