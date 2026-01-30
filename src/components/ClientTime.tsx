@@ -25,6 +25,10 @@ export default function ClientTime(props: ClientTimeProps) {
   onMount(() => {
     // Only format on client after mount
     setIsMounted(true);
+    // Format immediately on mount
+    if (props.date) {
+      setFormattedTime(formatTimeLocal(props.date));
+    }
   });
 
   createEffect(() => {
@@ -35,9 +39,10 @@ export default function ClientTime(props: ClientTimeProps) {
 
   // Return empty during SSR and initial render
   // Show formatted time after client hydration
+  // Use a non-breaking space to maintain layout
   return (
     <span class={props.class} style={props.style}>
-      {isMounted() ? formattedTime() : ""}
+      {isMounted() ? formattedTime() : "\u00A0"}
     </span>
   );
 }

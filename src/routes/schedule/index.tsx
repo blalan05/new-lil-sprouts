@@ -6,6 +6,7 @@ import { getServices } from "~/lib/services";
 import { createCareSchedule } from "~/lib/care-schedules";
 import { getFamilies, getFamily } from "~/lib/families";
 import { formatTimeLocal, ensureDate, isSameDay } from "~/lib/datetime";
+import ClientTime from "~/components/ClientTime";
 
 export const route = {
   preload() {
@@ -1376,7 +1377,7 @@ function ListView(props: {
                             "margin-top": "0.25rem",
                           }}
                         >
-                          {formatTime(ensureDate(session.scheduledStart))} - {formatTime(ensureDate(session.scheduledEnd))}
+                          <ClientTime date={session.scheduledStart} /> - <ClientTime date={session.scheduledEnd} />
                         </div>
                         <div style={{ color: "#718096", "font-size": "0.875rem" }}>
                           {formatDuration(startTime, endTime)}
@@ -1576,12 +1577,12 @@ function MonthView(props: {
                             opacity: isConfirmed ? 1 : 0.7,
                             "font-weight": isConfirmed ? "600" : "400",
                           }}
-                          title={`${session.family.familyName} - ${formatTime(
+                          title={`${session.family.familyName} - ${formatTimeLocal(
                             ensureDate(session.scheduledStart),
                           )}${isConfirmed ? " ✓ Confirmed" : isRecurring ? " (Planned)" : ""}`}
                         >
                           {isConfirmed && "✓ "}
-                          {formatTime(ensureDate(session.scheduledStart))} - {session.family.familyName}
+                          <ClientTime date={session.scheduledStart} /> - {session.family.familyName}
                         </A>
                       );
                     }}
