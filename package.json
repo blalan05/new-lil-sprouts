@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vinxi dev",
-    "build": "vinxi build",
+    "build": "primsma generate && vinxi build",
     "start": "vinxi start",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
