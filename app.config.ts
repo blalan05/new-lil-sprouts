@@ -59,14 +59,52 @@ function isPrismaModule(id: string): boolean {
 export default defineConfig({
   vite: {
     ssr: {
-      // Use function to externalize Prisma modules (handles dynamic imports better)
+      // Most comprehensive external function - catches everything Prisma-related
       external: (id) => {
-        // Explicitly handle the exact failing import first
-        if (id === "@prisma/client/runtime/query_compiler_bg.postgresql.mjs" ||
-            id === "@prisma/client/runtime/query_compiler_bg.postgresql.wasm-base64.mjs") {
+        // Normalize path separators
+        const normalizedId = id.replace(/\\/g, "/");
+        
+        // Log for debugging
+        if (normalizedId.includes("prisma") || normalizedId.includes("query_compiler")) {
+          console.log(`[SSR External] Checking: ${normalizedId}`);
+        }
+        
+        // Catch ALL @prisma/client imports (most important!)
+        if (normalizedId.startsWith("@prisma/client")) {
+          console.log(`[SSR External] ✅ Externalizing: ${normalizedId}`);
           return true;
         }
-        return isPrismaModule(id);
+        
+        // Catch Prisma adapter
+        if (normalizedId.startsWith("@prisma/adapter-pg")) {
+          return true;
+        }
+        
+        // Catch PostgreSQL driver
+        if (normalizedId === "pg" || normalizedId.startsWith("pg/")) {
+          return true;
+        }
+        
+        // Catch generated Prisma client
+        if (
+          normalizedId.startsWith("~/generated/prisma-client") ||
+          normalizedId.includes("/generated/prisma-client/") ||
+          normalizedId.includes("generated/prisma-client")
+        ) {
+          return true;
+        }
+        
+        // Catch query compiler and runtime modules (any path)
+        if (
+          normalizedId.includes("query_compiler") ||
+          normalizedId.includes("prisma-client/runtime") ||
+          normalizedId.includes("prisma-client/internal")
+        ) {
+          console.log(`[SSR External] ✅ Externalizing runtime: ${normalizedId}`);
+          return true;
+        }
+        
+        return false;
       },
       noExternal: [],
     },
@@ -81,18 +119,48 @@ export default defineConfig({
     build: {
       rollupOptions: {
         external: (id, importer) => {
+          // Most comprehensive externalization for Rollup
+          const normalizedId = id.replace(/\\/g, "/");
+          
+          // Log for debugging
+          if (normalizedId.includes("prisma") || normalizedId.includes("query_compiler")) {
+            console.log(`[Rollup External] Checking: ${normalizedId} (from ${importer})`);
+          }
+          
+          // Catch ALL @prisma/client imports FIRST (most important!)
+          if (normalizedId.startsWith("@prisma/client")) {
+            console.log(`[Rollup External] ✅ Externalizing: ${normalizedId}`);
+            return true;
+          }
+          
           // Handle dynamic imports from generated Prisma client
-          if (importer && importer.includes("generated/prisma-client")) {
-            if (id.startsWith("@prisma/client") || id.includes("prisma-client/runtime")) {
+          if (importer && (importer.includes("generated/prisma-client") || importer.includes("prisma-client"))) {
+            if (normalizedId.startsWith("@prisma/client") || normalizedId.includes("prisma") || normalizedId.includes("query_compiler")) {
+              console.log(`[Rollup External] ✅ Externalizing from Prisma client: ${normalizedId}`);
               return true;
             }
           }
-          // Explicitly handle the exact failing import
-          if (id === "@prisma/client/runtime/query_compiler_bg.postgresql.mjs" ||
-              id === "@prisma/client/runtime/query_compiler_bg.postgresql.wasm-base64.mjs") {
+          
+          // Catch Prisma adapter and pg
+          if (
+            normalizedId.startsWith("@prisma/adapter-pg") ||
+            normalizedId === "pg" ||
+            normalizedId.startsWith("pg/")
+          ) {
             return true;
           }
-          return isPrismaModule(id);
+          
+          // Catch query compiler and runtime modules (any path)
+          if (
+            normalizedId.includes("query_compiler") ||
+            normalizedId.includes("prisma-client/runtime") ||
+            normalizedId.includes("prisma-client/internal")
+          ) {
+            console.log(`[Rollup External] ✅ Externalizing runtime: ${normalizedId}`);
+            return true;
+          }
+          
+          return false;
         },
       },
     },
