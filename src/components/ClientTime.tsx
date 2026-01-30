@@ -1,4 +1,4 @@
-import { createEffect, createSignal, onMount } from "solid-js";
+import { createEffect, createSignal, onMount, Show } from "solid-js";
 import { ensureDate, formatTimeLocal } from "~/lib/datetime";
 
 /**
@@ -19,12 +19,12 @@ interface ClientTimeProps {
 }
 
 export default function ClientTime(props: ClientTimeProps) {
-  const [isMounted, setIsMounted] = createSignal(false);
+  const [isClient, setIsClient] = createSignal(typeof window !== "undefined");
   const [formattedTime, setFormattedTime] = createSignal("");
 
   onMount(() => {
-    // Only format on client after mount
-    setIsMounted(true);
+    // Ensure we're marked as client-side after mount
+    setIsClient(true);
     // Format immediately on mount
     if (props.date) {
       setFormattedTime(formatTimeLocal(props.date));
@@ -32,17 +32,22 @@ export default function ClientTime(props: ClientTimeProps) {
   });
 
   createEffect(() => {
-    if (isMounted() && props.date) {
+    // Only format on client-side
+    if (isClient() && props.date) {
       setFormattedTime(formatTimeLocal(props.date));
     }
   });
 
-  // Return empty during SSR and initial render
-  // Show formatted time after client hydration
-  // Use a non-breaking space to maintain layout
+  // Return empty during SSR, show formatted time on client
+  // Use Show to ensure we only render on client-side
   return (
-    <span class={props.class} style={props.style}>
-      {isMounted() ? formattedTime() : "\u00A0"}
-    </span>
+    <Show
+      when={isClient()}
+      fallback={<span class={props.class} style={props.style}>{"\u00A0"}</span>}
+    >
+      <span class={props.class} style={props.style}>
+        {formattedTime()}
+      </span>
+    </Show>
   );
 }
