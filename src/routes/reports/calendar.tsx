@@ -1,7 +1,7 @@
 import { type RouteDefinition, A, createAsync } from "@solidjs/router";
 import { Show, For, createSignal, createMemo, createEffect } from "solid-js";
 import { getCareSessionsForRange } from "~/lib/schedule";
-import { formatTimeLocal, ensureDate } from "~/lib/datetime";
+import { formatTimeLocal, ensureDate, isSameDay } from "~/lib/datetime";
 
 export const route = {
   preload() {
@@ -86,12 +86,8 @@ export default function CalendarReport() {
         return false;
       }
 
-      // Compare date components directly
-      return (
-        sessionDate.getFullYear() === targetYear &&
-        sessionDate.getMonth() === targetMonth &&
-        sessionDate.getDate() === targetDay
-      );
+      // Use isSameDay helper to compare dates correctly
+      return isSameDay(sessionDate, new Date(targetYear, targetMonth, targetDay));
     });
 
     return daySessions.sort((a, b) => {

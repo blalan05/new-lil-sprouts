@@ -8,7 +8,7 @@ import { getFamily } from "~/lib/families";
 import { createCareSchedule } from "~/lib/care-schedules";
 import { getServices } from "~/lib/services";
 import { getWeeklyStats, getDashboardStats, getStatsForPeriod } from "~/lib/stats";
-import { formatTimeLocal, ensureDate } from "~/lib/datetime";
+import { formatTimeLocal, ensureDate, isSameDay } from "~/lib/datetime";
 
 export const route = {
   preload() {
@@ -1116,9 +1116,11 @@ export default function Home() {
                 <For each={upcomingSessions()}>
                   {(session) => {
                     const sessionDate = ensureDate(session.scheduledStart);
-                    const isToday = sessionDate.toDateString() === new Date().toDateString();
-                    const isTomorrow =
-                      sessionDate.toDateString() === new Date(Date.now() + 86400000).toDateString();
+                    const today = new Date();
+                    const tomorrow = new Date(today);
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    const isToday = isSameDay(sessionDate, today);
+                    const isTomorrow = isSameDay(sessionDate, tomorrow);
 
                     const statusColors = {
                       SCHEDULED: { bg: "#bee3f8", color: "#2c5282" },

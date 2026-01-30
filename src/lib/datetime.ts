@@ -200,3 +200,22 @@ export function endOfDayUTC(date: Date | string): Date {
   d.setHours(23, 59, 59, 999);
   return d;
 }
+
+/**
+ * Compares two dates to see if they're on the same calendar day
+ * Uses local date components to avoid timezone issues
+ * 
+ * @param date1 - First date to compare
+ * @param date2 - Second date to compare
+ * @returns true if both dates are on the same calendar day in local timezone
+ */
+export function isSameDay(date1: Date | string, date2: Date | string): boolean {
+  const d1 = ensureDate(date1);
+  const d2 = ensureDate(date2);
+  
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
+}

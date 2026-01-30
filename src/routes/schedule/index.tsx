@@ -5,7 +5,7 @@ import { getUpcomingUnavailabilities, deleteUnavailability } from "~/lib/unavail
 import { getServices } from "~/lib/services";
 import { createCareSchedule } from "~/lib/care-schedules";
 import { getFamilies, getFamily } from "~/lib/families";
-import { formatTimeLocal, ensureDate } from "~/lib/datetime";
+import { formatTimeLocal, ensureDate, isSameDay } from "~/lib/datetime";
 
 export const route = {
   preload() {
@@ -1376,7 +1376,7 @@ function ListView(props: {
                             "margin-top": "0.25rem",
                           }}
                         >
-                          {formatTime(session.scheduledStart)} - {formatTime(session.scheduledEnd)}
+                          {formatTime(ensureDate(session.scheduledStart))} - {formatTime(ensureDate(session.scheduledEnd))}
                         </div>
                         <div style={{ color: "#718096", "font-size": "0.875rem" }}>
                           {formatDuration(startTime, endTime)}
@@ -1439,12 +1439,7 @@ function MonthView(props: {
 
   const getSessionsForDay = (date: Date) => {
     return props.sessions.filter((session) => {
-      const sessionDate = ensureDate(session.scheduledStart);
-      return (
-        sessionDate.getDate() === date.getDate() &&
-        sessionDate.getMonth() === date.getMonth() &&
-        sessionDate.getFullYear() === date.getFullYear()
-      );
+      return isSameDay(session.scheduledStart, date);
     });
   };
 
@@ -1458,7 +1453,7 @@ function MonthView(props: {
     });
   };
 
-  const formatTime = (date: Date) => {
+  const formatTime = (date: Date | string) => {
     return formatTimeLocal(date);
   };
 
@@ -1582,11 +1577,11 @@ function MonthView(props: {
                             "font-weight": isConfirmed ? "600" : "400",
                           }}
                           title={`${session.family.familyName} - ${formatTime(
-                            session.scheduledStart,
+                            ensureDate(session.scheduledStart),
                           )}${isConfirmed ? " ✓ Confirmed" : isRecurring ? " (Planned)" : ""}`}
                         >
                           {isConfirmed && "✓ "}
-                          {formatTime(session.scheduledStart)} - {session.family.familyName}
+                          {formatTime(ensureDate(session.scheduledStart))} - {session.family.familyName}
                         </A>
                       );
                     }}
@@ -1630,14 +1625,12 @@ function WeekView(props: { currentDate: Date; sessions: any[]; unavailabilities:
 
   const getSessionsForDayAndHour = (day: Date, hour: number) => {
     return props.sessions.filter((session) => {
+      if (!isSameDay(session.scheduledStart, day)) {
+        return false;
+      }
       const sessionDate = ensureDate(session.scheduledStart);
       const sessionHour = sessionDate.getHours();
-      return (
-        sessionDate.getDate() === day.getDate() &&
-        sessionDate.getMonth() === day.getMonth() &&
-        sessionDate.getFullYear() === day.getFullYear() &&
-        sessionHour === hour
-      );
+      return sessionHour === hour;
     });
   };
 
@@ -1805,15 +1798,13 @@ function DayView(props: { currentDate: Date; sessions: any[]; unavailabilities: 
 
     return props.sessions.filter((session) => {
       const sessionStart = ensureDate(session.scheduledStart);
-      const sessionEnd = ensureDate(session.scheduledEnd);
       // Only show session in the interval where it starts (to avoid duplicates)
-      return (
-        sessionStart.getDate() === date.getDate() &&
-        sessionStart.getMonth() === date.getMonth() &&
-        sessionStart.getFullYear() === date.getFullYear() &&
-        sessionStart >= intervalStart &&
-        sessionStart < intervalEnd
-      );
+      // First check if it's the same day
+      if (!isSameDay(sessionStart, date)) {
+        return false;
+      }
+      // Then check if it falls within the interval
+      return sessionStart >= intervalStart && sessionStart < intervalEnd;
     });
   };
 
