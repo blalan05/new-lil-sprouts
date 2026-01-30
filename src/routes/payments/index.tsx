@@ -2,6 +2,7 @@ import { createAsync, type RouteDefinition, A, useSubmission } from "@solidjs/ro
 import { Show, For, createSignal, createEffect } from "solid-js";
 import { getFamilies } from "~/lib/families";
 import { getUnpaidSessions, createPayment, getPayments } from "~/lib/payments";
+import { formatTimeLocal } from "~/lib/datetime";
 
 export const route = {
   preload() {
@@ -95,10 +96,7 @@ export default function PaymentsPage() {
   };
 
   const formatTime = (date: string | Date) => {
-    return new Date(date).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-    });
+    return formatTimeLocal(date);
   };
 
   const formatDuration = (start: Date, end: Date) => {

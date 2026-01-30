@@ -8,6 +8,7 @@ import { getFamily } from "~/lib/families";
 import { createCareSchedule } from "~/lib/care-schedules";
 import { getServices } from "~/lib/services";
 import { getWeeklyStats, getDashboardStats, getStatsForPeriod } from "~/lib/stats";
+import { formatTimeLocal } from "~/lib/datetime";
 
 export const route = {
   preload() {
@@ -461,15 +462,9 @@ export default function Home() {
                       {session.family.familyName}
                     </div>
                     <div style={{ "font-size": "0.8125rem", color: "#718096" }}>
-                      {new Date(session.scheduledStart).toLocaleTimeString("en-US", {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}{" "}
+                      {formatTimeLocal(session.scheduledStart)}{" "}
                       -{" "}
-                      {new Date(session.scheduledEnd).toLocaleTimeString("en-US", {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}
+                      {formatTimeLocal(session.scheduledEnd)}
                     </div>
                     <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}>
                       {session.service.name}
@@ -551,15 +546,9 @@ export default function Home() {
                       {session.family.familyName}
                     </div>
                     <div style={{ "font-size": "0.8125rem", color: "#718096" }}>
-                      {new Date(session.scheduledStart).toLocaleTimeString("en-US", {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}{" "}
+                      {formatTimeLocal(session.scheduledStart)}{" "}
                       -{" "}
-                      {new Date(session.scheduledEnd).toLocaleTimeString("en-US", {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}
+                      {formatTimeLocal(session.scheduledEnd)}
                     </div>
                     <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}>
                       {session.service.name}
@@ -641,15 +630,9 @@ export default function Home() {
                       {session.family.familyName}
                     </div>
                     <div style={{ "font-size": "0.8125rem", color: "#718096" }}>
-                      {new Date(session.scheduledStart).toLocaleTimeString("en-US", {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}{" "}
+                      {formatTimeLocal(session.scheduledStart)}{" "}
                       -{" "}
-                      {new Date(session.scheduledEnd).toLocaleTimeString("en-US", {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}
+                      {formatTimeLocal(session.scheduledEnd)}
                     </div>
                     <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}>
                       {session.service.name}
@@ -1160,10 +1143,7 @@ export default function Home() {
                                     })}
                             </div>
                             <div style={{ "font-size": "0.875rem", color: "#718096" }}>
-                              {sessionDate.toLocaleTimeString("en-US", {
-                                hour: "numeric",
-                                minute: "2-digit",
-                              })}
+                              {formatTimeLocal(sessionDate)}
                             </div>
                           </div>
                         </div>
@@ -1367,10 +1347,7 @@ export default function Home() {
                                   })}
                             </div>
                             <div style={{ "font-size": "0.75rem", color: "#a0aec0" }}>
-                              {reportDate.toLocaleTimeString("en-US", {
-                                hour: "numeric",
-                                minute: "2-digit",
-                              })}
+                              {formatTimeLocal(reportDate)}
                             </div>
                           </div>
                         </div>

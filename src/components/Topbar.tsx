@@ -34,12 +34,23 @@ export default function Topbar() {
             <A
               href="/"
               style={{
+                display: "flex",
+                "align-items": "center",
+                gap: "0.75rem",
                 "font-size": "1.25rem",
                 "font-weight": "700",
                 color: "#fff",
                 "text-decoration": "none",
               }}
             >
+              <img
+                src="/icons/icon-96x96.png"
+                alt="Lil Sprouts"
+                style={{
+                  width: "32px",
+                  height: "32px",
+                }}
+              />
               Lil Sprouts
             </A>
             {/* Desktop Navigation */}
@@ -253,6 +264,9 @@ export default function Topbar() {
             <A
               href="/"
               style={{
+                display: "flex",
+                "align-items": "center",
+                gap: "0.75rem",
                 "font-size": "1.25rem",
                 "font-weight": "700",
                 color: "#fff",
@@ -260,6 +274,14 @@ export default function Topbar() {
               }}
               onClick={() => setMobileMenuOpen(false)}
             >
+              <img
+                src="/icons/icon-96x96.png"
+                alt="Lil Sprouts"
+                style={{
+                  width: "32px",
+                  height: "32px",
+                }}
+              />
               Lil Sprouts
             </A>
             <button

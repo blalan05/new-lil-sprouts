@@ -118,8 +118,13 @@ const prismaClientSingleton = () => {
   const maskedUrl = dbUrl.replace(/:([^:@]+)@/, ":****@"); // Mask password
   console.log(`[DB] Connecting to database: ${maskedUrl.split("?")[0]}...`);
   
-  // Create PostgreSQL connection pool
-  const pool = new Pool({ connectionString: dbUrl });
+  // Create PostgreSQL connection pool with SSL configuration for self-signed certs
+  const pool = new Pool({ 
+    connectionString: dbUrl,
+    ssl: dbUrl.includes('sslcert=') ? {
+      rejectUnauthorized: false, // Accept self-signed certificates
+    } : false
+  });
   
   // Create Prisma adapter for PostgreSQL
   const adapter = new PrismaPg(pool);

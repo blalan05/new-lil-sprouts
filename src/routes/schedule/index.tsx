@@ -5,6 +5,7 @@ import { getUpcomingUnavailabilities, deleteUnavailability } from "~/lib/unavail
 import { getServices } from "~/lib/services";
 import { createCareSchedule } from "~/lib/care-schedules";
 import { getFamilies, getFamily } from "~/lib/families";
+import { formatTimeLocal } from "~/lib/datetime";
 
 export const route = {
   preload() {
@@ -1041,10 +1042,7 @@ function ListView(props: {
   };
 
   const formatTime = (date: string | Date) => {
-    return new Date(date).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-    });
+    return formatTimeLocal(date);
   };
 
   const formatDuration = (start: Date, end: Date) => {
@@ -1398,7 +1396,7 @@ function MonthView(props: {
   };
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    return formatTimeLocal(date);
   };
 
   return (
@@ -1907,15 +1905,9 @@ function DayView(props: {
                             {!isConfirmed && isRecurring && " (Planned)"}
                           </div>
                           <div style={{ "font-size": "0.75rem", "margin-top": "0.25rem" }}>
-                            {startTime.toLocaleTimeString("en-US", {
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })}{" "}
+                            {formatTimeLocal(startTime)}{" "}
                             -{" "}
-                            {endTime.toLocaleTimeString("en-US", {
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })}
+                            {formatTimeLocal(endTime)}
                           </div>
                           <div style={{ "font-size": "0.75rem", "margin-top": "0.25rem" }}>
                             {session.children.map((c: any) => c.firstName).join(", ")}

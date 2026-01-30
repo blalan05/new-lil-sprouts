@@ -3,6 +3,7 @@ import { createSignal, Show, For } from "solid-js";
 import { getUser } from "~/lib";
 import { getAllFamiliesForReports, getYearEndFamilyReport, getAllYearEndReports, type YearEndFamilyReport } from "~/lib/reports";
 import { formatParentNames } from "~/lib/families";
+import { formatTimeLocal } from "~/lib/datetime";
 
 export const route = {
   preload() {
@@ -52,10 +53,7 @@ export default function YearEndReports() {
   };
 
   const formatTime = (date: Date) => {
-    return new Date(date).toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-    });
+    return formatTimeLocal(date);
   };
 
   const exportToPDF = async (report: YearEndFamilyReport) => {

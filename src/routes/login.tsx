@@ -14,15 +14,31 @@ export default function Login(props: RouteSectionProps) {
         padding: "2rem",
       }}
     >
-      <h1
+      <div
         style={{
           "text-align": "center",
-          color: "#4a5568",
           "margin-bottom": "2rem",
         }}
       >
-        LOGIN
-      </h1>
+        <img
+          src="/icons/icon-192x192.png"
+          alt="Lil Sprouts"
+          style={{
+            width: "96px",
+            height: "96px",
+            "margin-bottom": "1rem",
+          }}
+        />
+        <h1
+          style={{
+            "text-align": "center",
+            color: "#4a5568",
+            margin: 0,
+          }}
+        >
+          LOGIN
+        </h1>
+      </div>
       <form action={loginOrRegister} method="post">
         <input type="hidden" name="redirectTo" value={props.params.redirectTo ?? "/"} />
         <fieldset

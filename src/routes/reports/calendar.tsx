@@ -1,6 +1,7 @@
 import { type RouteDefinition, A, createAsync } from "@solidjs/router";
 import { Show, For, createSignal, createMemo, createEffect } from "solid-js";
 import { getCareSessionsForRange } from "~/lib/schedule";
+import { formatTimeLocal } from "~/lib/datetime";
 
 export const route = {
   preload() {
@@ -38,10 +39,7 @@ export default function CalendarReport() {
       console.error("Invalid date:", date);
       return "Invalid";
     }
-    return d.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-    });
+    return formatTimeLocal(d);
   };
 
   const formatDuration = (start: Date, end: Date) => {
