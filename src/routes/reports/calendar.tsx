@@ -1,7 +1,7 @@
 import { type RouteDefinition, A, createAsync } from "@solidjs/router";
 import { Show, For, createSignal, createMemo, createEffect } from "solid-js";
 import { getCareSessionsForRange } from "~/lib/schedule";
-import { formatTimeLocal } from "~/lib/datetime";
+import { formatTimeLocal, ensureDate } from "~/lib/datetime";
 
 export const route = {
   preload() {

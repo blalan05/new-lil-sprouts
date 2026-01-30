@@ -8,7 +8,7 @@ import { getFamily } from "~/lib/families";
 import { createCareSchedule } from "~/lib/care-schedules";
 import { getServices } from "~/lib/services";
 import { getWeeklyStats, getDashboardStats, getStatsForPeriod } from "~/lib/stats";
-import { formatTimeLocal } from "~/lib/datetime";
+import { formatTimeLocal, ensureDate } from "~/lib/datetime";
 
 export const route = {
   preload() {

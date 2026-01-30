@@ -5,7 +5,7 @@ import { getUpcomingUnavailabilities, deleteUnavailability } from "~/lib/unavail
 import { getServices } from "~/lib/services";
 import { createCareSchedule } from "~/lib/care-schedules";
 import { getFamilies, getFamily } from "~/lib/families";
-import { formatTimeLocal } from "~/lib/datetime";
+import { formatTimeLocal, ensureDate } from "~/lib/datetime";
 
 export const route = {
   preload() {
