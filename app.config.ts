@@ -2,47 +2,53 @@ import { defineConfig } from "@solidjs/start/config";
 
 // Function to check if a module should be externalized
 function isPrismaModule(id: string): boolean {
+  // Normalize the ID to handle different path formats
+  const normalizedId = id.replace(/\\/g, "/");
+  
   // Log for debugging (remove in production if too verbose)
-  if (id.includes("prisma") || id.includes("query_compiler")) {
-    console.log(`[External Check] ${id}`);
+  if (normalizedId.includes("prisma") || normalizedId.includes("query_compiler")) {
+    console.log(`[External Check] ${normalizedId}`);
   }
   
   // Check for Prisma packages (exact matches and prefixes)
   if (
-    id === "@prisma/client" ||
-    id.startsWith("@prisma/client/") ||
-    id.startsWith("@prisma/adapter-pg") ||
-    id === "pg" ||
-    id.startsWith("pg/")
+    normalizedId === "@prisma/client" ||
+    normalizedId.startsWith("@prisma/client/") ||
+    normalizedId.startsWith("@prisma/adapter-pg") ||
+    normalizedId === "pg" ||
+    normalizedId.startsWith("pg/")
   ) {
     return true;
   }
   
   // Check for generated Prisma client (relative paths with ~ alias)
   if (
-    id.startsWith("~/generated/prisma-client") ||
-    id.startsWith("../generated/prisma-client") ||
-    id.startsWith("./generated/prisma-client") ||
-    id.startsWith("/generated/prisma-client")
+    normalizedId.startsWith("~/generated/prisma-client") ||
+    normalizedId.startsWith("../generated/prisma-client") ||
+    normalizedId.startsWith("./generated/prisma-client") ||
+    normalizedId.startsWith("/generated/prisma-client") ||
+    normalizedId.includes("/generated/prisma-client/")
   ) {
     return true;
   }
   
   // Check for Prisma runtime/internal modules (any path - most important!)
+  // This catches: @prisma/client/runtime/query_compiler_bg.postgresql.mjs
   if (
-    id.includes("prisma-client/runtime") ||
-    id.includes("prisma-client/internal") ||
-    id.includes("query_compiler") ||
-    id.includes("query_engine") ||
-    id.includes("libquery_engine")
+    normalizedId.includes("prisma-client/runtime") ||
+    normalizedId.includes("prisma-client/internal") ||
+    normalizedId.includes("query_compiler") ||
+    normalizedId.includes("query_engine") ||
+    normalizedId.includes("libquery_engine") ||
+    normalizedId.includes("@prisma/client/runtime")
   ) {
     return true;
   }
   
   // Check for absolute paths containing generated Prisma client
   if (
-    id.includes("/generated/prisma-client/") ||
-    id.includes("\\generated\\prisma-client\\")
+    normalizedId.includes("/generated/prisma-client/") ||
+    normalizedId.includes("generated/prisma-client")
   ) {
     return true;
   }
@@ -53,7 +59,7 @@ function isPrismaModule(id: string): boolean {
 export default defineConfig({
   vite: {
     ssr: {
-      // Use both array patterns and function for maximum coverage
+      // Externalize Prisma modules using regex patterns
       external: [
         "@prisma/client",
         /^@prisma\/client\/.*/,
@@ -61,8 +67,9 @@ export default defineConfig({
         "pg",
         "~/generated/prisma-client",
         /.*prisma-client\/runtime.*/,
+        /.*prisma-client\/internal.*/,
         /.*query_compiler.*/,
-        (id) => isPrismaModule(id),
+        /.*query_engine.*/,
       ],
       noExternal: [],
     },
@@ -77,6 +84,10 @@ export default defineConfig({
     build: {
       rollupOptions: {
         external: (id) => {
+          // Explicitly handle the exact failing import
+          if (id === "@prisma/client/runtime/query_compiler_bg.postgresql.mjs") {
+            return true;
+          }
           return isPrismaModule(id);
         },
       },
