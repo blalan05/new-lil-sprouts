@@ -59,18 +59,15 @@ function isPrismaModule(id: string): boolean {
 export default defineConfig({
   vite: {
     ssr: {
-      // Externalize Prisma modules using regex patterns
-      external: [
-        "@prisma/client",
-        /^@prisma\/client\/.*/,
-        "@prisma/adapter-pg",
-        "pg",
-        "~/generated/prisma-client",
-        /.*prisma-client\/runtime.*/,
-        /.*prisma-client\/internal.*/,
-        /.*query_compiler.*/,
-        /.*query_engine.*/,
-      ],
+      // Use function to externalize Prisma modules (handles dynamic imports better)
+      external: (id) => {
+        // Explicitly handle the exact failing import first
+        if (id === "@prisma/client/runtime/query_compiler_bg.postgresql.mjs" ||
+            id === "@prisma/client/runtime/query_compiler_bg.postgresql.wasm-base64.mjs") {
+          return true;
+        }
+        return isPrismaModule(id);
+      },
       noExternal: [],
     },
     optimizeDeps: {
@@ -83,9 +80,16 @@ export default defineConfig({
     },
     build: {
       rollupOptions: {
-        external: (id) => {
+        external: (id, importer) => {
+          // Handle dynamic imports from generated Prisma client
+          if (importer && importer.includes("generated/prisma-client")) {
+            if (id.startsWith("@prisma/client") || id.includes("prisma-client/runtime")) {
+              return true;
+            }
+          }
           // Explicitly handle the exact failing import
-          if (id === "@prisma/client/runtime/query_compiler_bg.postgresql.mjs") {
+          if (id === "@prisma/client/runtime/query_compiler_bg.postgresql.mjs" ||
+              id === "@prisma/client/runtime/query_compiler_bg.postgresql.wasm-base64.mjs") {
             return true;
           }
           return isPrismaModule(id);
