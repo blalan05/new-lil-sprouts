@@ -28,7 +28,25 @@ export default function ClientTime(props: ClientTimeProps) {
     // Format immediately on mount
     if (props.date) {
       // Ensure date is properly parsed as UTC
-      const date = ensureDate(props.date);
+      // If it's a string, parse it explicitly as UTC ISO string
+      let date: Date;
+      if (typeof props.date === "string") {
+        // Parse ISO string explicitly - this ensures UTC interpretation
+        date = new Date(props.date);
+      } else {
+        date = ensureDate(props.date);
+      }
+      
+      // Debug: Log the date to see what we're working with
+      if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
+        console.log("[ClientTime] Formatting date:", {
+          original: props.date,
+          parsed: date,
+          iso: date.toISOString(),
+          local: formatTimeLocal(date),
+        });
+      }
+      
       setFormattedTime(formatTimeLocal(date));
     }
   });
@@ -37,7 +55,13 @@ export default function ClientTime(props: ClientTimeProps) {
     // Only format after mount (client-side only)
     if (mounted() && props.date) {
       // Ensure date is properly parsed as UTC
-      const date = ensureDate(props.date);
+      let date: Date;
+      if (typeof props.date === "string") {
+        // Parse ISO string explicitly - this ensures UTC interpretation
+        date = new Date(props.date);
+      } else {
+        date = ensureDate(props.date);
+      }
       setFormattedTime(formatTimeLocal(date));
     }
   });

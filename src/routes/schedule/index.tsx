@@ -89,7 +89,30 @@ export default function SchedulePage() {
 
   // Use createResource which properly tracks reactive dependencies
   const [sessions] = createResource(dateRangeSource, async (source) => {
-    return getCareSessionsForRange(source.start, source.end);
+    const rawSessions = await getCareSessionsForRange(source.start, source.end);
+    // Ensure all dates are properly serialized as ISO strings to avoid timezone issues
+    // This prevents Date objects from being incorrectly interpreted during serialization
+    return rawSessions.map(session => ({
+      ...session,
+      scheduledStart: session.scheduledStart instanceof Date 
+        ? session.scheduledStart.toISOString() 
+        : session.scheduledStart,
+      scheduledEnd: session.scheduledEnd instanceof Date 
+        ? session.scheduledEnd.toISOString() 
+        : session.scheduledEnd,
+      actualStart: session.actualStart instanceof Date 
+        ? session.actualStart.toISOString() 
+        : session.actualStart || null,
+      actualEnd: session.actualEnd instanceof Date 
+        ? session.actualEnd.toISOString() 
+        : session.actualEnd || null,
+      dropOffTime: session.dropOffTime instanceof Date 
+        ? session.dropOffTime.toISOString() 
+        : session.dropOffTime || null,
+      pickUpTime: session.pickUpTime instanceof Date 
+        ? session.pickUpTime.toISOString() 
+        : session.pickUpTime || null,
+    }));
   });
 
   const [unavailabilities] = createResource(dateRangeSource, async (source) => {
