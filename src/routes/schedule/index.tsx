@@ -18,6 +18,9 @@ export const route = {
     getFamilies();
     getServices();
   },
+  info: {
+    ssr: false, // Disable SSR to prevent timezone mismatch between server and client
+  },
 } satisfies RouteDefinition;
 
 type ViewType = "month" | "week" | "day" | "list";
@@ -70,7 +73,7 @@ export default function SchedulePage() {
   };
 
   const dateRange = () => getDateRange();
-  
+
   // Create a source signal that changes when date or view changes
   const dateRangeSource = createMemo(() => {
     const date = currentDate();
@@ -78,12 +81,12 @@ export default function SchedulePage() {
     const range = getDateRange();
     return { start: range.start, end: range.end, key: `${date.getTime()}-${currentView}` };
   });
-  
+
   // Use createResource which properly tracks reactive dependencies
   const [sessions] = createResource(dateRangeSource, async (source) => {
     return getCareSessionsForRange(source.start, source.end);
   });
-  
+
   const [unavailabilities] = createResource(dateRangeSource, async (source) => {
     return getUnavailabilitiesForRange(source.start, source.end);
   });
@@ -94,14 +97,14 @@ export default function SchedulePage() {
   const [selectedFamilyId, setSelectedFamilyId] = createSignal<string>("");
   const families = createAsync(() => getFamilies());
   const submission = useSubmission(createCareSchedule);
-  
+
   const selectedFamily = createAsync(() => {
     const id = selectedFamilyId();
     return id ? getFamily(id) : null;
   });
-  
+
   const [serviceId, setServiceId] = createSignal<string>("");
-  
+
   const defaultServiceId = () => {
     const family = selectedFamily();
     if (family?.services && family.services.length > 0) {
@@ -113,15 +116,19 @@ export default function SchedulePage() {
     }
     return "";
   };
-  
+
   createEffect(() => {
     const family = selectedFamily();
     const allServices = services();
     const currentServiceId = serviceId();
-    
+
     if (allServices && allServices.length > 0) {
       const defaultId = defaultServiceId();
-      if (!currentServiceId || currentServiceId === "" || (family && defaultId && defaultId !== currentServiceId)) {
+      if (
+        !currentServiceId ||
+        currentServiceId === "" ||
+        (family && defaultId && defaultId !== currentServiceId)
+      ) {
         if (defaultId) {
           setServiceId(defaultId);
         } else if (allServices.length > 0) {
@@ -130,30 +137,30 @@ export default function SchedulePage() {
       }
     }
   });
-  
+
   const getCurrentDate = () => {
     return selectedDate() || new Date().toISOString().split("T")[0];
   };
-  
+
   const getCurrentTime = () => {
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, "0");
     const minutes = now.getMinutes().toString().padStart(2, "0");
     return `${hours}:${minutes}`;
   };
-  
+
   const handleCloseModal = () => {
     setShowAddSessionModal(false);
     setSelectedFamilyId("");
     setSelectedDate("");
   };
-  
+
   const handleDateClick = (date: Date) => {
     const dateStr = date.toISOString().split("T")[0];
     setSelectedDate(dateStr);
     setShowAddSessionModal(true);
   };
-  
+
   createEffect(() => {
     if (submission.result && !(submission.result instanceof Error)) {
       handleCloseModal();
@@ -245,7 +252,9 @@ export default function SchedulePage() {
           }}
           class="flex-row-mobile"
         >
-          <div style={{ display: "flex", "align-items": "center", gap: "1rem", "flex-wrap": "wrap" }}>
+          <div
+            style={{ display: "flex", "align-items": "center", gap: "1rem", "flex-wrap": "wrap" }}
+          >
             <A
               href="/"
               style={{
@@ -258,7 +267,10 @@ export default function SchedulePage() {
             </A>
             <h1 style={{ color: "#2d3748", "font-size": "2rem", margin: 0 }}>Schedule</h1>
           </div>
-          <div style={{ display: "flex", gap: "0.5rem", "flex-wrap": "wrap" }} class="calendar-view-buttons">
+          <div
+            style={{ display: "flex", gap: "0.5rem", "flex-wrap": "wrap" }}
+            class="calendar-view-buttons"
+          >
             <button
               onClick={() => setShowUnavailabilityPanel(!showUnavailabilityPanel())}
               style={{
@@ -324,7 +336,10 @@ export default function SchedulePage() {
           }}
           class="calendar-controls flex-row-mobile"
         >
-          <div style={{ display: "flex", gap: "0.5rem", "flex-wrap": "wrap" }} class="calendar-view-buttons">
+          <div
+            style={{ display: "flex", gap: "0.5rem", "flex-wrap": "wrap" }}
+            class="calendar-view-buttons"
+          >
             <button
               onClick={() => handleViewChange("month")}
               style={{
@@ -383,7 +398,14 @@ export default function SchedulePage() {
             </button>
           </div>
           <Show when={view() !== "list"}>
-            <div style={{ display: "flex", "align-items": "center", gap: "0.5rem", "flex-wrap": "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                "align-items": "center",
+                gap: "0.5rem",
+                "flex-wrap": "wrap",
+              }}
+            >
               <button
                 onClick={() => navigateDate("prev")}
                 style={{
@@ -541,7 +563,13 @@ export default function SchedulePage() {
                         </div>
                       </div>
                       <Show when={unavailability.notes}>
-                        <p style={{ color: "#718096", "font-size": "0.875rem", margin: "0.5rem 0 0 0" }}>
+                        <p
+                          style={{
+                            color: "#718096",
+                            "font-size": "0.875rem",
+                            margin: "0.5rem 0 0 0",
+                          }}
+                        >
                           {unavailability.notes}
                         </p>
                       </Show>
@@ -692,10 +720,7 @@ export default function SchedulePage() {
               </button>
             </div>
 
-            <form
-              action={createCareSchedule}
-              method="post"
-            >
+            <form action={createCareSchedule} method="post">
               <input type="hidden" name="recurrence" value="ONCE" />
 
               <div style={{ "margin-bottom": "1.5rem" }}>
@@ -759,9 +784,20 @@ export default function SchedulePage() {
                       </For>
                     </Show>
                   </select>
-                  <Show when={selectedFamilyId() && (!selectedFamily()?.services || selectedFamily()!.services.length === 0)}>
-                    <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "#718096" }}>
-                      No services assigned to this family. <A href={`/families/${selectedFamilyId()}/edit`} style={{ color: "#4299e1" }}>Assign services</A> to default this selection.
+                  <Show
+                    when={
+                      selectedFamilyId() &&
+                      (!selectedFamily()?.services || selectedFamily()!.services.length === 0)
+                    }
+                  >
+                    <p
+                      style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "#718096" }}
+                    >
+                      No services assigned to this family.{" "}
+                      <A href={`/families/${selectedFamilyId()}/edit`} style={{ color: "#4299e1" }}>
+                        Assign services
+                      </A>{" "}
+                      to default this selection.
                     </p>
                   </Show>
                 </Show>
@@ -795,16 +831,14 @@ export default function SchedulePage() {
                 >
                   <option value="">Select a family...</option>
                   <For each={families()}>
-                    {(family) => (
-                      <option value={family.id}>{family.familyName}</option>
-                    )}
+                    {(family) => <option value={family.id}>{family.familyName}</option>}
                   </For>
                 </select>
               </div>
 
               <Show when={selectedFamilyId() && selectedFamily()}>
                 {(family) => (
-                  <Show 
+                  <Show
                     when={(() => {
                       const selectedService = services()?.find((s) => s.id === serviceId());
                       return !selectedService?.requiresChildren || family().children.length > 0;
@@ -821,7 +855,9 @@ export default function SchedulePage() {
                       >
                         {(() => {
                           const selectedService = services()?.find((s) => s.id === serviceId());
-                          return selectedService?.requiresChildren ? "Children *" : "Student (optional)";
+                          return selectedService?.requiresChildren
+                            ? "Children *"
+                            : "Student (optional)";
                         })()}
                       </label>
                       <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem" }}>
@@ -1068,12 +1104,12 @@ function ListView(props: {
   // Filter sessions by search term and service type
   const filteredSessions = () => {
     let filtered = props.sessions;
-    
+
     // Filter by service if provided
     if (props.serviceFilter && props.serviceFilter !== "ALL") {
       filtered = filtered.filter((session) => session.service?.id === props.serviceFilter);
     }
-    
+
     // Filter by search term
     const search = props.searchTerm.toLowerCase();
     if (!search) return filtered;
@@ -1082,12 +1118,12 @@ function ListView(props: {
       (session) =>
         session.family?.familyName?.toLowerCase().includes(search) ||
         session.children?.some((c: any) =>
-          `${c.firstName} ${c.lastName}`.toLowerCase().includes(search)
+          `${c.firstName} ${c.lastName}`.toLowerCase().includes(search),
         ) ||
         session.status?.toLowerCase().includes(search) ||
         formatDate(session.scheduledStart).toLowerCase().includes(search) ||
         session.service?.name?.toLowerCase().includes(search) ||
-        session.service?.code?.toLowerCase().includes(search)
+        session.service?.code?.toLowerCase().includes(search),
     );
   };
 
@@ -1273,7 +1309,14 @@ function ListView(props: {
                       }}
                     >
                       <div style={{ flex: "1", "min-width": "200px" }}>
-                        <div style={{ display: "flex", gap: "0.5rem", "align-items": "center", "margin-bottom": "0.25rem" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "0.5rem",
+                            "align-items": "center",
+                            "margin-bottom": "0.25rem",
+                          }}
+                        >
                           <span
                             style={{
                               padding: "0.25rem 0.75rem",
@@ -1301,18 +1344,38 @@ function ListView(props: {
                             </span>
                           )}
                         </div>
-                        <div style={{ "font-weight": "600", color: "#2d3748", "font-size": "1.125rem" }}>
+                        <div
+                          style={{
+                            "font-weight": "600",
+                            color: "#2d3748",
+                            "font-size": "1.125rem",
+                          }}
+                        >
                           {session.family?.familyName || "Unknown Family"}
                         </div>
-                        <div style={{ color: "#718096", "font-size": "0.875rem", "margin-top": "0.25rem" }}>
-                          {session.children?.map((c: any) => `${c.firstName} ${c.lastName}`).join(", ") || "No children"}
+                        <div
+                          style={{
+                            color: "#718096",
+                            "font-size": "0.875rem",
+                            "margin-top": "0.25rem",
+                          }}
+                        >
+                          {session.children
+                            ?.map((c: any) => `${c.firstName} ${c.lastName}`)
+                            .join(", ") || "No children"}
                         </div>
                       </div>
                       <div style={{ "min-width": "150px" }}>
                         <div style={{ "font-weight": "600", color: "#2d3748" }}>
                           {formatDate(session.scheduledStart)}
                         </div>
-                        <div style={{ color: "#718096", "font-size": "0.875rem", "margin-top": "0.25rem" }}>
+                        <div
+                          style={{
+                            color: "#718096",
+                            "font-size": "0.875rem",
+                            "margin-top": "0.25rem",
+                          }}
+                        >
                           {formatTime(session.scheduledStart)} - {formatTime(session.scheduledEnd)}
                         </div>
                         <div style={{ color: "#718096", "font-size": "0.875rem" }}>
@@ -1376,7 +1439,7 @@ function MonthView(props: {
 
   const getSessionsForDay = (date: Date) => {
     return props.sessions.filter((session) => {
-      const sessionDate = new Date(session.scheduledStart);
+      const sessionDate = ensureDate(session.scheduledStart);
       return (
         sessionDate.getDate() === date.getDate() &&
         sessionDate.getMonth() === date.getMonth() &&
@@ -1387,8 +1450,8 @@ function MonthView(props: {
 
   const getUnavailabilitiesForDay = (date: Date) => {
     return props.unavailabilities.filter((unav) => {
-      const unavStart = new Date(unav.startDate);
-      const unavEnd = new Date(unav.endDate);
+      const unavStart = ensureDate(unav.startDate);
+      const unavEnd = ensureDate(unav.endDate);
       const checkDate = new Date(date);
       checkDate.setHours(12, 0, 0, 0);
       return checkDate >= unavStart && checkDate <= unavEnd;
@@ -1519,12 +1582,11 @@ function MonthView(props: {
                             "font-weight": isConfirmed ? "600" : "400",
                           }}
                           title={`${session.family.familyName} - ${formatTime(
-                            new Date(session.scheduledStart)
+                            session.scheduledStart,
                           )}${isConfirmed ? " ✓ Confirmed" : isRecurring ? " (Planned)" : ""}`}
                         >
                           {isConfirmed && "✓ "}
-                          {formatTime(new Date(session.scheduledStart))} -{" "}
-                          {session.family.familyName}
+                          {formatTime(session.scheduledStart)} - {session.family.familyName}
                         </A>
                       );
                     }}
@@ -1551,11 +1613,7 @@ function MonthView(props: {
 }
 
 // Week View Component
-function WeekView(props: {
-  currentDate: Date;
-  sessions: any[];
-  unavailabilities: any[];
-}) {
+function WeekView(props: { currentDate: Date; sessions: any[]; unavailabilities: any[] }) {
   const date = props.currentDate;
   const dayOfWeek = date.getDay();
   const startDate = new Date(date);
@@ -1572,7 +1630,7 @@ function WeekView(props: {
 
   const getSessionsForDayAndHour = (day: Date, hour: number) => {
     return props.sessions.filter((session) => {
-      const sessionDate = new Date(session.scheduledStart);
+      const sessionDate = ensureDate(session.scheduledStart);
       const sessionHour = sessionDate.getHours();
       return (
         sessionDate.getDate() === day.getDate() &&
@@ -1585,8 +1643,8 @@ function WeekView(props: {
 
   const getUnavailabilitiesForDay = (day: Date) => {
     return props.unavailabilities.filter((unav) => {
-      const unavStart = new Date(unav.startDate);
-      const unavEnd = new Date(unav.endDate);
+      const unavStart = ensureDate(unav.startDate);
+      const unavEnd = ensureDate(unav.endDate);
       const checkDate = new Date(day);
       checkDate.setHours(12, 0, 0, 0);
       return checkDate >= unavStart && checkDate <= unavEnd;
@@ -1623,9 +1681,7 @@ function WeekView(props: {
               }}
             >
               <div>{day.toLocaleDateString("en-US", { weekday: "short" })}</div>
-              <div style={{ "font-size": "1.25rem", "margin-top": "0.25rem" }}>
-                {day.getDate()}
-              </div>
+              <div style={{ "font-size": "1.25rem", "margin-top": "0.25rem" }}>{day.getDate()}</div>
             </div>
           )}
         </For>
@@ -1661,7 +1717,10 @@ function WeekView(props: {
                     >
                       <For each={dayUnavailabilities}>
                         {(unav) => {
-                          if (unav.allDay || (unav.startTime && hour >= parseInt(unav.startTime.split(":")[0]))) {
+                          if (
+                            unav.allDay ||
+                            (unav.startTime && hour >= parseInt(unav.startTime.split(":")[0]))
+                          ) {
                             return (
                               <div
                                 style={{
@@ -1732,11 +1791,7 @@ function WeekView(props: {
 }
 
 // Day View Component with Time Intervals
-function DayView(props: {
-  currentDate: Date;
-  sessions: any[];
-  unavailabilities: any[];
-}) {
+function DayView(props: { currentDate: Date; sessions: any[]; unavailabilities: any[] }) {
   const date = props.currentDate;
   const intervals = Array.from({ length: 48 }, (_, i) => i * 30); // 30-minute intervals
 
@@ -1749,8 +1804,8 @@ function DayView(props: {
     intervalEnd.setMinutes(intervalEnd.getMinutes() + 30);
 
     return props.sessions.filter((session) => {
-      const sessionStart = new Date(session.scheduledStart);
-      const sessionEnd = new Date(session.scheduledEnd);
+      const sessionStart = ensureDate(session.scheduledStart);
+      const sessionEnd = ensureDate(session.scheduledEnd);
       // Only show session in the interval where it starts (to avoid duplicates)
       return (
         sessionStart.getDate() === date.getDate() &&
@@ -1872,8 +1927,8 @@ function DayView(props: {
 
                       const isConfirmed = session.isConfirmed;
                       const isRecurring = !!session.scheduleId;
-                      const startTime = new Date(session.scheduledStart);
-                      const endTime = new Date(session.scheduledEnd);
+                      const startTime = ensureDate(session.scheduledStart);
+                      const endTime = ensureDate(session.scheduledEnd);
                       const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
                       const height = Math.max(60, (duration / 30) * 60);
 
@@ -1925,4 +1980,3 @@ function DayView(props: {
     </div>
   );
 }
-

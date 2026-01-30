@@ -20,17 +20,20 @@ export const route = {
     getDashboardStats();
     getStatsForPeriod("thisWeek");
     getStatsForPeriod("lastWeek");
-    
+
     // Preload sessions for yesterday, today, and tomorrow
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
+
     getSessionsForDay(yesterday);
     getSessionsForDay(today);
     getSessionsForDay(tomorrow);
+  },
+  info: {
+    ssr: false, // Disable SSR to prevent timezone mismatch between server and client
   },
 } satisfies RouteDefinition;
 
@@ -42,11 +45,15 @@ export default function Home() {
   const services = createAsync(() => getServices());
   const weeklyStats = createAsync(() => getWeeklyStats());
   const dashboardStats = createAsync(() => getDashboardStats());
-  
+
   // Time period selection for hours and money widgets
-  const [hoursPeriod, setHoursPeriod] = createSignal<"lastWeek" | "thisWeek" | "month" | "ytd">("thisWeek");
-  const [moneyPeriod, setMoneyPeriod] = createSignal<"lastWeek" | "thisWeek" | "month" | "ytd">("thisWeek");
-  
+  const [hoursPeriod, setHoursPeriod] = createSignal<"lastWeek" | "thisWeek" | "month" | "ytd">(
+    "thisWeek",
+  );
+  const [moneyPeriod, setMoneyPeriod] = createSignal<"lastWeek" | "thisWeek" | "month" | "ytd">(
+    "thisWeek",
+  );
+
   const hoursStats = createAsync(() => getStatsForPeriod(hoursPeriod()));
   const moneyStats = createAsync(() => getStatsForPeriod(moneyPeriod()));
   const [showQuickAddModal, setShowQuickAddModal] = createSignal(false);
@@ -64,13 +71,13 @@ export default function Home() {
   const yesterdaySessions = createAsync(() => getSessionsForDay(yesterday));
   const todaySessions = createAsync(() => getSessionsForDay(today));
   const tomorrowSessions = createAsync(() => getSessionsForDay(tomorrow));
-  
+
   // Default service ID based on selected family's assigned services
   const selectedFamily = createAsync(() => {
     const id = selectedFamilyId();
     return id ? getFamily(id) : null;
   });
-  
+
   const defaultServiceId = () => {
     const family = selectedFamily();
     if (family?.services && family.services.length > 0) {
@@ -82,19 +89,23 @@ export default function Home() {
     }
     return "";
   };
-  
+
   const [serviceId, setServiceId] = createSignal<string>("");
-  
+
   // Update service ID when family or services change
   createEffect(() => {
     const family = selectedFamily();
     const allServices = services();
     const currentServiceId = serviceId();
-    
+
     if (allServices && allServices.length > 0) {
       const defaultId = defaultServiceId();
       // Set serviceId if it's empty or if the family changed and we have a new default
-      if (!currentServiceId || currentServiceId === "" || (family && defaultId && defaultId !== currentServiceId)) {
+      if (
+        !currentServiceId ||
+        currentServiceId === "" ||
+        (family && defaultId && defaultId !== currentServiceId)
+      ) {
         if (defaultId) {
           setServiceId(defaultId);
         } else if (allServices.length > 0) {
@@ -139,12 +150,12 @@ export default function Home() {
     const month = calendarMonth();
     const year = month.getFullYear();
     const monthIndex = month.getMonth();
-    
+
     const firstDay = new Date(year, monthIndex, 1);
     const lastDay = new Date(year, monthIndex + 1, 0);
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - startDate.getDay()); // Start from Sunday
-    
+
     const days: Date[] = [];
     const current = new Date(startDate);
     for (let i = 0; i < 42; i++) {
@@ -197,7 +208,9 @@ export default function Home() {
         }}
         class="flex-row-mobile"
       >
-        <div style={{ display: "flex", "align-items": "center", gap: "0.75rem", "flex-wrap": "wrap" }}>
+        <div
+          style={{ display: "flex", "align-items": "center", gap: "0.75rem", "flex-wrap": "wrap" }}
+        >
           <h1
             style={{
               color: "#2d3748",
@@ -349,7 +362,11 @@ export default function Home() {
                   onClick={() => handleDateClick(day)}
                   style={{
                     padding: "0.5rem",
-                    "background-color": isTodayDay ? "#bee3f8" : isCurrentMonthDay ? "#fff" : "#f7fafc",
+                    "background-color": isTodayDay
+                      ? "#bee3f8"
+                      : isCurrentMonthDay
+                        ? "#fff"
+                        : "#f7fafc",
                     color: isCurrentMonthDay ? "#2d3748" : "#a0aec0",
                     border: isTodayDay ? "2px solid #4299e1" : "1px solid #e2e8f0",
                     "border-radius": "4px",
@@ -411,7 +428,9 @@ export default function Home() {
               "margin-bottom": "0.75rem",
             }}
           >
-            <h2 style={{ "font-size": "1.125rem", "font-weight": "600", color: "#2d3748", margin: 0 }}>
+            <h2
+              style={{ "font-size": "1.125rem", "font-weight": "600", color: "#2d3748", margin: 0 }}
+            >
               Yesterday
             </h2>
             <span
@@ -430,7 +449,14 @@ export default function Home() {
           <Show
             when={yesterdaySessions() && yesterdaySessions()!.length > 0}
             fallback={
-              <p style={{ color: "#a0aec0", "font-size": "0.875rem", "text-align": "center", padding: "0.75rem" }}>
+              <p
+                style={{
+                  color: "#a0aec0",
+                  "font-size": "0.875rem",
+                  "text-align": "center",
+                  padding: "0.75rem",
+                }}
+              >
                 No sessions
               </p>
             }
@@ -458,7 +484,14 @@ export default function Home() {
                       e.currentTarget.style.borderColor = "#e2e8f0";
                     }}
                   >
-                    <div style={{ "font-weight": "600", color: "#2d3748", "margin-bottom": "0.125rem", "font-size": "0.875rem" }}>
+                    <div
+                      style={{
+                        "font-weight": "600",
+                        color: "#2d3748",
+                        "margin-bottom": "0.125rem",
+                        "font-size": "0.875rem",
+                      }}
+                    >
                       {session.family.familyName}
                     </div>
                     <div style={{ "font-size": "0.8125rem", color: "#718096" }}>
@@ -466,9 +499,12 @@ export default function Home() {
                       -{" "}
                       {formatTimeLocal(session.scheduledEnd)}
                     </div>
-                    <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}>
+                    <div
+                      style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}
+                    >
                       {session.service.name}
-                      {session.children.length > 0 && ` • ${session.children.length} child${session.children.length > 1 ? "ren" : ""}`}
+                      {session.children.length > 0 &&
+                        ` • ${session.children.length} child${session.children.length > 1 ? "ren" : ""}`}
                     </div>
                   </A>
                 )}
@@ -495,7 +531,9 @@ export default function Home() {
               "margin-bottom": "0.75rem",
             }}
           >
-            <h2 style={{ "font-size": "1.125rem", "font-weight": "600", color: "#2d3748", margin: 0 }}>
+            <h2
+              style={{ "font-size": "1.125rem", "font-weight": "600", color: "#2d3748", margin: 0 }}
+            >
               Today
             </h2>
             <span
@@ -514,7 +552,14 @@ export default function Home() {
           <Show
             when={todaySessions() && todaySessions()!.length > 0}
             fallback={
-              <p style={{ color: "#a0aec0", "font-size": "0.875rem", "text-align": "center", padding: "0.75rem" }}>
+              <p
+                style={{
+                  color: "#a0aec0",
+                  "font-size": "0.875rem",
+                  "text-align": "center",
+                  padding: "0.75rem",
+                }}
+              >
                 No sessions
               </p>
             }
@@ -542,7 +587,14 @@ export default function Home() {
                       e.currentTarget.style.borderColor = "#e2e8f0";
                     }}
                   >
-                    <div style={{ "font-weight": "600", color: "#2d3748", "margin-bottom": "0.125rem", "font-size": "0.875rem" }}>
+                    <div
+                      style={{
+                        "font-weight": "600",
+                        color: "#2d3748",
+                        "margin-bottom": "0.125rem",
+                        "font-size": "0.875rem",
+                      }}
+                    >
                       {session.family.familyName}
                     </div>
                     <div style={{ "font-size": "0.8125rem", color: "#718096" }}>
@@ -550,9 +602,12 @@ export default function Home() {
                       -{" "}
                       {formatTimeLocal(session.scheduledEnd)}
                     </div>
-                    <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}>
+                    <div
+                      style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}
+                    >
                       {session.service.name}
-                      {session.children.length > 0 && ` • ${session.children.length} child${session.children.length > 1 ? "ren" : ""}`}
+                      {session.children.length > 0 &&
+                        ` • ${session.children.length} child${session.children.length > 1 ? "ren" : ""}`}
                     </div>
                   </A>
                 )}
@@ -579,7 +634,9 @@ export default function Home() {
               "margin-bottom": "0.75rem",
             }}
           >
-            <h2 style={{ "font-size": "1.125rem", "font-weight": "600", color: "#2d3748", margin: 0 }}>
+            <h2
+              style={{ "font-size": "1.125rem", "font-weight": "600", color: "#2d3748", margin: 0 }}
+            >
               Tomorrow
             </h2>
             <span
@@ -598,7 +655,14 @@ export default function Home() {
           <Show
             when={tomorrowSessions() && tomorrowSessions()!.length > 0}
             fallback={
-              <p style={{ color: "#a0aec0", "font-size": "0.875rem", "text-align": "center", padding: "0.75rem" }}>
+              <p
+                style={{
+                  color: "#a0aec0",
+                  "font-size": "0.875rem",
+                  "text-align": "center",
+                  padding: "0.75rem",
+                }}
+              >
                 No sessions
               </p>
             }
@@ -626,7 +690,14 @@ export default function Home() {
                       e.currentTarget.style.borderColor = "#e2e8f0";
                     }}
                   >
-                    <div style={{ "font-weight": "600", color: "#2d3748", "margin-bottom": "0.125rem", "font-size": "0.875rem" }}>
+                    <div
+                      style={{
+                        "font-weight": "600",
+                        color: "#2d3748",
+                        "margin-bottom": "0.125rem",
+                        "font-size": "0.875rem",
+                      }}
+                    >
                       {session.family.familyName}
                     </div>
                     <div style={{ "font-size": "0.8125rem", color: "#718096" }}>
@@ -634,9 +705,12 @@ export default function Home() {
                       -{" "}
                       {formatTimeLocal(session.scheduledEnd)}
                     </div>
-                    <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}>
+                    <div
+                      style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}
+                    >
                       {session.service.name}
-                      {session.children.length > 0 && ` • ${session.children.length} child${session.children.length > 1 ? "ren" : ""}`}
+                      {session.children.length > 0 &&
+                        ` • ${session.children.length} child${session.children.length > 1 ? "ren" : ""}`}
                     </div>
                   </A>
                 )}
@@ -852,7 +926,6 @@ export default function Home() {
             "margin-bottom": "1rem",
           }}
         >
-
           <Show when={dashboardStats()}>
             <div
               style={{
@@ -863,7 +936,9 @@ export default function Home() {
                 "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
               }}
             >
-              <div style={{ "font-size": "0.8125rem", color: "#718096", "margin-bottom": "0.375rem" }}>
+              <div
+                style={{ "font-size": "0.8125rem", color: "#718096", "margin-bottom": "0.375rem" }}
+              >
                 Hours This Month
               </div>
               <div style={{ "font-size": "1.75rem", "font-weight": "700", color: "#2d3748" }}>
@@ -883,7 +958,9 @@ export default function Home() {
                 "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
               }}
             >
-              <div style={{ "font-size": "0.8125rem", color: "#718096", "margin-bottom": "0.375rem" }}>
+              <div
+                style={{ "font-size": "0.8125rem", color: "#718096", "margin-bottom": "0.375rem" }}
+              >
                 Upcoming Sessions
               </div>
               <div style={{ "font-size": "1.75rem", "font-weight": "700", color: "#4299e1" }}>
@@ -903,7 +980,9 @@ export default function Home() {
                 "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
               }}
             >
-              <div style={{ "font-size": "0.8125rem", color: "#718096", "margin-bottom": "0.375rem" }}>
+              <div
+                style={{ "font-size": "0.8125rem", color: "#718096", "margin-bottom": "0.375rem" }}
+              >
                 Unpaid Sessions
               </div>
               <div style={{ "font-size": "1.75rem", "font-weight": "700", color: "#ed8936" }}>
@@ -923,7 +1002,9 @@ export default function Home() {
                 "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
               }}
             >
-              <div style={{ "font-size": "0.8125rem", color: "#718096", "margin-bottom": "0.375rem" }}>
+              <div
+                style={{ "font-size": "0.8125rem", color: "#718096", "margin-bottom": "0.375rem" }}
+              >
                 Active Families
               </div>
               <div style={{ "font-size": "1.75rem", "font-weight": "700", color: "#805ad5" }}>
@@ -934,7 +1015,9 @@ export default function Home() {
               </div>
             </div>
 
-            <Show when={dashboardStats()?.averageHourlyRate && dashboardStats()!.averageHourlyRate > 0}>
+            <Show
+              when={dashboardStats()?.averageHourlyRate && dashboardStats()!.averageHourlyRate > 0}
+            >
               <div
                 style={{
                   "background-color": "#fff",
@@ -944,7 +1027,13 @@ export default function Home() {
                   "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
                 }}
               >
-                <div style={{ "font-size": "0.8125rem", color: "#718096", "margin-bottom": "0.375rem" }}>
+                <div
+                  style={{
+                    "font-size": "0.8125rem",
+                    color: "#718096",
+                    "margin-bottom": "0.375rem",
+                  }}
+                >
                   Avg Hourly Rate
                 </div>
                 <div style={{ "font-size": "1.75rem", "font-weight": "700", color: "#2d3748" }}>
@@ -1010,7 +1099,7 @@ export default function Home() {
           <Show
             when={!upcomingSessions.loading && upcomingSessions()}
             fallback={
-                <div style={{ "text-align": "center", padding: "1.5rem", color: "#718096" }}>
+              <div style={{ "text-align": "center", padding: "1.5rem", color: "#718096" }}>
                 Loading...
               </div>
             }
@@ -1019,19 +1108,17 @@ export default function Home() {
               when={upcomingSessions()?.length}
               fallback={
                 <div style={{ "text-align": "center", padding: "1.5rem", color: "#718096" }}>
-                No upcoming sessions scheduled
-              </div>
+                  No upcoming sessions scheduled
+                </div>
               }
             >
               <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem" }}>
                 <For each={upcomingSessions()}>
                   {(session) => {
-                    const sessionDate = new Date(session.scheduledStart);
-                    const isToday =
-                      sessionDate.toDateString() === new Date().toDateString();
+                    const sessionDate = ensureDate(session.scheduledStart);
+                    const isToday = sessionDate.toDateString() === new Date().toDateString();
                     const isTomorrow =
-                      sessionDate.toDateString() ===
-                      new Date(Date.now() + 86400000).toDateString();
+                      sessionDate.toDateString() === new Date(Date.now() + 86400000).toDateString();
 
                     const statusColors = {
                       SCHEDULED: { bg: "#bee3f8", color: "#2c5282" },
@@ -1125,11 +1212,7 @@ export default function Home() {
                               style={{
                                 "font-size": "0.875rem",
                                 "font-weight": "600",
-                                color: isToday
-                                  ? "#e53e3e"
-                                  : isTomorrow
-                                    ? "#ed8936"
-                                    : "#2d3748",
+                                color: isToday ? "#e53e3e" : isTomorrow ? "#ed8936" : "#2d3748",
                               }}
                             >
                               {isToday
@@ -1197,7 +1280,7 @@ export default function Home() {
           <Show
             when={!recentIncidents.loading && recentIncidents()}
             fallback={
-                <div style={{ "text-align": "center", padding: "1.5rem", color: "#718096" }}>
+              <div style={{ "text-align": "center", padding: "1.5rem", color: "#718096" }}>
                 Loading...
               </div>
             }
@@ -1206,8 +1289,8 @@ export default function Home() {
               when={recentIncidents()?.length}
               fallback={
                 <div style={{ "text-align": "center", padding: "1.5rem", color: "#718096" }}>
-                No recent incidents or reports
-              </div>
+                  No recent incidents or reports
+                </div>
               }
             >
               <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem" }}>
@@ -1233,8 +1316,7 @@ export default function Home() {
                     };
 
                     const reportDate = new Date(report.timestamp);
-                    const isToday =
-                      reportDate.toDateString() === new Date().toDateString();
+                    const isToday = reportDate.toDateString() === new Date().toDateString();
 
                     return (
                       <A
@@ -1275,9 +1357,7 @@ export default function Home() {
                                 "margin-bottom": "0.25rem",
                               }}
                             >
-                              <span style={{ "font-size": "1.25rem" }}>
-                                {severityColors.icon}
-                              </span>
+                              <span style={{ "font-size": "1.25rem" }}>{severityColors.icon}</span>
                               <h3
                                 style={{
                                   "font-size": "1rem",
@@ -1425,10 +1505,7 @@ export default function Home() {
               </button>
             </div>
 
-            <form
-              action={createCareSchedule}
-              method="post"
-            >
+            <form action={createCareSchedule} method="post">
               <input type="hidden" name="recurrence" value="ONCE" />
 
               <div style={{ "margin-bottom": "1.5rem" }}>
@@ -1492,9 +1569,20 @@ export default function Home() {
                       </For>
                     </Show>
                   </select>
-                  <Show when={selectedFamilyId() && (!selectedFamily()?.services || selectedFamily()!.services.length === 0)}>
-                    <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "#718096" }}>
-                      No services assigned to this family. <A href={`/families/${selectedFamilyId()}/edit`} style={{ color: "#4299e1" }}>Assign services</A> to default this selection.
+                  <Show
+                    when={
+                      selectedFamilyId() &&
+                      (!selectedFamily()?.services || selectedFamily()!.services.length === 0)
+                    }
+                  >
+                    <p
+                      style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "#718096" }}
+                    >
+                      No services assigned to this family.{" "}
+                      <A href={`/families/${selectedFamilyId()}/edit`} style={{ color: "#4299e1" }}>
+                        Assign services
+                      </A>{" "}
+                      to default this selection.
                     </p>
                   </Show>
                 </Show>
@@ -1528,16 +1616,14 @@ export default function Home() {
                 >
                   <option value="">Select a family...</option>
                   <For each={families()}>
-                    {(family) => (
-                      <option value={family.id}>{family.familyName}</option>
-                    )}
+                    {(family) => <option value={family.id}>{family.familyName}</option>}
                   </For>
                 </select>
               </div>
 
               <Show when={selectedFamilyId() && selectedFamily()}>
                 {(family) => (
-                  <Show 
+                  <Show
                     when={(() => {
                       const selectedService = services()?.find((s) => s.id === serviceId());
                       return !selectedService?.requiresChildren || family().children.length > 0;
@@ -1554,7 +1640,9 @@ export default function Home() {
                       >
                         {(() => {
                           const selectedService = services()?.find((s) => s.id === serviceId());
-                          return selectedService?.requiresChildren ? "Children *" : "Student (optional)";
+                          return selectedService?.requiresChildren
+                            ? "Children *"
+                            : "Student (optional)";
                         })()}
                       </label>
                       <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem" }}>

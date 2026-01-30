@@ -1,7 +1,12 @@
 import { createAsync, type RouteDefinition, A, useParams, useSubmission } from "@solidjs/router";
 import { Show, For, createSignal, createMemo, createEffect } from "solid-js";
 import { getCareSession, updateCareSession } from "~/lib/schedule";
-import { formatDateLocal, formatDateTimeLocal, formatTimeLocal, utcToDatetimeLocal } from "~/lib/datetime";
+import {
+  formatDateLocal,
+  formatDateTimeLocal,
+  formatTimeLocal,
+  utcToDatetimeLocal,
+} from "~/lib/datetime";
 import { recordDropOff, recordPickUp } from "~/lib/care-schedules";
 import { getSessionReports } from "~/lib/session-reports";
 import { getFamilyMembers } from "~/lib/family-members";
@@ -25,6 +30,9 @@ export const route = {
       }
     }
   },
+  info: {
+    ssr: false, // Disable SSR for authenticated pages
+  },
 } satisfies RouteDefinition;
 
 export default function CareSessionDetail() {
@@ -34,29 +42,29 @@ export default function CareSessionDetail() {
   const expenses = createAsync(() => getSessionExpenses(params.sessionId!));
   const expenseTotal = createAsync(() => getSessionExpenseTotal(params.sessionId!));
   const familyMembers = createAsync(() => getFamilyMembers(params.id!));
-  
+
   // Create combined list of primary parent + family members for drop-off/pickup
   const allPeople = createMemo(() => {
     const people = [];
-    
+
     // Add primary parent
     if (session()?.family?.parentFirstName && session()?.family?.parentLastName) {
       people.push({
-        id: 'primary-parent',
+        id: "primary-parent",
         firstName: session()!.family.parentFirstName,
         lastName: session()!.family.parentLastName,
-        relationship: 'PARENT',
+        relationship: "PARENT",
       });
     }
-    
+
     // Add family members
     if (familyMembers()) {
       people.push(...familyMembers()!);
     }
-    
+
     return people;
   });
-  
+
   const dropOffSubmission = useSubmission(recordDropOff);
   const pickUpSubmission = useSubmission(recordPickUp);
   const expenseSubmission = useSubmission(createExpense);
@@ -86,7 +94,6 @@ export default function CareSessionDetail() {
       setDinnerCount(currentSession.dinnerCount || 0);
     }
   });
-
 
   const formatDate = formatDateLocal;
   const formatDateTime = formatDateTimeLocal;
@@ -283,7 +290,9 @@ export default function CareSessionDetail() {
             <div style={{ "margin-top": "1rem" }}>
               <strong style={{ color: "#4a5568" }}>Children:</strong>
               <p style={{ margin: "0.25rem 0 0 0" }}>
-                {session()?.children?.map((c: any) => `${c.firstName} ${c.lastName}`).join(", ")}
+                {session()
+                  ?.children?.map((c: any) => `${c.firstName} ${c.lastName}`)
+                  .join(", ")}
               </p>
             </div>
           </Show>
@@ -339,9 +348,7 @@ export default function CareSessionDetail() {
             fallback={
               <Show
                 when={showDropOffForm()}
-                fallback={
-                  <p style={{ color: "#718096", margin: 0 }}>Not yet recorded</p>
-                }
+                fallback={<p style={{ color: "#718096", margin: 0 }}>Not yet recorded</p>}
               >
                 <form
                   action={recordDropOff}
@@ -515,9 +522,7 @@ export default function CareSessionDetail() {
             fallback={
               <Show
                 when={showPickUpForm()}
-                fallback={
-                  <p style={{ color: "#718096", margin: 0 }}>Not yet recorded</p>
-                }
+                fallback={<p style={{ color: "#718096", margin: 0 }}>Not yet recorded</p>}
               >
                 <form
                   action={recordPickUp}
@@ -714,7 +719,13 @@ export default function CareSessionDetail() {
                     border: "1px solid #e2e8f0",
                   }}
                 >
-                  <div style={{ color: "#718096", "font-size": "0.875rem", "margin-bottom": "0.25rem" }}>
+                  <div
+                    style={{
+                      color: "#718096",
+                      "font-size": "0.875rem",
+                      "margin-bottom": "0.25rem",
+                    }}
+                  >
                     Breakfast
                   </div>
                   <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
@@ -729,7 +740,13 @@ export default function CareSessionDetail() {
                     border: "1px solid #e2e8f0",
                   }}
                 >
-                  <div style={{ color: "#718096", "font-size": "0.875rem", "margin-bottom": "0.25rem" }}>
+                  <div
+                    style={{
+                      color: "#718096",
+                      "font-size": "0.875rem",
+                      "margin-bottom": "0.25rem",
+                    }}
+                  >
                     Morning Snack
                   </div>
                   <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
@@ -744,7 +761,13 @@ export default function CareSessionDetail() {
                     border: "1px solid #e2e8f0",
                   }}
                 >
-                  <div style={{ color: "#718096", "font-size": "0.875rem", "margin-bottom": "0.25rem" }}>
+                  <div
+                    style={{
+                      color: "#718096",
+                      "font-size": "0.875rem",
+                      "margin-bottom": "0.25rem",
+                    }}
+                  >
                     Lunch
                   </div>
                   <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
@@ -759,7 +782,13 @@ export default function CareSessionDetail() {
                     border: "1px solid #e2e8f0",
                   }}
                 >
-                  <div style={{ color: "#718096", "font-size": "0.875rem", "margin-bottom": "0.25rem" }}>
+                  <div
+                    style={{
+                      color: "#718096",
+                      "font-size": "0.875rem",
+                      "margin-bottom": "0.25rem",
+                    }}
+                  >
                     Afternoon Snack
                   </div>
                   <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
@@ -774,7 +803,13 @@ export default function CareSessionDetail() {
                     border: "1px solid #e2e8f0",
                   }}
                 >
-                  <div style={{ color: "#718096", "font-size": "0.875rem", "margin-bottom": "0.25rem" }}>
+                  <div
+                    style={{
+                      color: "#718096",
+                      "font-size": "0.875rem",
+                      "margin-bottom": "0.25rem",
+                    }}
+                  >
                     Dinner
                   </div>
                   <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
@@ -1086,7 +1121,13 @@ export default function CareSessionDetail() {
                           <strong style={{ color: "#4a5568", "font-size": "0.875rem" }}>
                             Action Taken:
                           </strong>
-                          <p style={{ color: "#718096", "font-size": "0.875rem", margin: "0.25rem 0 0 0" }}>
+                          <p
+                            style={{
+                              color: "#718096",
+                              "font-size": "0.875rem",
+                              margin: "0.25rem 0 0 0",
+                            }}
+                          >
                             {report.actionTaken}
                           </p>
                         </div>
@@ -1162,7 +1203,14 @@ export default function CareSessionDetail() {
                 <input type="hidden" name="id" value={editingExpenseId()!} />
               </Show>
 
-              <div style={{ display: "grid", "grid-template-columns": "2fr 1fr 1fr", gap: "1rem", "margin-bottom": "1rem" }}>
+              <div
+                style={{
+                  display: "grid",
+                  "grid-template-columns": "2fr 1fr 1fr",
+                  gap: "1rem",
+                  "margin-bottom": "1rem",
+                }}
+              >
                 <div>
                   <label
                     for="description"
@@ -1290,7 +1338,10 @@ export default function CareSessionDetail() {
                     color: "white",
                     border: "none",
                     "border-radius": "4px",
-                    cursor: expenseSubmission.pending || updateExpenseSubmission.pending ? "not-allowed" : "pointer",
+                    cursor:
+                      expenseSubmission.pending || updateExpenseSubmission.pending
+                        ? "not-allowed"
+                        : "pointer",
                     "font-weight": "600",
                   }}
                 >
@@ -1352,7 +1403,14 @@ export default function CareSessionDetail() {
                       }}
                     >
                       <div style={{ flex: "1" }}>
-                        <div style={{ display: "flex", "align-items": "center", gap: "0.5rem", "margin-bottom": "0.25rem" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            "align-items": "center",
+                            gap: "0.5rem",
+                            "margin-bottom": "0.25rem",
+                          }}
+                        >
                           <strong style={{ color: "#2d3748" }}>{expense.description}</strong>
                           {expense.category && (
                             <span
@@ -1373,14 +1431,26 @@ export default function CareSessionDetail() {
                           {formatTime(expense.createdAt)}
                         </div>
                         <Show when={expense.notes}>
-                          <p style={{ "margin-top": "0.5rem", color: "#4a5568", "font-size": "0.875rem" }}>
+                          <p
+                            style={{
+                              "margin-top": "0.5rem",
+                              color: "#4a5568",
+                              "font-size": "0.875rem",
+                            }}
+                          >
                             {expense.notes}
                           </p>
                         </Show>
                       </div>
                       <div style={{ display: "flex", "align-items": "center", gap: "1rem" }}>
                         <div style={{ "text-align": "right" }}>
-                          <div style={{ "font-size": "1.125rem", "font-weight": "600", color: "#2d3748" }}>
+                          <div
+                            style={{
+                              "font-size": "1.125rem",
+                              "font-weight": "600",
+                              color: "#2d3748",
+                            }}
+                          >
                             ${expense.amount.toFixed(2)}
                           </div>
                         </div>

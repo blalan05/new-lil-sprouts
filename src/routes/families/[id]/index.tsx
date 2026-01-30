@@ -28,6 +28,9 @@ export const route = {
       getServices();
     }
   },
+  info: {
+    ssr: false, // Disable SSR for authenticated pages
+  },
 } satisfies RouteDefinition;
 
 export default function FamilyDetailPage() {
@@ -37,38 +40,40 @@ export default function FamilyDetailPage() {
   const schedules = createAsync(() => getCareSchedules(params.id!));
   const children = createAsync(() => getChildren(params.id!));
   const services = createAsync(() => getServices());
-  
+
   const [showInviteModal, setShowInviteModal] = createSignal<string | null>(null);
-  const [showScheduleDialog, setShowScheduleDialog] = createSignal<"view" | "create" | "edit" | null>(null);
+  const [showScheduleDialog, setShowScheduleDialog] = createSignal<
+    "view" | "create" | "edit" | null
+  >(null);
   const [selectedScheduleId, setSelectedScheduleId] = createSignal<string | null>(null);
   const [showGenerateDialog, setShowGenerateDialog] = createSignal(false);
   const [generateScheduleId, setGenerateScheduleId] = createSignal<string | null>(null);
-  
+
   const createScheduleSubmission = useSubmission(createCareSchedule);
   const updateScheduleSubmission = useSubmission(updateCareSchedule);
   const deleteScheduleSubmission = useSubmission(deleteCareSchedule);
   const generateSessionsSubmission = useSubmission(generateSessionsFromSchedule);
-  
+
   const selectedSchedule = () => {
     if (!selectedScheduleId()) return null;
-    return schedules()?.find(s => s.id === selectedScheduleId());
+    return schedules()?.find((s) => s.id === selectedScheduleId());
   };
-  
+
   const openScheduleDialog = (mode: "view" | "create" | "edit", scheduleId?: string) => {
     if (scheduleId) setSelectedScheduleId(scheduleId);
     setShowScheduleDialog(mode);
   };
-  
+
   const closeScheduleDialog = () => {
     setShowScheduleDialog(null);
     setSelectedScheduleId(null);
   };
-  
+
   const openGenerateDialog = (scheduleId: string) => {
     setGenerateScheduleId(scheduleId);
     setShowGenerateDialog(true);
   };
-  
+
   const closeGenerateDialog = () => {
     setShowGenerateDialog(false);
     setGenerateScheduleId(null);
@@ -251,11 +256,12 @@ export default function FamilyDetailPage() {
             <div>
               <strong style={{ color: "#4a5568" }}>Parents:</strong>
               <p style={{ margin: "0.25rem 0 0 0" }}>
-                {family() && formatParentNames(
-                  family()!.parentFirstName,
-                  family()!.parentLastName,
-                  family()!.familyMembers
-                )}
+                {family() &&
+                  formatParentNames(
+                    family()!.parentFirstName,
+                    family()!.parentLastName,
+                    family()!.familyMembers,
+                  )}
               </p>
             </div>
             <div>
@@ -734,7 +740,8 @@ export default function FamilyDetailPage() {
             when={schedules()?.length}
             fallback={
               <p style={{ color: "#718096", "text-align": "center", padding: "2rem" }}>
-                No recurring schedules created yet. Create schedules to automatically generate sessions.
+                No recurring schedules created yet. Create schedules to automatically generate
+                sessions.
               </p>
             }
           >
@@ -780,8 +787,12 @@ export default function FamilyDetailPage() {
                           </span>
                         </div>
                         <div style={{ color: "#718096", "font-size": "0.875rem" }}>
-                          <div><strong>Service:</strong> {schedule.service.name}</div>
-                          <div><strong>Pattern:</strong> {schedule.recurrence}</div>
+                          <div>
+                            <strong>Service:</strong> {schedule.service.name}
+                          </div>
+                          <div>
+                            <strong>Pattern:</strong> {schedule.recurrence}
+                          </div>
                           <div>
                             <strong>Days:</strong> {schedule.daysOfWeek.join(", ")}
                           </div>
@@ -847,7 +858,11 @@ export default function FamilyDetailPage() {
                           action={deleteCareSchedule}
                           method="post"
                           onSubmit={(e) => {
-                            if (!confirm(`Are you sure you want to delete "${schedule.name}"? This will not delete generated sessions.`)) {
+                            if (
+                              !confirm(
+                                `Are you sure you want to delete "${schedule.name}"? This will not delete generated sessions.`,
+                              )
+                            ) {
                               e.preventDefault();
                             }
                           }}
@@ -1638,7 +1653,13 @@ export default function FamilyDetailPage() {
             {/* View Schedule Dialog */}
             <Show when={showScheduleDialog() === "view" && selectedSchedule()}>
               <div>
-                <div style={{ display: "flex", "justify-content": "space-between", "margin-bottom": "1.5rem" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    "justify-content": "space-between",
+                    "margin-bottom": "1.5rem",
+                  }}
+                >
                   <h2 style={{ color: "#2d3748", "font-size": "1.5rem", margin: 0 }}>
                     {selectedSchedule()?.name}
                   </h2>
@@ -1655,7 +1676,7 @@ export default function FamilyDetailPage() {
                     ×
                   </button>
                 </div>
-                  
+
                 <div style={{ display: "grid", gap: "1rem", "margin-bottom": "1.5rem" }}>
                   <div>
                     <strong style={{ color: "#4a5568" }}>Service:</strong>
@@ -1667,7 +1688,9 @@ export default function FamilyDetailPage() {
                   </div>
                   <div>
                     <strong style={{ color: "#4a5568" }}>Days of Week:</strong>
-                    <p style={{ margin: "0.25rem 0 0 0" }}>{selectedSchedule()?.daysOfWeek.join(", ")}</p>
+                    <p style={{ margin: "0.25rem 0 0 0" }}>
+                      {selectedSchedule()?.daysOfWeek.join(", ")}
+                    </p>
                   </div>
                   <div>
                     <strong style={{ color: "#4a5568" }}>Time:</strong>
@@ -1678,47 +1701,67 @@ export default function FamilyDetailPage() {
                   <div>
                     <strong style={{ color: "#4a5568" }}>Hourly Rate:</strong>
                     <p style={{ margin: "0.25rem 0 0 0" }}>
-                      {selectedSchedule()?.hourlyRate ? `$${selectedSchedule()?.hourlyRate}` : "Service default"}
+                      {selectedSchedule()?.hourlyRate
+                        ? `$${selectedSchedule()?.hourlyRate}`
+                        : "Service default"}
                     </p>
                   </div>
                   <div>
                     <strong style={{ color: "#4a5568" }}>Children:</strong>
                     <p style={{ margin: "0.25rem 0 0 0" }}>
-                      {selectedSchedule()?.children.map((c: any) => `${c.firstName} ${c.lastName}`).join(", ") || "None"}
+                      {selectedSchedule()
+                        ?.children.map((c: any) => `${c.firstName} ${c.lastName}`)
+                        .join(", ") || "None"}
                     </p>
                   </div>
                   <div>
                     <strong style={{ color: "#4a5568" }}>Start Date:</strong>
-                    <p style={{ margin: "0.25rem 0 0 0" }}>{selectedSchedule()?.startDate && formatDateLocal(selectedSchedule()!.startDate)}</p>
+                    <p style={{ margin: "0.25rem 0 0 0" }}>
+                      {selectedSchedule()?.startDate &&
+                        formatDateLocal(selectedSchedule()!.startDate)}
+                    </p>
                   </div>
                   <Show when={selectedSchedule()?.endDate}>
                     <div>
                       <strong style={{ color: "#4a5568" }}>End Date:</strong>
-                      <p style={{ margin: "0.25rem 0 0 0" }}>{selectedSchedule()?.endDate && formatDateLocal(selectedSchedule()!.endDate!)}</p>
+                      <p style={{ margin: "0.25rem 0 0 0" }}>
+                        {selectedSchedule()?.endDate &&
+                          formatDateLocal(selectedSchedule()!.endDate!)}
+                      </p>
                     </div>
                   </Show>
                   <div>
                     <strong style={{ color: "#4a5568" }}>Status:</strong>
-                    <p style={{ margin: "0.25rem 0 0 0" }}>{selectedSchedule()?.isActive ? "Active" : "Inactive"}</p>
+                    <p style={{ margin: "0.25rem 0 0 0" }}>
+                      {selectedSchedule()?.isActive ? "Active" : "Inactive"}
+                    </p>
                   </div>
                   <div>
                     <strong style={{ color: "#4a5568" }}>Sessions Generated:</strong>
-                    <p style={{ margin: "0.25rem 0 0 0" }}>{selectedSchedule()?._count.careSessions}</p>
+                    <p style={{ margin: "0.25rem 0 0 0" }}>
+                      {selectedSchedule()?._count.careSessions}
+                    </p>
                   </div>
                   <Show when={selectedSchedule()?.notes}>
                     <div>
                       <strong style={{ color: "#4a5568" }}>Notes:</strong>
-                      <p style={{ margin: "0.25rem 0 0 0", color: "#718096" }}>{selectedSchedule()?.notes}</p>
+                      <p style={{ margin: "0.25rem 0 0 0", color: "#718096" }}>
+                        {selectedSchedule()?.notes}
+                      </p>
                     </div>
                   </Show>
                 </div>
-                  
+
                 <div style={{ display: "flex", gap: "1rem", "justify-content": "space-between" }}>
                   <form
                     action={deleteCareSchedule}
                     method="post"
                     onSubmit={(e) => {
-                      if (!confirm(`Are you sure you want to delete "${selectedSchedule()?.name}"? This will not delete generated sessions.`)) {
+                      if (
+                        !confirm(
+                          `Are you sure you want to delete "${selectedSchedule()?.name}"? This will not delete generated sessions.`,
+                        )
+                      ) {
                         e.preventDefault();
                       } else {
                         setTimeout(() => {
@@ -1781,7 +1824,13 @@ export default function FamilyDetailPage() {
             {/* Create/Edit Schedule Dialog */}
             <Show when={showScheduleDialog() === "create" || showScheduleDialog() === "edit"}>
               <div>
-                <div style={{ display: "flex", "justify-content": "space-between", "margin-bottom": "1.5rem" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    "justify-content": "space-between",
+                    "margin-bottom": "1.5rem",
+                  }}
+                >
                   <h2 style={{ color: "#2d3748", "font-size": "1.5rem", margin: 0 }}>
                     {showScheduleDialog() === "create" ? "Create New Schedule" : "Edit Schedule"}
                   </h2>
@@ -1800,7 +1849,9 @@ export default function FamilyDetailPage() {
                 </div>
 
                 <form
-                  action={showScheduleDialog() === "create" ? createCareSchedule : updateCareSchedule}
+                  action={
+                    showScheduleDialog() === "create" ? createCareSchedule : updateCareSchedule
+                  }
                   method="post"
                   onSubmit={(e) => {
                     setTimeout(() => {
@@ -1818,7 +1869,14 @@ export default function FamilyDetailPage() {
 
                   <div style={{ display: "grid", gap: "1rem" }}>
                     <div>
-                      <label style={{ display: "block", "margin-bottom": "0.5rem", "font-weight": "500", color: "#2d3748" }}>
+                      <label
+                        style={{
+                          display: "block",
+                          "margin-bottom": "0.5rem",
+                          "font-weight": "500",
+                          color: "#2d3748",
+                        }}
+                      >
                         Schedule Name *
                       </label>
                       <input
@@ -1837,7 +1895,14 @@ export default function FamilyDetailPage() {
                     </div>
 
                     <div>
-                      <label style={{ display: "block", "margin-bottom": "0.5rem", "font-weight": "500", color: "#2d3748" }}>
+                      <label
+                        style={{
+                          display: "block",
+                          "margin-bottom": "0.5rem",
+                          "font-weight": "500",
+                          color: "#2d3748",
+                        }}
+                      >
                         Service *
                       </label>
                       <select
@@ -1859,7 +1924,14 @@ export default function FamilyDetailPage() {
                     </div>
 
                     <div>
-                      <label style={{ display: "block", "margin-bottom": "0.5rem", "font-weight": "500", color: "#2d3748" }}>
+                      <label
+                        style={{
+                          display: "block",
+                          "margin-bottom": "0.5rem",
+                          "font-weight": "500",
+                          color: "#2d3748",
+                        }}
+                      >
                         Recurrence Pattern *
                       </label>
                       <select
@@ -1881,13 +1953,38 @@ export default function FamilyDetailPage() {
                     </div>
 
                     <div>
-                      <label style={{ display: "block", "margin-bottom": "0.5rem", "font-weight": "500", color: "#2d3748" }}>
+                      <label
+                        style={{
+                          display: "block",
+                          "margin-bottom": "0.5rem",
+                          "font-weight": "500",
+                          color: "#2d3748",
+                        }}
+                      >
                         Days of Week *
                       </label>
-                      <div style={{ display: "grid", "grid-template-columns": "repeat(4, 1fr)", gap: "0.5rem" }}>
-                        <For each={["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]}>
+                      <div
+                        style={{
+                          display: "grid",
+                          "grid-template-columns": "repeat(4, 1fr)",
+                          gap: "0.5rem",
+                        }}
+                      >
+                        <For
+                          each={[
+                            "MONDAY",
+                            "TUESDAY",
+                            "WEDNESDAY",
+                            "THURSDAY",
+                            "FRIDAY",
+                            "SATURDAY",
+                            "SUNDAY",
+                          ]}
+                        >
                           {(day) => (
-                            <label style={{ display: "flex", "align-items": "center", gap: "0.25rem" }}>
+                            <label
+                              style={{ display: "flex", "align-items": "center", gap: "0.25rem" }}
+                            >
                               <input
                                 type="checkbox"
                                 name="daysOfWeek"
@@ -1901,9 +1998,18 @@ export default function FamilyDetailPage() {
                       </div>
                     </div>
 
-                    <div style={{ display: "grid", "grid-template-columns": "1fr 1fr", gap: "1rem" }}>
+                    <div
+                      style={{ display: "grid", "grid-template-columns": "1fr 1fr", gap: "1rem" }}
+                    >
                       <div>
-                        <label style={{ display: "block", "margin-bottom": "0.5rem", "font-weight": "500", color: "#2d3748" }}>
+                        <label
+                          style={{
+                            display: "block",
+                            "margin-bottom": "0.5rem",
+                            "font-weight": "500",
+                            color: "#2d3748",
+                          }}
+                        >
                           Start Time *
                         </label>
                         <input
@@ -1920,7 +2026,14 @@ export default function FamilyDetailPage() {
                         />
                       </div>
                       <div>
-                        <label style={{ display: "block", "margin-bottom": "0.5rem", "font-weight": "500", color: "#2d3748" }}>
+                        <label
+                          style={{
+                            display: "block",
+                            "margin-bottom": "0.5rem",
+                            "font-weight": "500",
+                            color: "#2d3748",
+                          }}
+                        >
                           End Time *
                         </label>
                         <input
@@ -1939,7 +2052,14 @@ export default function FamilyDetailPage() {
                     </div>
 
                     <div>
-                      <label style={{ display: "block", "margin-bottom": "0.5rem", "font-weight": "500", color: "#2d3748" }}>
+                      <label
+                        style={{
+                          display: "block",
+                          "margin-bottom": "0.5rem",
+                          "font-weight": "500",
+                          color: "#2d3748",
+                        }}
+                      >
                         Hourly Rate (optional)
                       </label>
                       <input
@@ -1959,35 +2079,61 @@ export default function FamilyDetailPage() {
                     </div>
 
                     <div>
-                      <label style={{ display: "block", "margin-bottom": "0.5rem", "font-weight": "500", color: "#2d3748" }}>
+                      <label
+                        style={{
+                          display: "block",
+                          "margin-bottom": "0.5rem",
+                          "font-weight": "500",
+                          color: "#2d3748",
+                        }}
+                      >
                         Children
                       </label>
                       <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem" }}>
                         <For each={children()}>
                           {(child) => (
-                            <label style={{ display: "flex", "align-items": "center", gap: "0.5rem" }}>
+                            <label
+                              style={{ display: "flex", "align-items": "center", gap: "0.5rem" }}
+                            >
                               <input
                                 type="checkbox"
                                 name="childIds"
                                 value={child.id}
-                                checked={selectedSchedule()?.children.some((c: any) => c.id === child.id)}
+                                checked={selectedSchedule()?.children.some(
+                                  (c: any) => c.id === child.id,
+                                )}
                               />
-                              <span>{child.firstName} {child.lastName}</span>
+                              <span>
+                                {child.firstName} {child.lastName}
+                              </span>
                             </label>
                           )}
                         </For>
                       </div>
                     </div>
 
-                    <div style={{ display: "grid", "grid-template-columns": "1fr 1fr", gap: "1rem" }}>
+                    <div
+                      style={{ display: "grid", "grid-template-columns": "1fr 1fr", gap: "1rem" }}
+                    >
                       <div>
-                        <label style={{ display: "block", "margin-bottom": "0.5rem", "font-weight": "500", color: "#2d3748" }}>
+                        <label
+                          style={{
+                            display: "block",
+                            "margin-bottom": "0.5rem",
+                            "font-weight": "500",
+                            color: "#2d3748",
+                          }}
+                        >
                           Start Date *
                         </label>
                         <input
                           type="date"
                           name="startDate"
-                          value={selectedSchedule()?.startDate ? selectedSchedule()!.startDate.toString().split('T')[0] : ""}
+                          value={
+                            selectedSchedule()?.startDate
+                              ? selectedSchedule()!.startDate.toString().split("T")[0]
+                              : ""
+                          }
                           required
                           style={{
                             width: "100%",
@@ -1998,13 +2144,24 @@ export default function FamilyDetailPage() {
                         />
                       </div>
                       <div>
-                        <label style={{ display: "block", "margin-bottom": "0.5rem", "font-weight": "500", color: "#2d3748" }}>
+                        <label
+                          style={{
+                            display: "block",
+                            "margin-bottom": "0.5rem",
+                            "font-weight": "500",
+                            color: "#2d3748",
+                          }}
+                        >
                           End Date (optional)
                         </label>
                         <input
                           type="date"
                           name="endDate"
-                          value={selectedSchedule()?.endDate ? selectedSchedule()!.endDate!.toString().split('T')[0] : ""}
+                          value={
+                            selectedSchedule()?.endDate
+                              ? selectedSchedule()!.endDate!.toString().split("T")[0]
+                              : ""
+                          }
                           style={{
                             width: "100%",
                             padding: "0.5rem",
@@ -2028,7 +2185,14 @@ export default function FamilyDetailPage() {
                     </div>
 
                     <div>
-                      <label style={{ display: "block", "margin-bottom": "0.5rem", "font-weight": "500", color: "#2d3748" }}>
+                      <label
+                        style={{
+                          display: "block",
+                          "margin-bottom": "0.5rem",
+                          "font-weight": "500",
+                          color: "#2d3748",
+                        }}
+                      >
                         Notes
                       </label>
                       <textarea
@@ -2047,7 +2211,14 @@ export default function FamilyDetailPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", gap: "1rem", "justify-content": "flex-end", "margin-top": "1.5rem" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "1rem",
+                      "justify-content": "flex-end",
+                      "margin-top": "1.5rem",
+                    }}
+                  >
                     <button
                       type="button"
                       onClick={closeScheduleDialog}
@@ -2064,23 +2235,31 @@ export default function FamilyDetailPage() {
                     </button>
                     <button
                       type="submit"
-                      disabled={createScheduleSubmission.pending || updateScheduleSubmission.pending}
+                      disabled={
+                        createScheduleSubmission.pending || updateScheduleSubmission.pending
+                      }
                       style={{
                         padding: "0.5rem 1rem",
                         "background-color": "#805ad5",
                         color: "#fff",
                         border: "none",
                         "border-radius": "4px",
-                        cursor: createScheduleSubmission.pending || updateScheduleSubmission.pending ? "not-allowed" : "pointer",
-                        opacity: createScheduleSubmission.pending || updateScheduleSubmission.pending ? "0.6" : "1",
+                        cursor:
+                          createScheduleSubmission.pending || updateScheduleSubmission.pending
+                            ? "not-allowed"
+                            : "pointer",
+                        opacity:
+                          createScheduleSubmission.pending || updateScheduleSubmission.pending
+                            ? "0.6"
+                            : "1",
                         "font-weight": "600",
                       }}
                     >
                       {createScheduleSubmission.pending || updateScheduleSubmission.pending
                         ? "Saving..."
                         : showScheduleDialog() === "create"
-                        ? "Create Schedule"
-                        : "Save Changes"}
+                          ? "Create Schedule"
+                          : "Save Changes"}
                     </button>
                   </div>
                 </form>
@@ -2118,7 +2297,13 @@ export default function FamilyDetailPage() {
               padding: "2rem",
             }}
           >
-            <div style={{ display: "flex", "justify-content": "space-between", "margin-bottom": "1.5rem" }}>
+            <div
+              style={{
+                display: "flex",
+                "justify-content": "space-between",
+                "margin-bottom": "1.5rem",
+              }}
+            >
               <h2 style={{ color: "#2d3748", "font-size": "1.5rem", margin: 0 }}>
                 Generate Sessions
               </h2>
@@ -2156,7 +2341,14 @@ export default function FamilyDetailPage() {
 
               <div style={{ display: "grid", gap: "1rem" }}>
                 <div>
-                  <label style={{ display: "block", "margin-bottom": "0.5rem", "font-weight": "500", color: "#2d3748" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      "margin-bottom": "0.5rem",
+                      "font-weight": "500",
+                      color: "#2d3748",
+                    }}
+                  >
                     Start Date *
                   </label>
                   <input
@@ -2173,7 +2365,14 @@ export default function FamilyDetailPage() {
                 </div>
 
                 <div>
-                  <label style={{ display: "block", "margin-bottom": "0.5rem", "font-weight": "500", color: "#2d3748" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      "margin-bottom": "0.5rem",
+                      "font-weight": "500",
+                      color: "#2d3748",
+                    }}
+                  >
                     End Date *
                   </label>
                   <input
@@ -2190,7 +2389,14 @@ export default function FamilyDetailPage() {
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: "1rem", "justify-content": "flex-end", "margin-top": "1.5rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "1rem",
+                  "justify-content": "flex-end",
+                  "margin-top": "1.5rem",
+                }}
+              >
                 <button
                   type="button"
                   onClick={closeGenerateDialog}

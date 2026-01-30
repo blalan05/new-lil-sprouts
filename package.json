@@ -1,5 +1,6 @@
 {
   "name": "example-with-prisma",
+  "version": "1.0.7",
   "type": "module",
   "scripts": {
     "dev": "vinxi dev",
@@ -17,14 +18,14 @@
     "sharp": "^0.34.5"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.0.0",
-    "@prisma/client": "^7.0.0",
+    "@prisma/adapter-pg": "^7.3.0",
+    "@prisma/client": "^7.3.0",
     "@solidjs/router": "^0.15.4",
     "@solidjs/start": "^1.2.1",
-    "dotenv": "^16.4.5",
-    "pg": "^8.13.1",
-    "solid-js": "^1.9.10",
-    "vinxi": "^0.5.10"
+    "dotenv": "^16.6.1",
+    "pg": "^8.17.2",
+    "solid-js": "^1.9.11",
+    "vinxi": "^0.5.11"
   },
   "engines": {
     "node": ">=22"

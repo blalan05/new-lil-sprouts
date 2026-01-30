@@ -1,55 +1,51 @@
 import { query, action, reload, redirect } from "@solidjs/router";
 import { db } from "./db";
+import { startOfDayUTC, endOfDayUTC } from "./datetime";
 
 // Get care sessions for a date range
-export const getCareSessionsForRange = query(
-  async (startDate: Date, endDate: Date) => {
-    "use server";
-    const sessions = await db.careSession.findMany({
-      where: {
-        scheduledStart: {
-          gte: startDate,
-          lte: endDate,
+export const getCareSessionsForRange = query(async (startDate: Date, endDate: Date) => {
+  "use server";
+  const sessions = await db.careSession.findMany({
+    where: {
+      scheduledStart: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    include: {
+      family: {
+        select: {
+          id: true,
+          familyName: true,
         },
       },
-      include: {
-        family: {
-          select: {
-            id: true,
-            familyName: true,
-          },
-        },
-        service: {
-          select: {
-            id: true,
-            name: true,
-            code: true,
-          },
-        },
-        children: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
+      service: {
+        select: {
+          id: true,
+          name: true,
+          code: true,
         },
       },
-      orderBy: {
-        scheduledStart: "asc",
+      children: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+        },
       },
-    });
-    return sessions;
-  },
-  "care-sessions-range"
-);
+    },
+    orderBy: {
+      scheduledStart: "asc",
+    },
+  });
+  return sessions;
+}, "care-sessions-range");
 
 // Get sessions for a specific day
 export const getSessionsForDay = query(async (date: Date) => {
   "use server";
-  const startOfDay = new Date(date);
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(date);
-  endOfDay.setHours(23, 59, 59, 999);
+  const startOfDay = startOfDayUTC(date);
+  const endOfDay = endOfDayUTC(date);
 
   const sessions = await db.careSession.findMany({
     where: {
@@ -179,51 +175,48 @@ export const getCareSession = query(async (id: string) => {
 }, "care-session");
 
 // Get unavailabilities for a date range
-export const getUnavailabilitiesForRange = query(
-  async (startDate: Date, endDate: Date) => {
-    "use server";
-    const unavailabilities = await db.unavailability.findMany({
-      where: {
-        OR: [
-          {
-            // Unavailability starts within range
-            startDate: {
-              gte: startDate,
-              lte: endDate,
-            },
+export const getUnavailabilitiesForRange = query(async (startDate: Date, endDate: Date) => {
+  "use server";
+  const unavailabilities = await db.unavailability.findMany({
+    where: {
+      OR: [
+        {
+          // Unavailability starts within range
+          startDate: {
+            gte: startDate,
+            lte: endDate,
           },
-          {
-            // Unavailability ends within range
-            endDate: {
-              gte: startDate,
-              lte: endDate,
-            },
+        },
+        {
+          // Unavailability ends within range
+          endDate: {
+            gte: startDate,
+            lte: endDate,
           },
-          {
-            // Unavailability spans the entire range
-            AND: [
-              {
-                startDate: {
-                  lte: startDate,
-                },
+        },
+        {
+          // Unavailability spans the entire range
+          AND: [
+            {
+              startDate: {
+                lte: startDate,
               },
-              {
-                endDate: {
-                  gte: endDate,
-                },
+            },
+            {
+              endDate: {
+                gte: endDate,
               },
-            ],
-          },
-        ],
-      },
-      orderBy: {
-        startDate: "asc",
-      },
-    });
-    return unavailabilities;
-  },
-  "unavailabilities-range"
-);
+            },
+          ],
+        },
+      ],
+    },
+    orderBy: {
+      startDate: "asc",
+    },
+  });
+  return unavailabilities;
+}, "unavailabilities-range");
 
 // Update a care session (including meal counts)
 export const updateCareSession = action(async (formData: FormData) => {
@@ -270,11 +263,13 @@ export const editCareSessionFull = action(async (formData: FormData) => {
     const sessionId = String(formData.get("sessionId"));
     const scheduledStart = String(formData.get("scheduledStart"));
     const scheduledEnd = String(formData.get("scheduledEnd"));
-    const hourlyRate = formData.get("hourlyRate") ? parseFloat(String(formData.get("hourlyRate"))) : null;
+    const hourlyRate = formData.get("hourlyRate")
+      ? parseFloat(String(formData.get("hourlyRate")))
+      : null;
     const notes = String(formData.get("notes") || "");
     const isConfirmed = formData.get("isConfirmed") === "true";
     const status = String(formData.get("status"));
-    
+
     // Get child IDs from form
     const childIds: string[] = [];
     formData.forEach((value, key) => {
@@ -335,6 +330,3 @@ export const deleteCareSession = action(async (formData: FormData) => {
     return new Error(err instanceof Error ? err.message : "Failed to delete care session");
   }
 });
-
-
-

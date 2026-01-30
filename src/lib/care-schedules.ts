@@ -62,7 +62,7 @@ export const createCareSchedule = action(async (formData: FormData) => {
   try {
     const session = await getSession();
     const userId = session.data.userId;
-    
+
     const familyId = String(formData.get("familyId"));
     const name = String(formData.get("name"));
     const serviceId = String(formData.get("serviceId"));
@@ -169,14 +169,10 @@ export const createCareSchedule = action(async (formData: FormData) => {
 
     // For ONCE schedules, automatically create the session
     if (recurrence === "ONCE") {
-      const [startHour, startMinute] = startTime.split(":").map(Number);
-      const [endHour, endMinute] = endTime.split(":").map(Number);
-
-      const sessionStart = new Date(startDate);
-      sessionStart.setHours(startHour, startMinute, 0, 0);
-
-      const sessionEnd = new Date(startDate);
-      sessionEnd.setHours(endHour, endMinute, 0, 0);
+      // Combine date and time into datetime-local format and convert to UTC
+      // This ensures the time is interpreted in the user's timezone, not the server's
+      const sessionStart = datetimeLocalToUTC(`${startDate}T${startTime}`);
+      const sessionEnd = datetimeLocalToUTC(`${startDate}T${endTime}`);
 
       await db.careSession.create({
         data: {
@@ -307,11 +303,11 @@ export const deleteCareSchedule = action(async (formData: FormData) => {
   "use server";
   try {
     const id = String(formData.get("id"));
-    
+
     if (!id) {
       return new Error("Schedule ID is required");
     }
-    
+
     await db.careSchedule.delete({
       where: { id },
     });
@@ -362,15 +358,16 @@ export const generateSessionsFromSchedule = action(async (formData: FormData) =>
 
       // Check if this day is in the schedule
       if (schedule.daysOfWeek.includes(dayOfWeek)) {
-        // Parse start and end times
-        const [startHour, startMinute] = schedule.startTime.split(":").map(Number);
-        const [endHour, endMinute] = schedule.endTime.split(":").map(Number);
+        // Format the current date as YYYY-MM-DD
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+        const day = String(currentDate.getDate()).padStart(2, "0");
+        const dateString = `${year}-${month}-${day}`;
 
-        const scheduledStart = new Date(currentDate);
-        scheduledStart.setHours(startHour, startMinute, 0, 0);
-
-        const scheduledEnd = new Date(currentDate);
-        scheduledEnd.setHours(endHour, endMinute, 0, 0);
+        // Combine date and time into datetime-local format and convert to UTC
+        // This ensures the time is interpreted in the user's timezone, not the server's
+        const scheduledStart = datetimeLocalToUTC(`${dateString}T${schedule.startTime}`);
+        const scheduledEnd = datetimeLocalToUTC(`${dateString}T${schedule.endTime}`);
 
         // Check if session already exists for this date
         const existingSession = await db.careSession.findFirst({
@@ -386,7 +383,7 @@ export const generateSessionsFromSchedule = action(async (formData: FormData) =>
           if (!sessionHourlyRate && schedule.service) {
             sessionHourlyRate = await calculateServiceRate(
               schedule.service.id,
-              schedule.children.length
+              schedule.children.length,
             );
           }
 
