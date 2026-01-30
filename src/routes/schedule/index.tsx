@@ -10,6 +10,10 @@ import ClientTime from "~/components/ClientTime";
 
 export const route = {
   preload() {
+    // Only preload on client-side to prevent server-side date serialization issues
+    if (typeof window === "undefined") {
+      return;
+    }
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);

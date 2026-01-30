@@ -19,30 +19,34 @@ interface ClientTimeProps {
 }
 
 export default function ClientTime(props: ClientTimeProps) {
-  const [isClient, setIsClient] = createSignal(typeof window !== "undefined");
   const [formattedTime, setFormattedTime] = createSignal("");
+  const [mounted, setMounted] = createSignal(false);
 
   onMount(() => {
-    // Ensure we're marked as client-side after mount
-    setIsClient(true);
+    // Only format after mount - this ensures we're definitely client-side
+    setMounted(true);
     // Format immediately on mount
     if (props.date) {
-      setFormattedTime(formatTimeLocal(props.date));
+      // Ensure date is properly parsed as UTC
+      const date = ensureDate(props.date);
+      setFormattedTime(formatTimeLocal(date));
     }
   });
 
   createEffect(() => {
-    // Only format on client-side
-    if (isClient() && props.date) {
-      setFormattedTime(formatTimeLocal(props.date));
+    // Only format after mount (client-side only)
+    if (mounted() && props.date) {
+      // Ensure date is properly parsed as UTC
+      const date = ensureDate(props.date);
+      setFormattedTime(formatTimeLocal(date));
     }
   });
 
   // Return empty during SSR, show formatted time on client
-  // Use Show to ensure we only render on client-side
+  // Use Show to ensure we only render on the client
   return (
     <Show
-      when={isClient()}
+      when={mounted()}
       fallback={<span class={props.class} style={props.style}>{"\u00A0"}</span>}
     >
       <span class={props.class} style={props.style}>
