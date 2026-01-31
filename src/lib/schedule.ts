@@ -38,7 +38,36 @@ export const getCareSessionsForRange = query(async (startDate: Date, endDate: Da
       scheduledStart: "asc",
     },
   });
-  return sessions;
+  
+  // Convert all Date objects to ISO strings to ensure proper UTC serialization
+  // This prevents timezone issues during client-server data transfer
+  return sessions.map(session => ({
+    ...session,
+    scheduledStart: session.scheduledStart instanceof Date 
+      ? session.scheduledStart.toISOString() 
+      : session.scheduledStart,
+    scheduledEnd: session.scheduledEnd instanceof Date 
+      ? session.scheduledEnd.toISOString() 
+      : session.scheduledEnd,
+    actualStart: session.actualStart instanceof Date 
+      ? session.actualStart.toISOString() 
+      : session.actualStart || null,
+    actualEnd: session.actualEnd instanceof Date 
+      ? session.actualEnd.toISOString() 
+      : session.actualEnd || null,
+    dropOffTime: session.dropOffTime instanceof Date 
+      ? session.dropOffTime.toISOString() 
+      : session.dropOffTime || null,
+    pickUpTime: session.pickUpTime instanceof Date 
+      ? session.pickUpTime.toISOString() 
+      : session.pickUpTime || null,
+    createdAt: session.createdAt instanceof Date 
+      ? session.createdAt.toISOString() 
+      : session.createdAt,
+    updatedAt: session.updatedAt instanceof Date 
+      ? session.updatedAt.toISOString() 
+      : session.updatedAt,
+  }));
 }, "care-sessions-range");
 
 // Get sessions for a specific day

@@ -9,20 +9,7 @@ import { formatTimeLocal, ensureDate, isSameDay } from "~/lib/datetime";
 import ClientTime from "~/components/ClientTime";
 
 export const route = {
-  preload() {
-    // Only preload on client-side to prevent server-side date serialization issues
-    if (typeof window === "undefined") {
-      return;
-    }
-    const today = new Date();
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
-    getCareSessionsForRange(startOfMonth, endOfMonth);
-    getUnavailabilitiesForRange(startOfMonth, endOfMonth);
-    getUpcomingUnavailabilities();
-    getFamilies();
-    getServices();
-  },
+  // Remove preload entirely - let the component handle data fetching client-side only
   info: {
     ssr: false, // Disable SSR to prevent timezone mismatch between server and client
   },
@@ -89,30 +76,8 @@ export default function SchedulePage() {
 
   // Use createResource which properly tracks reactive dependencies
   const [sessions] = createResource(dateRangeSource, async (source) => {
-    const rawSessions = await getCareSessionsForRange(source.start, source.end);
-    // Ensure all dates are properly serialized as ISO strings to avoid timezone issues
-    // This prevents Date objects from being incorrectly interpreted during serialization
-    return rawSessions.map(session => ({
-      ...session,
-      scheduledStart: session.scheduledStart instanceof Date 
-        ? session.scheduledStart.toISOString() 
-        : session.scheduledStart,
-      scheduledEnd: session.scheduledEnd instanceof Date 
-        ? session.scheduledEnd.toISOString() 
-        : session.scheduledEnd,
-      actualStart: session.actualStart instanceof Date 
-        ? session.actualStart.toISOString() 
-        : session.actualStart || null,
-      actualEnd: session.actualEnd instanceof Date 
-        ? session.actualEnd.toISOString() 
-        : session.actualEnd || null,
-      dropOffTime: session.dropOffTime instanceof Date 
-        ? session.dropOffTime.toISOString() 
-        : session.dropOffTime || null,
-      pickUpTime: session.pickUpTime instanceof Date 
-        ? session.pickUpTime.toISOString() 
-        : session.pickUpTime || null,
-    }));
+    // Data is already serialized as ISO strings in getCareSessionsForRange
+    return getCareSessionsForRange(source.start, source.end);
   });
 
   const [unavailabilities] = createResource(dateRangeSource, async (source) => {
