@@ -61,6 +61,56 @@ async function fixTimezoneOffset(offsetHours) {
   const client = await pool.connect();
   
   try {
+    // First, check what tables exist (for debugging)
+    console.log("📋 Checking database tables...");
+    const tablesResult = await client.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_type = 'BASE TABLE'
+      ORDER BY table_name
+    `);
+    console.log(`   Found ${tablesResult.rows.length} tables:`);
+    tablesResult.rows.forEach(row => {
+      console.log(`   - ${row.table_name}`);
+    });
+    console.log();
+
+    // Check if CareSession table exists (case-sensitive)
+    const tableExists = tablesResult.rows.some(row => row.table_name === 'CareSession');
+    if (!tableExists) {
+      // Try lowercase version
+      const lowerExists = tablesResult.rows.some(row => row.table_name === 'caresession');
+      if (lowerExists) {
+        console.log("⚠️  Found 'caresession' (lowercase) instead of 'CareSession'");
+        console.log("   Using lowercase table name...\n");
+        // Use lowercase for queries
+        const countResult = await client.query('SELECT COUNT(*) as count FROM caresession');
+        const sessionCount = parseInt(countResult.rows[0].count);
+        console.log(`Found ${sessionCount} care sessions to process\n`);
+
+        const intervalHours = Math.abs(offsetHours);
+        const intervalDirection = offsetHours >= 0 ? '+' : '-';
+        
+        const updateQuery = `
+          UPDATE caresession
+          SET 
+            "scheduledStart" = "scheduledStart" ${intervalDirection} INTERVAL '${intervalHours} hours',
+            "scheduledEnd" = "scheduledEnd" ${intervalDirection} INTERVAL '${intervalHours} hours'
+        `;
+
+        console.log(`Executing update query...`);
+        const result = await client.query(updateQuery);
+        
+        console.log(`\n✅ Done!`);
+        console.log(`   Updated: ${result.rowCount} sessions`);
+        console.log(`   Added ${offsetHours} hours to all scheduledStart and scheduledEnd times`);
+        return;
+      } else {
+        throw new Error(`Table "CareSession" not found. Available tables: ${tablesResult.rows.map(r => r.table_name).join(', ')}`);
+      }
+    }
+
     // Get count of sessions
     const countResult = await client.query('SELECT COUNT(*) as count FROM "CareSession"');
     const sessionCount = parseInt(countResult.rows[0].count);
