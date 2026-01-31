@@ -26,23 +26,34 @@ const __dirname = dirname(__filename);
 // Load environment variables
 config({ path: resolve(__dirname, "..", ".env") });
 
-const dbUrl = process.env.DATABASE_URL;
+let dbUrl = process.env.DATABASE_URL;
 if (!dbUrl) {
   console.error("❌ DATABASE_URL environment variable is not set");
   process.exit(1);
 }
 
-// Configure SSL - PostgreSQL production databases typically require SSL
-// Enable SSL if DATABASE_URL has SSL parameters, or if in production environment
-const hasSSLParams = dbUrl.includes('sslcert=') || dbUrl.includes('sslrootcert=') || dbUrl.includes('sslmode=');
-const isProduction = process.env.NODE_ENV === 'production';
+// Ensure SSL is enabled in the connection string
+// Remove any sslmode=disable and ensure sslmode=require
+if (dbUrl.includes('sslmode=disable')) {
+  dbUrl = dbUrl.replace(/sslmode=disable/gi, 'sslmode=require');
+  console.log("⚠️  Removed sslmode=disable from DATABASE_URL, enabling SSL");
+} else if (!dbUrl.includes('sslmode=')) {
+  // Add sslmode=require if not present
+  dbUrl += (dbUrl.includes('?') ? '&' : '?') + 'sslmode=require';
+  console.log("⚠️  Added sslmode=require to DATABASE_URL");
+}
+
+// Configure SSL - always enable SSL for production databases
+// The database requires SSL, so we need to enable it
+const sslConfig = {
+  rejectUnauthorized: false, // Accept self-signed certificates
+};
+
+console.log("🔒 SSL enabled for database connection");
 
 const pool = new Pool({ 
   connectionString: dbUrl,
-  // Enable SSL if URL has SSL params OR if we're in production (most production DBs require SSL)
-  ssl: hasSSLParams || isProduction ? {
-    rejectUnauthorized: false, // Accept self-signed certificates
-  } : false
+  ssl: sslConfig  // Always enable SSL for production database
 });
 
 async function fixTimezoneOffset(offsetHours) {
