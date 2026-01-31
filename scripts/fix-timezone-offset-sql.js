@@ -215,35 +215,43 @@ if (dbUrl.includes('sslcert=')) {
   }
 }
 
-// Remove sslmode from connection string - we'll control SSL via the config object
-// Keep sslcert in the URL (like db.ts does) - the certificate path helps with connection
-// but we'll use rejectUnauthorized: false to not validate it
-if (resolvedDbUrl.includes('sslmode=')) {
-  resolvedDbUrl = resolvedDbUrl.replace(/[?&]sslmode=[^&]*/gi, '');
-  console.log("⚠️  Removed sslmode from DATABASE_URL (will use SSL config object instead)");
-}
-// Clean up any double ? or trailing &
-resolvedDbUrl = resolvedDbUrl.replace(/\?&/g, '?').replace(/[?&]$/, '');
+// Remove ALL SSL-related parameters from connection string
+// The pg library reads these from the URL and they can override our config object
+// We'll handle SSL purely through the Pool config object
+const sslParamsToRemove = ['sslmode', 'sslcert', 'sslrootcert', 'sslkey', 'ssl'];
+let cleanedDbUrl = resolvedDbUrl;
+let hadSslParams = false;
 
-// Configure SSL - match db.ts approach: enable SSL with rejectUnauthorized: false
-// This allows the certificate to be used but doesn't validate the chain
-const sslConfig = resolvedDbUrl.includes('sslcert=') ? {
+for (const param of sslParamsToRemove) {
+  if (cleanedDbUrl.includes(`${param}=`)) {
+    cleanedDbUrl = cleanedDbUrl.replace(new RegExp(`[?&]${param}=[^&]*`, 'gi'), '');
+    hadSslParams = true;
+  }
+}
+
+// Clean up any double ? or trailing &
+cleanedDbUrl = cleanedDbUrl.replace(/\?&/g, '?').replace(/[?&]$/, '');
+
+if (hadSslParams) {
+  console.log("⚠️  Removed SSL parameters from DATABASE_URL (will use SSL config object instead)");
+}
+
+// Configure SSL - always enable SSL for production databases
+// Use rejectUnauthorized: false to accept self-signed certificates
+// This MUST be set in the Pool config, not the connection string
+const sslConfig = {
   rejectUnauthorized: false, // Accept self-signed certificates (don't validate cert chain)
-} : false; // No SSL if no certificate specified
+};
 
 console.log("🔒 SSL configuration:");
-if (sslConfig) {
-  console.log("   SSL enabled (accepting self-signed certificates)");
-  if (sslCertPath) {
-    console.log(`   Certificate file: ${sslCertPath}`);
-  }
-} else {
-  console.log("   SSL disabled (no certificate in connection string)");
+console.log("   SSL enabled (accepting self-signed certificates)");
+if (sslCertPath) {
+  console.log(`   Certificate file found: ${sslCertPath} (not needed with rejectUnauthorized: false)`);
 }
 
 const pool = new Pool({ 
-  connectionString: resolvedDbUrl,  // Use resolved URL with certificate path
-  ssl: sslConfig  // Always enable SSL, accept self-signed certs
+  connectionString: cleanedDbUrl,  // Use cleaned URL without SSL params
+  ssl: sslConfig  // Always enable SSL, accept self-signed certs via config object
 });
 
 async function fixTimezoneOffset(offsetHours) {
