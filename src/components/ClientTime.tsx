@@ -27,26 +27,20 @@ export default function ClientTime(props: ClientTimeProps) {
     setMounted(true);
     // Format immediately on mount
     if (props.date) {
-      // Ensure date is properly parsed as UTC
-      // If it's a string, parse it explicitly as UTC ISO string
-      let date: Date;
-      if (typeof props.date === "string") {
-        // Parse ISO string explicitly - this ensures UTC interpretation
-        date = new Date(props.date);
-      } else {
-        date = ensureDate(props.date);
+      // Parse the date - if it's a string (ISO format), new Date() will parse it as UTC
+      // If it's already a Date object, use it directly
+      const date = typeof props.date === "string" 
+        ? new Date(props.date)  // ISO strings like "2026-01-05T06:35:00.000Z" parse as UTC
+        : ensureDate(props.date);
+      
+      // Verify the date was parsed correctly
+      if (isNaN(date.getTime())) {
+        console.error("[ClientTime] Invalid date:", props.date);
+        setFormattedTime("");
+        return;
       }
       
-      // Debug: Log the date to see what we're working with
-      if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
-        console.log("[ClientTime] Formatting date:", {
-          original: props.date,
-          parsed: date,
-          iso: date.toISOString(),
-          local: formatTimeLocal(date),
-        });
-      }
-      
+      // Format using the browser's local timezone
       setFormattedTime(formatTimeLocal(date));
     }
   });
@@ -54,15 +48,13 @@ export default function ClientTime(props: ClientTimeProps) {
   createEffect(() => {
     // Only format after mount (client-side only)
     if (mounted() && props.date) {
-      // Ensure date is properly parsed as UTC
-      let date: Date;
-      if (typeof props.date === "string") {
-        // Parse ISO string explicitly - this ensures UTC interpretation
-        date = new Date(props.date);
-      } else {
-        date = ensureDate(props.date);
+      const date = typeof props.date === "string" 
+        ? new Date(props.date)
+        : ensureDate(props.date);
+      
+      if (!isNaN(date.getTime())) {
+        setFormattedTime(formatTimeLocal(date));
       }
-      setFormattedTime(formatTimeLocal(date));
     }
   });
 

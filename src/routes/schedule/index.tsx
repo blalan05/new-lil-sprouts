@@ -1569,9 +1569,7 @@ function MonthView(props: {
                             opacity: isConfirmed ? 1 : 0.7,
                             "font-weight": isConfirmed ? "600" : "400",
                           }}
-                          title={`${session.family.familyName} - ${formatTimeLocal(
-                            ensureDate(session.scheduledStart),
-                          )}${isConfirmed ? " ✓ Confirmed" : isRecurring ? " (Planned)" : ""}`}
+                          title={`${session.family.familyName}${isConfirmed ? " ✓ Confirmed" : isRecurring ? " (Planned)" : ""}`}
                         >
                           {isConfirmed && "✓ "}
                           <ClientTime date={session.scheduledStart} /> - {session.family.familyName}
