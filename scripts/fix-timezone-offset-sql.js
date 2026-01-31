@@ -32,28 +32,26 @@ if (!dbUrl) {
   process.exit(1);
 }
 
-// Ensure SSL is enabled in the connection string
-// Remove any sslmode=disable and ensure sslmode=require
-if (dbUrl.includes('sslmode=disable')) {
-  dbUrl = dbUrl.replace(/sslmode=disable/gi, 'sslmode=require');
-  console.log("⚠️  Removed sslmode=disable from DATABASE_URL, enabling SSL");
-} else if (!dbUrl.includes('sslmode=')) {
-  // Add sslmode=require if not present
-  dbUrl += (dbUrl.includes('?') ? '&' : '?') + 'sslmode=require';
-  console.log("⚠️  Added sslmode=require to DATABASE_URL");
+// Remove sslmode from connection string - we'll control SSL via the config object
+// This prevents connection string SSL settings from overriding our config
+if (dbUrl.includes('sslmode=')) {
+  dbUrl = dbUrl.replace(/[?&]sslmode=[^&]*/gi, '');
+  // Clean up any double ? or trailing &
+  dbUrl = dbUrl.replace(/\?&/g, '?').replace(/[?&]$/, '');
+  console.log("⚠️  Removed sslmode from DATABASE_URL (will use SSL config object instead)");
 }
 
 // Configure SSL - always enable SSL for production databases
-// The database requires SSL, so we need to enable it
+// Use rejectUnauthorized: false to accept self-signed certificates
 const sslConfig = {
   rejectUnauthorized: false, // Accept self-signed certificates
 };
 
-console.log("🔒 SSL enabled for database connection");
+console.log("🔒 SSL enabled for database connection (accepting self-signed certificates)");
 
 const pool = new Pool({ 
   connectionString: dbUrl,
-  ssl: sslConfig  // Always enable SSL for production database
+  ssl: sslConfig  // Always enable SSL, accept self-signed certs
 });
 
 async function fixTimezoneOffset(offsetHours) {
