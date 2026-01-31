@@ -12,13 +12,55 @@
  * So we need to ADD 6 hours to fix them.
  */
 
-import { PrismaClient } from "../src/generated/prisma-client/client.js";
+import { resolve } from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { config } from "dotenv";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 // Load environment variables
-config();
+config({ path: resolve(__dirname, "..", ".env") });
+
+// Import Prisma Client - try multiple strategies
+let PrismaClient;
+let lastError = null;
+
+// Strategy 1: Try @prisma/client (standard, should work if Prisma is installed)
+try {
+  const module = await import("@prisma/client");
+  PrismaClient = module.PrismaClient;
+  console.log("✅ Using Prisma Client from @prisma/client");
+} catch (error) {
+  lastError = error;
+  // Strategy 2: Try custom generated path with .js extension
+  try {
+    const module = await import("../src/generated/prisma-client/client.js");
+    PrismaClient = module.PrismaClient;
+    console.log("✅ Using Prisma Client from generated path (.js)");
+  } catch (error2) {
+    lastError = error2;
+    // Strategy 3: Try custom generated path with .ts extension
+    try {
+      const module = await import("../src/generated/prisma-client/client.ts");
+      PrismaClient = module.PrismaClient;
+      console.log("✅ Using Prisma Client from generated path (.ts)");
+    } catch (error3) {
+      lastError = error3;
+      console.error("❌ Could not import Prisma Client");
+      console.error("   Tried @prisma/client, .js, and .ts paths");
+      console.error("   Last error:", lastError?.message);
+      console.error("\n   Ensure Prisma client is generated:");
+      console.error("   Run: pnpm prisma:generate");
+      console.error("   Or: prisma generate");
+      console.error("\n   In production, ensure Prisma client is generated during build.");
+      process.exit(1);
+    }
+  }
+}
 
 const dbUrl = process.env.DATABASE_URL;
 if (!dbUrl) {
@@ -28,13 +70,16 @@ if (!dbUrl) {
 
 const pool = new Pool({ 
   connectionString: dbUrl,
-  ssl: dbUrl.includes('sslcert=') ? {
+  ssl: dbUrl.includes('sslcert=') || dbUrl.includes('sslrootcert=') ? {
     rejectUnauthorized: false,
   } : false
 });
 
 const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient({ 
+  adapter,
+  log: ["error", "warn"],
+});
 
 async function fixTimezoneOffset(offsetHours) {
   console.log(`\n🔧 Fixing timezone offset: ${offsetHours} hours`);
@@ -101,6 +146,7 @@ if (offsetHours === null || isNaN(offsetHours)) {
 // Confirm before proceeding
 console.log("\n⚠️  WARNING: This will modify all care session times in the database!");
 console.log(`   Timezone offset: ${offsetHours} hours`);
+console.log(`   This will ADD ${offsetHours} hours to all scheduledStart and scheduledEnd times`);
 console.log("\n   Press Ctrl+C to cancel, or wait 5 seconds to continue...\n");
 
 setTimeout(async () => {
