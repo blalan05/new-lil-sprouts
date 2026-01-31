@@ -19,6 +19,7 @@ import { config } from "dotenv";
 import { resolve } from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import { existsSync } from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -171,25 +172,78 @@ if (targetDbName) {
   console.log(`   (To override, use: node scripts/fix-timezone-offset-sql.js -6 overallvoyage)`);
 }
 
-// Remove sslmode from connection string - we'll control SSL via the config object
+// Handle SSL certificate path from DATABASE_URL (like db.ts does)
+let resolvedDbUrl = dbUrl;
+let sslCertPath = null;
+
+if (dbUrl.includes('sslcert=')) {
+  const certPathMatch = dbUrl.match(/sslcert=([^&]+)/);
+  if (certPathMatch) {
+    let certPath = decodeURIComponent(certPathMatch[1]);
+    const originalCertPath = certPath;
+    const cwd = process.cwd();
+    
+    console.log(`🔒 SSL certificate path from DATABASE_URL: ${originalCertPath}`);
+    
+    // Build list of paths to try
+    const pathsToTry = [];
+    if (certPath.startsWith("/")) {
+      // Absolute path - try as-is
+      pathsToTry.push(certPath);
+    } else {
+      // Relative path - resolve from current working directory
+      pathsToTry.push(resolve(cwd, certPath));
+      pathsToTry.push(resolve(__dirname, "..", certPath)); // From project root
+    }
+    
+    // Try each path
+    for (const testPath of pathsToTry) {
+      if (existsSync(testPath)) {
+        console.log(`✅ SSL certificate found at: ${testPath}`);
+        sslCertPath = testPath;
+        const urlPath = testPath.replace(/\\/g, "/");
+        resolvedDbUrl = dbUrl.replace(/sslcert=[^&]+/, `sslcert=${encodeURIComponent(urlPath)}`);
+        break;
+      }
+    }
+    
+    if (!sslCertPath) {
+      console.warn(`⚠️  SSL certificate not found at: ${originalCertPath}`);
+      console.warn(`   Tried: ${pathsToTry.join(", ")}`);
+      console.warn(`   Will attempt connection without certificate file (using rejectUnauthorized: false)`);
+    }
+  }
+}
+
+// Remove sslmode and sslcert from connection string - we'll control SSL via the config object
 // This prevents connection string SSL settings from overriding our config
-if (dbUrl.includes('sslmode=')) {
-  dbUrl = dbUrl.replace(/[?&]sslmode=[^&]*/gi, '');
-  // Clean up any double ? or trailing &
-  dbUrl = dbUrl.replace(/\?&/g, '?').replace(/[?&]$/, '');
+// Since we're using rejectUnauthorized: false, we don't need the certificate file
+if (resolvedDbUrl.includes('sslmode=')) {
+  resolvedDbUrl = resolvedDbUrl.replace(/[?&]sslmode=[^&]*/gi, '');
   console.log("⚠️  Removed sslmode from DATABASE_URL (will use SSL config object instead)");
 }
+if (resolvedDbUrl.includes('sslcert=')) {
+  resolvedDbUrl = resolvedDbUrl.replace(/[?&]sslcert=[^&]*/gi, '');
+  console.log("⚠️  Removed sslcert from DATABASE_URL (not needed with rejectUnauthorized: false)");
+}
+// Clean up any double ? or trailing &
+resolvedDbUrl = resolvedDbUrl.replace(/\?&/g, '?').replace(/[?&]$/, '');
 
 // Configure SSL - always enable SSL for production databases
 // Use rejectUnauthorized: false to accept self-signed certificates
 const sslConfig = {
-  rejectUnauthorized: false, // Accept self-signed certificates
+  rejectUnauthorized: false, // Accept self-signed certificates (don't validate cert chain)
 };
 
+// If we have a certificate file, we could add it, but rejectUnauthorized: false should be enough
+// The pg library will use the certificate if provided in the connection string
 console.log("🔒 SSL enabled for database connection (accepting self-signed certificates)");
+if (sslCertPath) {
+  console.log(`   Certificate file: ${sslCertPath}`);
+}
 
 const pool = new Pool({ 
-  connectionString: dbUrl,
+  connectionString: resolvedDbUrl,  // Use resolved URL with certificate path
   ssl: sslConfig  // Always enable SSL, accept self-signed certs
 });
 
