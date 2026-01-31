@@ -23,19 +23,8 @@ import { dirname } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Check if DATABASE_URL is already set in environment (takes precedence)
-if (process.env.DATABASE_URL && !process.argv.includes('--ignore-env')) {
-  console.log("⚠️  DATABASE_URL is already set in environment:");
-  try {
-    const url = new URL(process.env.DATABASE_URL);
-    console.log(`   Database: ${url.pathname.replace(/^\//, '')}`);
-    console.log(`   Host: ${url.hostname}`);
-    console.log(`   This will override any .env file values!`);
-    console.log(`   (Use --ignore-env flag to ignore environment variables)\n`);
-  } catch (e) {
-    // Ignore parse errors
-  }
-}
+// Store original DATABASE_URL from environment (if set)
+const originalEnvDbUrl = process.env.DATABASE_URL;
 
 // Allow specifying custom .env file path as 4th argument
 // Usage: node scripts/fix-timezone-offset-sql.js -6 overallvoyage /path/to/.env
@@ -53,25 +42,61 @@ const envPaths = customEnvPath
 
 let envLoaded = false;
 let loadedEnvPath = null;
+let envFileDbUrl = null;
 
+// First, try to load .env file WITHOUT overriding (to see what's in it)
 for (const envPath of envPaths) {
-  const result = config({ path: envPath, override: false }); // Don't override existing env vars
-  if (!result.error && result.parsed) {
-    console.log(`✅ Loaded .env from: ${envPath}`);
-    console.log(`   File exists and was parsed successfully`);
+  // Temporarily clear DATABASE_URL to read from file
+  const tempDbUrl = process.env.DATABASE_URL;
+  delete process.env.DATABASE_URL;
+  
+  const result = config({ path: envPath, override: true });
+  if (!result.error && result.parsed && process.env.DATABASE_URL) {
+    envFileDbUrl = process.env.DATABASE_URL;
     envLoaded = true;
     loadedEnvPath = envPath;
     break;
   }
+  
+  // Restore original if file didn't have it
+  if (!process.env.DATABASE_URL && tempDbUrl) {
+    process.env.DATABASE_URL = tempDbUrl;
+  }
 }
 
-if (!envLoaded) {
-  console.warn(`⚠️  Could not load .env file from any of these paths: ${envPaths.join(", ")}`);
-  console.warn(`   Current working directory: ${process.cwd()}`);
-  console.warn(`   Script directory: ${__dirname}`);
-  console.warn(`   Using environment variables only (if set)\n`);
+// Now force override with .env file values if we found one
+if (envLoaded && envFileDbUrl) {
+  // Force override - use .env file values
+  process.env.DATABASE_URL = envFileDbUrl;
+  console.log(`✅ Loaded .env from: ${loadedEnvPath}`);
+  console.log(`   File exists and was parsed successfully`);
+  
+  if (originalEnvDbUrl && originalEnvDbUrl !== envFileDbUrl) {
+    console.log(`⚠️  DATABASE_URL was set in environment but OVERRIDDEN with .env file value`);
+    try {
+      const origUrl = new URL(originalEnvDbUrl);
+      const newUrl = new URL(envFileDbUrl);
+      console.log(`   Environment had: ${origUrl.pathname.replace(/^\//, '')}`);
+      console.log(`   .env file has: ${newUrl.pathname.replace(/^\//, '')}`);
+      console.log(`   Using .env file value\n`);
+    } catch (e) {
+      // Ignore parse errors
+    }
+  } else {
+    console.log(`   Using DATABASE_URL from .env file\n`);
+  }
 } else {
-  console.log(`   Loaded .env file: ${loadedEnvPath}\n`);
+  if (originalEnvDbUrl) {
+    console.log(`⚠️  Could not load .env file, using DATABASE_URL from environment`);
+    console.log(`   Tried paths: ${envPaths.join(", ")}`);
+    console.log(`   Current working directory: ${process.cwd()}`);
+    console.log(`   Script directory: ${__dirname}\n`);
+  } else {
+    console.warn(`⚠️  Could not load .env file from any of these paths: ${envPaths.join(", ")}`);
+    console.warn(`   Current working directory: ${process.cwd()}`);
+    console.warn(`   Script directory: ${__dirname}`);
+    console.warn(`   DATABASE_URL not found in environment or .env file\n`);
+  }
 }
 
 let dbUrl = process.env.DATABASE_URL;
@@ -86,14 +111,21 @@ if (!dbUrl) {
   process.exit(1);
 }
 
-// Show where DATABASE_URL came from
-console.log("📋 DATABASE_URL source:");
-if (process.env.DATABASE_URL && !loadedEnvPath) {
-  console.log("   → From environment variable (not from .env file)");
-} else if (loadedEnvPath) {
-  console.log(`   → From .env file: ${loadedEnvPath}`);
-} else {
-  console.log("   → From environment variable");
+// Show the actual DATABASE_URL being used (safely)
+console.log("📋 DATABASE_URL being used:");
+try {
+  const url = new URL(process.env.DATABASE_URL);
+  console.log(`   Host: ${url.hostname}`);
+  console.log(`   Port: ${url.port || '5432'}`);
+  console.log(`   Username: ${url.username}`);
+  console.log(`   Database: ${url.pathname.replace(/^\//, '')}`);
+  if (loadedEnvPath) {
+    console.log(`   Source: .env file (${loadedEnvPath})`);
+  } else {
+    console.log(`   Source: environment variable`);
+  }
+} catch (e) {
+  console.log(`   Could not parse DATABASE_URL`);
 }
 console.log();
 
