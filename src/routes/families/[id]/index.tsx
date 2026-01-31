@@ -1863,6 +1863,7 @@ export default function FamilyDetailPage() {
                   }}
                 >
                   <input type="hidden" name="familyId" value={params.id} />
+                  <input type="hidden" name="timezoneOffset" value={new Date().getTimezoneOffset() * -1} />
                   <Show when={showScheduleDialog() === "edit"}>
                     <input type="hidden" name="id" value={selectedScheduleId()!} />
                   </Show>
@@ -2329,6 +2330,15 @@ export default function FamilyDetailPage() {
               action={generateSessionsFromSchedule}
               method="post"
               onSubmit={(e) => {
+                // Add timezone offset to form before submit
+                const form = e.currentTarget;
+                if (!form.querySelector('input[name="timezoneOffset"]')) {
+                  const offsetInput = document.createElement('input');
+                  offsetInput.type = 'hidden';
+                  offsetInput.name = 'timezoneOffset';
+                  offsetInput.value = String(new Date().getTimezoneOffset() * -1);
+                  form.appendChild(offsetInput);
+                }
                 setTimeout(() => {
                   if (!generateSessionsSubmission.pending) {
                     closeGenerateDialog();

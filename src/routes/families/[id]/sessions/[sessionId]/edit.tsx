@@ -68,6 +68,7 @@ export default function EditCareSession() {
         >
           <form action={editCareSessionFull} method="post">
             <input type="hidden" name="sessionId" value={params.sessionId} />
+            <input type="hidden" name="timezoneOffset" value={new Date().getTimezoneOffset() * -1} />
 
             {/* Scheduled Start Time */}
             <div style={{ "margin-bottom": "1.5rem" }}>

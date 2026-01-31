@@ -1509,6 +1509,7 @@ export default function Home() {
 
             <form action={createCareSchedule} method="post">
               <input type="hidden" name="recurrence" value="ONCE" />
+              <input type="hidden" name="timezoneOffset" value={new Date().getTimezoneOffset() * -1} />
 
               <div style={{ "margin-bottom": "1.5rem" }}>
                 <label

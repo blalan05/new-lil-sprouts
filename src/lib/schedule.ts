@@ -314,11 +314,17 @@ export const editCareSessionFull = action(async (formData: FormData) => {
     // Import datetime utility
     const { datetimeLocalToUTC } = await import("./datetime");
 
+    // Get timezone offset from form (in minutes, convert to hours for the function)
+    const timezoneOffsetMinutes = formData.get("timezoneOffset")
+      ? parseInt(String(formData.get("timezoneOffset")))
+      : undefined;
+    const timezoneOffsetHours = timezoneOffsetMinutes !== undefined ? timezoneOffsetMinutes / 60 : undefined;
+
     const updatedSession = await db.careSession.update({
       where: { id: sessionId },
       data: {
-        scheduledStart: datetimeLocalToUTC(scheduledStart),
-        scheduledEnd: datetimeLocalToUTC(scheduledEnd),
+        scheduledStart: datetimeLocalToUTC(scheduledStart, timezoneOffsetHours),
+        scheduledEnd: datetimeLocalToUTC(scheduledEnd, timezoneOffsetHours),
         hourlyRate,
         notes: notes || null,
         isConfirmed,

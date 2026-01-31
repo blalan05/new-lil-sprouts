@@ -106,6 +106,7 @@ export default function NewCareSchedule() {
           >
             <input type="hidden" name="familyId" value={params.id} />
             <input type="hidden" name="serviceId" value={serviceId()} />
+            <input type="hidden" name="timezoneOffset" value={new Date().getTimezoneOffset() * -1} />
 
             <fieldset
               style={{

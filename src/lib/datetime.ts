@@ -36,34 +36,40 @@ export function ensureDate(date: Date | string): Date {
  * datetime-local inputs return strings like "2024-01-15T14:30" (no timezone)
  * We interpret this as the user's LOCAL time and return a Date in UTC
  *
- * Example: User enters "2024-01-15T14:30" in PST (UTC-8)
+ * IMPORTANT: This function runs on the SERVER, so it uses the SERVER's timezone.
+ * To properly convert user's local time, we need the user's timezone offset.
+ *
+ * @param datetimeLocal - String in format "YYYY-MM-DDTHH:mm"
+ * @param userTimezoneOffset - Optional timezone offset in minutes (e.g., -360 for UTC-6)
+ *                            If not provided, uses server's timezone (may be incorrect!)
+ * @returns Date object in UTC
+ *
+ * Example: User enters "2024-01-15T14:30" in PST (UTC-8, offset -480 minutes)
  *   -> Returns Date object representing "2024-01-15T22:30:00.000Z"
  */
-export function datetimeLocalToUTC(datetimeLocal: string): Date {
+export function datetimeLocalToUTC(datetimeLocal: string, userTimezoneOffset?: number): Date {
   if (!datetimeLocal) {
     throw new Error("datetimeLocal string is required");
   }
-
-  // datetime-local format: "YYYY-MM-DDTHH:mm"
-  // The Date constructor with a string interprets it as LOCAL time when no timezone is specified
-  // But we need to be explicit about the conversion
 
   const [datePart, timePart] = datetimeLocal.split("T");
   const [year, month, day] = datePart.split("-").map(Number);
   const [hours, minutes] = timePart.split(":").map(Number);
 
-  // Create a Date object in the user's LOCAL timezone
-  // This uses the browser's/server's timezone offset
+  // If user timezone offset is provided, use it to convert properly
+  if (userTimezoneOffset !== undefined) {
+    // Create a Date object assuming UTC, then adjust by the offset
+    // This ensures we're converting from the user's timezone to UTC correctly
+    const utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, 0, 0));
+    // Subtract the offset to convert from user's local time to UTC
+    // Offset is in HOURS (e.g., -6 for UTC-6)
+    // (offset is negative for timezones behind UTC, so subtracting it adds hours)
+    return new Date(utcDate.getTime() - (userTimezoneOffset * 60 * 60 * 1000));
+  }
+
+  // Fallback: Use server's timezone (may be incorrect if server and user are in different timezones!)
+  // This is the old behavior - kept for backward compatibility
   const localDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
-
-  // JavaScript Date objects are ALWAYS stored internally as UTC milliseconds since epoch
-  // When we use new Date(year, month, day, hours, minutes), it:
-  // 1. Takes these as LOCAL time values
-  // 2. Converts to UTC internally based on the system's timezone
-  // 3. When sent to PostgreSQL with TIMESTAMPTZ, it preserves the UTC value
-
-  // So this actually IS returning UTC - the Date object's internal representation
-  // is UTC milliseconds since epoch
   return localDate;
 }
 

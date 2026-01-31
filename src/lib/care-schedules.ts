@@ -167,12 +167,18 @@ export const createCareSchedule = action(async (formData: FormData) => {
       },
     });
 
+    // Get timezone offset from form (in minutes, convert to hours for the function)
+    const timezoneOffsetMinutes = formData.get("timezoneOffset")
+      ? parseInt(String(formData.get("timezoneOffset")))
+      : undefined;
+    const timezoneOffsetHours = timezoneOffsetMinutes !== undefined ? timezoneOffsetMinutes / 60 : undefined;
+
     // For ONCE schedules, automatically create the session
     if (recurrence === "ONCE") {
       // Combine date and time into datetime-local format and convert to UTC
       // This ensures the time is interpreted in the user's timezone, not the server's
-      const sessionStart = datetimeLocalToUTC(`${startDate}T${startTime}`);
-      const sessionEnd = datetimeLocalToUTC(`${startDate}T${endTime}`);
+      const sessionStart = datetimeLocalToUTC(`${startDate}T${startTime}`, timezoneOffsetHours);
+      const sessionEnd = datetimeLocalToUTC(`${startDate}T${endTime}`, timezoneOffsetHours);
 
       await db.careSession.create({
         data: {
@@ -364,10 +370,16 @@ export const generateSessionsFromSchedule = action(async (formData: FormData) =>
         const day = String(currentDate.getDate()).padStart(2, "0");
         const dateString = `${year}-${month}-${day}`;
 
+        // Get timezone offset from form (in minutes, convert to hours for the function)
+        const timezoneOffsetMinutes = formData.get("timezoneOffset")
+          ? parseInt(String(formData.get("timezoneOffset")))
+          : undefined;
+        const timezoneOffsetHours = timezoneOffsetMinutes !== undefined ? timezoneOffsetMinutes / 60 : undefined;
+
         // Combine date and time into datetime-local format and convert to UTC
         // This ensures the time is interpreted in the user's timezone, not the server's
-        const scheduledStart = datetimeLocalToUTC(`${dateString}T${schedule.startTime}`);
-        const scheduledEnd = datetimeLocalToUTC(`${dateString}T${schedule.endTime}`);
+        const scheduledStart = datetimeLocalToUTC(`${dateString}T${schedule.startTime}`, timezoneOffsetHours);
+        const scheduledEnd = datetimeLocalToUTC(`${dateString}T${schedule.endTime}`, timezoneOffsetHours);
 
         // Check if session already exists for this date
         const existingSession = await db.careSession.findFirst({
