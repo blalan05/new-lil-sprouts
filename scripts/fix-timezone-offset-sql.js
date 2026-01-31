@@ -32,10 +32,16 @@ if (!dbUrl) {
   process.exit(1);
 }
 
+// Configure SSL - PostgreSQL production databases typically require SSL
+// Enable SSL if DATABASE_URL has SSL parameters, or if in production environment
+const hasSSLParams = dbUrl.includes('sslcert=') || dbUrl.includes('sslrootcert=') || dbUrl.includes('sslmode=');
+const isProduction = process.env.NODE_ENV === 'production';
+
 const pool = new Pool({ 
   connectionString: dbUrl,
-  ssl: dbUrl.includes('sslcert=') || dbUrl.includes('sslrootcert=') ? {
-    rejectUnauthorized: false,
+  // Enable SSL if URL has SSL params OR if we're in production (most production DBs require SSL)
+  ssl: hasSSLParams || isProduction ? {
+    rejectUnauthorized: false, // Accept self-signed certificates
   } : false
 });
 
