@@ -23,20 +23,44 @@ import { dirname } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Check if DATABASE_URL is already set in environment (takes precedence)
+if (process.env.DATABASE_URL && !process.argv.includes('--ignore-env')) {
+  console.log("⚠️  DATABASE_URL is already set in environment:");
+  try {
+    const url = new URL(process.env.DATABASE_URL);
+    console.log(`   Database: ${url.pathname.replace(/^\//, '')}`);
+    console.log(`   Host: ${url.hostname}`);
+    console.log(`   This will override any .env file values!`);
+    console.log(`   (Use --ignore-env flag to ignore environment variables)\n`);
+  } catch (e) {
+    // Ignore parse errors
+  }
+}
+
+// Allow specifying custom .env file path as 4th argument
+// Usage: node scripts/fix-timezone-offset-sql.js -6 overallvoyage /path/to/.env
+const customEnvPath = process.argv[4] || process.env.ENV_FILE_PATH;
+
 // Load environment variables from project root
 // Try multiple paths to be robust
-const envPaths = [
-  resolve(__dirname, "..", ".env"),  // From scripts/ folder, go up to root
-  resolve(process.cwd(), ".env"),     // From current working directory
-  ".env"                              // Relative to current directory
-];
+const envPaths = customEnvPath 
+  ? [resolve(customEnvPath)]  // Use custom path if provided
+  : [
+      resolve(__dirname, "..", ".env"),  // From scripts/ folder, go up to root
+      resolve(process.cwd(), ".env"),     // From current working directory
+      ".env"                              // Relative to current directory
+    ];
 
 let envLoaded = false;
+let loadedEnvPath = null;
+
 for (const envPath of envPaths) {
-  const result = config({ path: envPath });
-  if (!result.error) {
+  const result = config({ path: envPath, override: false }); // Don't override existing env vars
+  if (!result.error && result.parsed) {
     console.log(`✅ Loaded .env from: ${envPath}`);
+    console.log(`   File exists and was parsed successfully`);
     envLoaded = true;
+    loadedEnvPath = envPath;
     break;
   }
 }
@@ -45,13 +69,33 @@ if (!envLoaded) {
   console.warn(`⚠️  Could not load .env file from any of these paths: ${envPaths.join(", ")}`);
   console.warn(`   Current working directory: ${process.cwd()}`);
   console.warn(`   Script directory: ${__dirname}`);
+  console.warn(`   Using environment variables only (if set)\n`);
+} else {
+  console.log(`   Loaded .env file: ${loadedEnvPath}\n`);
 }
 
 let dbUrl = process.env.DATABASE_URL;
 if (!dbUrl) {
   console.error("❌ DATABASE_URL environment variable is not set");
+  console.error("   Checked:");
+  console.error(`   - Environment variables`);
+  if (loadedEnvPath) {
+    console.error(`   - .env file at: ${loadedEnvPath}`);
+  }
+  console.error("\n   Make sure DATABASE_URL is set in your .env file or environment.");
   process.exit(1);
 }
+
+// Show where DATABASE_URL came from
+console.log("📋 DATABASE_URL source:");
+if (process.env.DATABASE_URL && !loadedEnvPath) {
+  console.log("   → From environment variable (not from .env file)");
+} else if (loadedEnvPath) {
+  console.log(`   → From .env file: ${loadedEnvPath}`);
+} else {
+  console.log("   → From environment variable");
+}
+console.log();
 
 // Parse and display connection details (safely, without password)
 try {
@@ -126,9 +170,31 @@ async function fixTimezoneOffset(offsetHours) {
   try {
     // First, verify which database we're connected to
     const dbNameResult = await client.query('SELECT current_database() as db_name, current_schema() as schema_name');
-    console.log(`📊 Connected to database: ${dbNameResult.rows[0].db_name}`);
-    console.log(`📊 Current schema: ${dbNameResult.rows[0].schema_name}`);
+    const connectedDb = dbNameResult.rows[0].db_name;
+    const currentSchema = dbNameResult.rows[0].schema_name;
+    console.log(`📊 Connected to database: ${connectedDb}`);
+    console.log(`📊 Current schema: ${currentSchema}`);
     console.log();
+
+    // List all databases (to help identify if we're in the right one)
+    console.log("📋 Checking available databases on this server...");
+    try {
+      // Connect to postgres database to list all databases
+      const dbListResult = await client.query(`
+        SELECT datname 
+        FROM pg_database 
+        WHERE datistemplate = false 
+        ORDER BY datname
+      `);
+      console.log(`   Found ${dbListResult.rows.length} databases:`);
+      dbListResult.rows.forEach(row => {
+        const marker = row.datname === connectedDb ? ' ← (connected)' : '';
+        console.log(`   - ${row.datname}${marker}`);
+      });
+      console.log();
+    } catch (e) {
+      console.log(`   ⚠️  Could not list databases: ${e.message}`);
+    }
 
     // Check what schemas exist
     const schemasResult = await client.query(`
@@ -249,6 +315,7 @@ if (offsetHours === null || isNaN(offsetHours)) {
   console.error("❌ Please provide timezone offset in hours");
   console.error("   Example: node scripts/fix-timezone-offset-sql.js -6  (for UTC-6)");
   console.error("   Example: node scripts/fix-timezone-offset-sql.js -6 overallvoyage  (specify database name)");
+  console.error("   Example: node scripts/fix-timezone-offset-sql.js -6 overallvoyage /path/to/.env  (specify .env file)");
   console.error("   Example: node scripts/fix-timezone-offset-sql.js -8  (for UTC-8)");
   process.exit(1);
 }
