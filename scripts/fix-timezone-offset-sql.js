@@ -23,8 +23,29 @@ import { dirname } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load environment variables
-config({ path: resolve(__dirname, "..", ".env") });
+// Load environment variables from project root
+// Try multiple paths to be robust
+const envPaths = [
+  resolve(__dirname, "..", ".env"),  // From scripts/ folder, go up to root
+  resolve(process.cwd(), ".env"),     // From current working directory
+  ".env"                              // Relative to current directory
+];
+
+let envLoaded = false;
+for (const envPath of envPaths) {
+  const result = config({ path: envPath });
+  if (!result.error) {
+    console.log(`✅ Loaded .env from: ${envPath}`);
+    envLoaded = true;
+    break;
+  }
+}
+
+if (!envLoaded) {
+  console.warn(`⚠️  Could not load .env file from any of these paths: ${envPaths.join(", ")}`);
+  console.warn(`   Current working directory: ${process.cwd()}`);
+  console.warn(`   Script directory: ${__dirname}`);
+}
 
 let dbUrl = process.env.DATABASE_URL;
 if (!dbUrl) {
@@ -103,8 +124,24 @@ async function fixTimezoneOffset(offsetHours) {
   const client = await pool.connect();
   
   try {
-    // First, check what tables exist (for debugging)
-    console.log("📋 Checking database tables...");
+    // First, verify which database we're connected to
+    const dbNameResult = await client.query('SELECT current_database() as db_name, current_schema() as schema_name');
+    console.log(`📊 Connected to database: ${dbNameResult.rows[0].db_name}`);
+    console.log(`📊 Current schema: ${dbNameResult.rows[0].schema_name}`);
+    console.log();
+
+    // Check what schemas exist
+    const schemasResult = await client.query(`
+      SELECT schema_name 
+      FROM information_schema.schemata 
+      WHERE schema_name NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+      ORDER BY schema_name
+    `);
+    console.log(`📋 Available schemas: ${schemasResult.rows.map(r => r.schema_name).join(', ')}`);
+    console.log();
+
+    // Check what tables exist in public schema (for debugging)
+    console.log("📋 Checking tables in 'public' schema...");
     const tablesResult = await client.query(`
       SELECT table_name 
       FROM information_schema.tables 
@@ -112,10 +149,31 @@ async function fixTimezoneOffset(offsetHours) {
       AND table_type = 'BASE TABLE'
       ORDER BY table_name
     `);
-    console.log(`   Found ${tablesResult.rows.length} tables:`);
-    tablesResult.rows.forEach(row => {
-      console.log(`   - ${row.table_name}`);
-    });
+    console.log(`   Found ${tablesResult.rows.length} tables in 'public' schema:`);
+    if (tablesResult.rows.length > 0) {
+      tablesResult.rows.forEach(row => {
+        console.log(`   - ${row.table_name}`);
+      });
+    } else {
+      console.log("   ⚠️  No tables found in 'public' schema!");
+      // Check other schemas
+      for (const schemaRow of schemasResult.rows) {
+        const schemaName = schemaRow.schema_name;
+        const schemaTablesResult = await client.query(`
+          SELECT table_name 
+          FROM information_schema.tables 
+          WHERE table_schema = $1 
+          AND table_type = 'BASE TABLE'
+          ORDER BY table_name
+        `, [schemaName]);
+        if (schemaTablesResult.rows.length > 0) {
+          console.log(`   📋 Found ${schemaTablesResult.rows.length} tables in '${schemaName}' schema:`);
+          schemaTablesResult.rows.forEach(row => {
+            console.log(`      - ${row.table_name}`);
+          });
+        }
+      }
+    }
     console.log();
 
     // Check if CareSession table exists (case-sensitive)
