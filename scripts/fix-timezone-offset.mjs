@@ -4,8 +4,8 @@
  * This script adjusts scheduledStart and scheduledEnd times by adding the timezone offset
  * to convert from incorrectly stored UTC times to correct UTC times.
  * 
- * Usage: node scripts/fix-timezone-offset.js [timezone-offset-hours]
- * Example: node scripts/fix-timezone-offset.js -6  (for UTC-6, Central Time)
+ * Usage: node scripts/fix-timezone-offset.mjs [timezone-offset-hours]
+ * Example: node scripts/fix-timezone-offset.mjs -6  (for UTC-6, Central Time)
  * 
  * IMPORTANT: This assumes all times were stored incorrectly by the server's timezone.
  * If your server is in UTC and you're in UTC-6, times were stored 6 hours early.
@@ -18,29 +18,30 @@ import { dirname } from "path";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { config } from "dotenv";
+import { createRequire } from "module";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const require = createRequire(import.meta.url);
 
 // Load environment variables
 config({ path: resolve(__dirname, "..", ".env") });
 
-// Import Prisma Client - use the custom generated path from schema.prisma
-// The schema outputs to src/generated/prisma-client, so we need to import from there
-// But we need to use .js extension for Node.js (even though files are .ts)
+// Import Prisma Client using require (works with TypeScript files via ts-node/tsx or compiled JS)
 let PrismaClient;
 try {
-  // Try the custom generated path with .js extension (Node.js will resolve .ts files)
-  const module = await import("../src/generated/prisma-client/client.js");
-  PrismaClient = module.PrismaClient;
+  // Use require to import the generated Prisma client
+  // This works because Node.js can resolve the path even if it's TypeScript
+  // (assuming the project is set up to handle TypeScript imports)
+  const prismaModule = require("../src/generated/prisma-client/client.ts");
+  PrismaClient = prismaModule.PrismaClient;
   console.log("✅ Using Prisma Client from generated path");
 } catch (error) {
   console.error("❌ Could not import Prisma Client");
   console.error("   Error:", error.message);
-  console.error("\n   Prisma client needs to be generated to the custom output path.");
+  console.error("\n   Prisma client needs to be generated.");
   console.error("   Run: pnpm prisma:generate");
   console.error("   Or: prisma generate");
-  console.error("\n   This will generate to: src/generated/prisma-client");
   process.exit(1);
 }
 
@@ -120,8 +121,8 @@ const offsetHours = process.argv[2] ? parseInt(process.argv[2]) : null;
 
 if (offsetHours === null || isNaN(offsetHours)) {
   console.error("❌ Please provide timezone offset in hours");
-  console.error("   Example: node scripts/fix-timezone-offset.js -6  (for UTC-6)");
-  console.error("   Example: node scripts/fix-timezone-offset.js -8  (for UTC-8)");
+  console.error("   Example: node scripts/fix-timezone-offset.mjs -6  (for UTC-6)");
+  console.error("   Example: node scripts/fix-timezone-offset.mjs -8  (for UTC-8)");
   process.exit(1);
 }
 
