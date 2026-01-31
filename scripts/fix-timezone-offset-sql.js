@@ -32,6 +32,48 @@ if (!dbUrl) {
   process.exit(1);
 }
 
+// Parse and display connection details (safely, without password)
+try {
+  const url = new URL(dbUrl);
+  const username = url.username || 'not specified';
+  const host = url.hostname || 'not specified';
+  const port = url.port || '5432';
+  const currentDb = url.pathname ? url.pathname.replace(/^\//, '') : 'not specified';
+  
+  console.log("🔗 Database Connection Details:");
+  console.log(`   Host: ${host}`);
+  console.log(`   Port: ${port}`);
+  console.log(`   Username: ${username}`);
+  console.log(`   Database: ${currentDb}`);
+  console.log(`   Password: [hidden]`);
+} catch (e) {
+  console.log("⚠️  Could not parse DATABASE_URL format");
+}
+
+// Allow overriding database name via command line argument or environment variable
+const targetDbName = process.argv[3] || process.env.TARGET_DB_NAME || null;
+if (targetDbName) {
+  // Replace database name in connection string
+  // Format: postgresql://user:pass@host:port/dbname?params
+  dbUrl = dbUrl.replace(/\/[^\/\?]+(\?|$)/, `/${targetDbName}$1`);
+  console.log(`\n📝 Overriding database name to: ${targetDbName}`);
+  
+  // Show updated database name
+  try {
+    const url = new URL(dbUrl);
+    const updatedDb = url.pathname ? url.pathname.replace(/^\//, '') : 'not specified';
+    console.log(`   Updated Database: ${updatedDb}`);
+  } catch (e) {
+    // Ignore parse errors
+  }
+} else {
+  // Extract current database name for verification
+  const dbMatch = dbUrl.match(/\/([^\/\?]+)(\?|$)/);
+  const currentDb = dbMatch ? dbMatch[1] : 'unknown';
+  console.log(`\n📝 Using database from DATABASE_URL: ${currentDb}`);
+  console.log(`   (To override, use: node scripts/fix-timezone-offset-sql.js -6 overallvoyage)`);
+}
+
 // Remove sslmode from connection string - we'll control SSL via the config object
 // This prevents connection string SSL settings from overriding our config
 if (dbUrl.includes('sslmode=')) {
@@ -148,6 +190,7 @@ const offsetHours = process.argv[2] ? parseInt(process.argv[2]) : null;
 if (offsetHours === null || isNaN(offsetHours)) {
   console.error("❌ Please provide timezone offset in hours");
   console.error("   Example: node scripts/fix-timezone-offset-sql.js -6  (for UTC-6)");
+  console.error("   Example: node scripts/fix-timezone-offset-sql.js -6 overallvoyage  (specify database name)");
   console.error("   Example: node scripts/fix-timezone-offset-sql.js -8  (for UTC-8)");
   process.exit(1);
 }
