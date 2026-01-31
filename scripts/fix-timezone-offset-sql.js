@@ -256,7 +256,12 @@ const pool = new Pool({
 
 async function fixTimezoneOffset(offsetHours) {
   console.log(`\n🔧 Fixing timezone offset: ${offsetHours} hours`);
-  console.log(`   This will ADD ${offsetHours} hours to all scheduledStart and scheduledEnd times\n`);
+  if (offsetHours < 0) {
+    console.log(`   This will SUBTRACT ${Math.abs(offsetHours)} hours from all scheduledStart and scheduledEnd times`);
+  } else {
+    console.log(`   This will ADD ${offsetHours} hours to all scheduledStart and scheduledEnd times`);
+  }
+  console.log();
 
   const client = await pool.connect();
   
