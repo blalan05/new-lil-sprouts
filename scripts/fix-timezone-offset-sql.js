@@ -215,31 +215,30 @@ if (dbUrl.includes('sslcert=')) {
   }
 }
 
-// Remove sslmode and sslcert from connection string - we'll control SSL via the config object
-// This prevents connection string SSL settings from overriding our config
-// Since we're using rejectUnauthorized: false, we don't need the certificate file
+// Remove sslmode from connection string - we'll control SSL via the config object
+// Keep sslcert in the URL (like db.ts does) - the certificate path helps with connection
+// but we'll use rejectUnauthorized: false to not validate it
 if (resolvedDbUrl.includes('sslmode=')) {
   resolvedDbUrl = resolvedDbUrl.replace(/[?&]sslmode=[^&]*/gi, '');
   console.log("⚠️  Removed sslmode from DATABASE_URL (will use SSL config object instead)");
 }
-if (resolvedDbUrl.includes('sslcert=')) {
-  resolvedDbUrl = resolvedDbUrl.replace(/[?&]sslcert=[^&]*/gi, '');
-  console.log("⚠️  Removed sslcert from DATABASE_URL (not needed with rejectUnauthorized: false)");
-}
 // Clean up any double ? or trailing &
 resolvedDbUrl = resolvedDbUrl.replace(/\?&/g, '?').replace(/[?&]$/, '');
 
-// Configure SSL - always enable SSL for production databases
-// Use rejectUnauthorized: false to accept self-signed certificates
-const sslConfig = {
+// Configure SSL - match db.ts approach: enable SSL with rejectUnauthorized: false
+// This allows the certificate to be used but doesn't validate the chain
+const sslConfig = resolvedDbUrl.includes('sslcert=') ? {
   rejectUnauthorized: false, // Accept self-signed certificates (don't validate cert chain)
-};
+} : false; // No SSL if no certificate specified
 
-// If we have a certificate file, we could add it, but rejectUnauthorized: false should be enough
-// The pg library will use the certificate if provided in the connection string
-console.log("🔒 SSL enabled for database connection (accepting self-signed certificates)");
-if (sslCertPath) {
-  console.log(`   Certificate file: ${sslCertPath}`);
+console.log("🔒 SSL configuration:");
+if (sslConfig) {
+  console.log("   SSL enabled (accepting self-signed certificates)");
+  if (sslCertPath) {
+    console.log(`   Certificate file: ${sslCertPath}`);
+  }
+} else {
+  console.log("   SSL disabled (no certificate in connection string)");
 }
 
 const pool = new Pool({ 
