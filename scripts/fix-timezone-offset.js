@@ -25,41 +25,22 @@ const __dirname = dirname(__filename);
 // Load environment variables
 config({ path: resolve(__dirname, "..", ".env") });
 
-// Import Prisma Client - try multiple strategies
+// Import Prisma Client - use @prisma/client which is the standard compiled package
+// This works in production because @prisma/client is installed as a dependency
 let PrismaClient;
-let lastError = null;
-
-// Strategy 1: Try @prisma/client (standard, should work if Prisma is installed)
 try {
   const module = await import("@prisma/client");
   PrismaClient = module.PrismaClient;
   console.log("✅ Using Prisma Client from @prisma/client");
 } catch (error) {
-  lastError = error;
-  // Strategy 2: Try custom generated path with .js extension
-  try {
-    const module = await import("../src/generated/prisma-client/client.js");
-    PrismaClient = module.PrismaClient;
-    console.log("✅ Using Prisma Client from generated path (.js)");
-  } catch (error2) {
-    lastError = error2;
-    // Strategy 3: Try custom generated path with .ts extension
-    try {
-      const module = await import("../src/generated/prisma-client/client.ts");
-      PrismaClient = module.PrismaClient;
-      console.log("✅ Using Prisma Client from generated path (.ts)");
-    } catch (error3) {
-      lastError = error3;
-      console.error("❌ Could not import Prisma Client");
-      console.error("   Tried @prisma/client, .js, and .ts paths");
-      console.error("   Last error:", lastError?.message);
-      console.error("\n   Ensure Prisma client is generated:");
-      console.error("   Run: pnpm prisma:generate");
-      console.error("   Or: prisma generate");
-      console.error("\n   In production, ensure Prisma client is generated during build.");
-      process.exit(1);
-    }
-  }
+  console.error("❌ Could not import Prisma Client from @prisma/client");
+  console.error("   Error:", error.message);
+  console.error("\n   This usually means:");
+  console.error("   1. Prisma client hasn't been generated: Run 'prisma generate'");
+  console.error("   2. @prisma/client package is missing: Run 'pnpm install'");
+  console.error("   3. Node modules aren't installed properly");
+  console.error("\n   Try running: pnpm install && pnpm prisma:generate");
+  process.exit(1);
 }
 
 const dbUrl = process.env.DATABASE_URL;
