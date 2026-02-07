@@ -13,6 +13,11 @@ export default {
       env_file: ".env", // Load .env file from project root
       env: {
         NODE_ENV: "production",
+        PORT: "3000",
+        NITRO_PORT: "3000",
+        NITRO_HOST: "0.0.0.0",
+        // Ensure Nitro knows the public URL when behind reverse proxy
+        PUBLIC_URL: "https://lilsprouts.io",
       },
       error_file: "/root/.pm2/logs/lilsprouts-error.log",
       out_file: "/root/.pm2/logs/lilsprouts-out.log",
