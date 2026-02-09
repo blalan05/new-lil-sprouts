@@ -1,6 +1,7 @@
-import { query, action, redirect, reload } from "@solidjs/router";
+import { query, action, reload } from "@solidjs/router";
 import { db } from "./db";
 import { calculateHours, calculateSessionCost, sumMoney, roundMoney } from "./money";
+import { serverRedirect } from "./server-redirect";
 
 // Helper function to format parent names
 export function formatParentNames(
@@ -296,7 +297,7 @@ export const createFamily = action(async (formData: FormData) => {
       });
     }
 
-    return redirect(`/families/${family.id}`);
+    return serverRedirect(`/families/${family.id}`);
   } catch (err) {
     console.error("Error creating family:", err);
     return new Error(err instanceof Error ? err.message : "Failed to create family");
@@ -359,7 +360,7 @@ export const updateFamily = action(async (formData: FormData) => {
       },
     });
 
-    return redirect(`/families/${id}`);
+    return serverRedirect(`/families/${id}`);
   } catch (err) {
     console.error("Error updating family:", err);
     return new Error(err instanceof Error ? err.message : "Failed to update family");

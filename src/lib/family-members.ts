@@ -1,6 +1,7 @@
-import { action, query, redirect, reload } from "@solidjs/router";
+import { action, query, reload } from "@solidjs/router";
 import { db } from "./db";
 import type { MemberRelationship } from "../generated/prisma-client/client.js";
+import { serverRedirect } from "./server-redirect";
 
 export const getFamilyMembers = query(async (familyId: string) => {
   "use server";
@@ -76,7 +77,7 @@ export const createFamilyMember = action(async (formData: FormData) => {
       },
     });
 
-    return redirect(`/families/${familyId}`);
+    return serverRedirect(`/families/${familyId}`);
   } catch (err) {
     console.error("Error creating family member:", err);
     return new Error(err instanceof Error ? err.message : "Failed to create family member");
@@ -119,7 +120,7 @@ export const updateFamilyMember = action(async (formData: FormData) => {
       },
     });
 
-    return redirect(`/families/${familyId}`);
+    return serverRedirect(`/families/${familyId}`);
   } catch (err) {
     console.error("Error updating family member:", err);
     return new Error(err instanceof Error ? err.message : "Failed to update family member");

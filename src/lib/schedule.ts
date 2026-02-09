@@ -1,6 +1,7 @@
-import { query, action, reload, redirect } from "@solidjs/router";
+import { query, action, reload } from "@solidjs/router";
 import { db } from "./db";
 import { startOfDayUTC, endOfDayUTC } from "./datetime";
+import { serverRedirect } from "./server-redirect";
 
 // Get care sessions for a date range
 export const getCareSessionsForRange = query(async (startDate: Date, endDate: Date) => {
@@ -278,7 +279,7 @@ export const updateCareSession = action(async (formData: FormData) => {
       },
     });
 
-    return redirect(`/families/${updatedSession.familyId}/sessions/${sessionId}`);
+    return serverRedirect(`/families/${updatedSession.familyId}/sessions/${sessionId}`);
   } catch (err) {
     console.error("Error updating care session:", err);
     return new Error(err instanceof Error ? err.message : "Failed to update care session");
@@ -338,7 +339,7 @@ export const editCareSessionFull = action(async (formData: FormData) => {
       },
     });
 
-    return redirect(`/families/${updatedSession.familyId}/sessions/${sessionId}`);
+    return serverRedirect(`/families/${updatedSession.familyId}/sessions/${sessionId}`);
   } catch (err) {
     console.error("Error editing care session:", err);
     return new Error(err instanceof Error ? err.message : "Failed to edit care session");

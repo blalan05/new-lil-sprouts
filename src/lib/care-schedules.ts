@@ -1,10 +1,11 @@
-import { action, query, redirect, reload } from "@solidjs/router";
+import { action, query, reload } from "@solidjs/router";
 import { db } from "./db";
 import { datetimeLocalToUTC, parseFormDate } from "./datetime";
 import { getSession } from "./server";
 import { getSettingValue } from "./settings";
 import { calculateServiceRate } from "./services";
 import type { DayOfWeek, RecurrencePattern } from "../generated/prisma-client/client.js";
+import { serverRedirect } from "./server-redirect";
 
 export const getCareSchedules = query(async (familyId: string) => {
   "use server";
@@ -198,10 +199,10 @@ export const createCareSchedule = action(async (formData: FormData) => {
       });
 
       // Redirect to family page for one-time sessions
-      return redirect(`/families/${familyId}`);
+      return serverRedirect(`/families/${familyId}`);
     }
 
-    return redirect(`/families/${familyId}/schedules/${schedule.id}`);
+    return serverRedirect(`/families/${familyId}/schedules/${schedule.id}`);
   } catch (err) {
     console.error("Error creating care schedule:", err);
     return new Error(err instanceof Error ? err.message : "Failed to create care schedule");
@@ -298,7 +299,7 @@ export const updateCareSchedule = action(async (formData: FormData) => {
       },
     });
 
-    return redirect(`/families/${familyId}/schedules/${id}`);
+    return serverRedirect(`/families/${familyId}/schedules/${id}`);
   } catch (err) {
     console.error("Error updating care schedule:", err);
     return new Error(err instanceof Error ? err.message : "Failed to update care schedule");

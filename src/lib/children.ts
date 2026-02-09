@@ -1,5 +1,6 @@
-import { action, query, redirect, reload } from "@solidjs/router";
+import { action, query, reload } from "@solidjs/router";
 import { db } from "./db";
+import { serverRedirect } from "./server-redirect";
 
 export const getChildren = query(async (familyId: string) => {
   "use server";
@@ -89,7 +90,7 @@ export const createChild = action(async (formData: FormData) => {
       },
     });
 
-    return redirect(`/families/${familyId}`);
+    return serverRedirect(`/families/${familyId}`);
   } catch (err) {
     console.error("Error creating child:", err);
     return new Error(err instanceof Error ? err.message : "Failed to create child");
@@ -138,7 +139,7 @@ export const updateChild = action(async (formData: FormData) => {
       },
     });
 
-    return redirect(`/families/${familyId}`);
+    return serverRedirect(`/families/${familyId}`);
   } catch (err) {
     console.error("Error updating child:", err);
     return new Error(err instanceof Error ? err.message : "Failed to update child");

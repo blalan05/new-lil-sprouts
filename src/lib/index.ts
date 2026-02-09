@@ -1,5 +1,6 @@
-import { action, query, redirect } from "@solidjs/router";
+import { action, query } from "@solidjs/router";
 import { db } from "./db";
+import { serverRedirect } from "./server-redirect";
 import {
   getSession,
   login,
@@ -29,7 +30,7 @@ export const getUser = query(async () => {
     };
   } catch {
     await logoutSession();
-    throw redirect("/login");
+    throw serverRedirect("/login");
   }
 }, "user");
 
@@ -65,7 +66,7 @@ export const updateUser = action(async (formData: FormData) => {
       },
     });
 
-    return redirect("/account");
+    return serverRedirect("/account");
   } catch (err) {
     console.error("Error updating user:", err);
     return new Error(err instanceof Error ? err.message : "Failed to update user");
@@ -107,7 +108,7 @@ export const updatePassword = action(async (formData: FormData) => {
       },
     });
 
-    return redirect("/account");
+    return serverRedirect("/account");
   } catch (err) {
     console.error("Error updating password:", err);
     return new Error(err instanceof Error ? err.message : "Failed to update password");
@@ -140,11 +141,11 @@ export const loginOrRegister = action(async (formData: FormData) => {
   } catch (err) {
     return err as Error;
   }
-  return redirect("/");
+  return serverRedirect("/");
 });
 
 export const logout = action(async () => {
   "use server";
   await logoutSession();
-  return redirect("/login");
+  return serverRedirect("/login");
 });

@@ -1,7 +1,8 @@
-import { action, query, redirect } from "@solidjs/router";
+import { action, query } from "@solidjs/router";
 import { db } from "./db";
 import { getSessionExpenseTotal } from "./expenses";
 import { calculateHours, calculateSessionCost, sumMoney, addMoney, roundMoney } from "./money";
+import { serverRedirect } from "./server-redirect";
 
 // Get unpaid confirmed sessions for a family
 export const getUnpaidSessions = query(async (familyId: string) => {
@@ -198,7 +199,7 @@ export const createPayment = action(async (formData: FormData) => {
       });
     }
 
-    return redirect(`/payments?success=true`);
+    return serverRedirect(`/payments?success=true`);
   } catch (err) {
     console.error("Error creating payment:", err);
     return new Error(err instanceof Error ? err.message : "Failed to create payment");

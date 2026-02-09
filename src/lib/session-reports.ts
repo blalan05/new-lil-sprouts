@@ -1,6 +1,7 @@
-import { action, query, redirect, reload } from "@solidjs/router";
+import { action, query, reload } from "@solidjs/router";
 import { db } from "./db";
 import type { ReportType, ReportSeverity } from "../generated/prisma-client/client.js";
+import { serverRedirect } from "./server-redirect";
 
 export const getSessionReports = query(async (careSessionId: string) => {
   "use server";
@@ -172,7 +173,7 @@ export const createSessionReport = action(async (formData: FormData) => {
       select: { familyId: true },
     });
 
-    return redirect(`/families/${session?.familyId}/sessions/${careSessionId}`);
+    return serverRedirect(`/families/${session?.familyId}/sessions/${careSessionId}`);
   } catch (err) {
     console.error("Error creating session report:", err);
     return new Error(err instanceof Error ? err.message : "Failed to create report");

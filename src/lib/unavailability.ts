@@ -1,6 +1,7 @@
-import { action, query, redirect, reload } from "@solidjs/router";
+import { action, query, reload } from "@solidjs/router";
 import { db } from "./db";
 import { parseFormDate } from "./datetime";
+import { serverRedirect } from "./server-redirect";
 
 export const getUnavailabilities = query(async (userId?: string) => {
   "use server";
@@ -76,7 +77,7 @@ export const createUnavailability = action(async (formData: FormData) => {
       },
     });
 
-    return redirect("/schedule");
+    return serverRedirect("/schedule");
   } catch (err) {
     console.error("Error creating unavailability:", err);
     return new Error(err instanceof Error ? err.message : "Failed to create unavailability");
@@ -129,7 +130,7 @@ export const updateUnavailability = action(async (formData: FormData) => {
       },
     });
 
-    return redirect("/schedule");
+    return serverRedirect("/schedule");
   } catch (err) {
     console.error("Error updating unavailability:", err);
     return new Error(err instanceof Error ? err.message : "Failed to update unavailability");
