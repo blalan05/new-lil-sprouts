@@ -57,16 +57,6 @@ function isPrismaModule(id: string): boolean {
 }
 
 export default defineConfig({
-  server: {
-    // Trust proxy headers when behind reverse proxy
-    preset: "node-server",
-  },
-  nitro: {
-    // Ensure Nitro trusts proxy headers
-    experimental: {
-      wasm: false,
-    },
-  },
   vite: {
     ssr: {
       // Most comprehensive external function - catches everything Prisma-related
