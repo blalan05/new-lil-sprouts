@@ -66,20 +66,6 @@ export default defineConfig({
     experimental: {
       wasm: false,
     },
-    // Configure route rules for proxy compatibility
-    routeRules: {
-      "/**": {
-        headers: {
-          // Ensure proper headers are passed through
-        },
-      },
-    },
-    // Explicitly configure runtime config for base URL
-    runtimeConfig: {
-      app: {
-        baseURL: "/",
-      },
-    },
   },
   vite: {
     ssr: {
