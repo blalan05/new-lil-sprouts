@@ -1,4 +1,5 @@
 import { defineConfig } from "@solidjs/start/config";
+import { VitePWA } from "vite-plugin-pwa";
 
 // Function to check if a module should be externalized
 function isPrismaModule(id: string): boolean {
@@ -57,7 +58,44 @@ function isPrismaModule(id: string): boolean {
 }
 
 export default defineConfig({
+  middleware: "src/middleware/index.ts",
   vite: {
+    plugins: [
+      VitePWA({
+        // Keep registration explicit in `src/entry-client.tsx`
+        injectRegister: null,
+        registerType: "autoUpdate",
+
+        // Match your existing URL (`/service-worker.js`)
+        filename: "service-worker.js",
+
+        // You already have `public/manifest.json` and `<link rel="manifest" ...>`
+        // so let that remain the single source of truth.
+        manifest: false,
+
+        includeAssets: ["favicon.ico", "icons/*.png"],
+
+        // Basic offline app-shell behavior for navigation requests.
+        workbox: {
+          navigateFallback: "/",
+          runtimeCaching: [
+            // Never cache server/API endpoints
+            {
+              urlPattern: ({ url }) =>
+                url.pathname.startsWith("/_server") ||
+                url.pathname.startsWith("/api") ||
+                url.pathname.startsWith("/_build"),
+              handler: "NetworkOnly",
+            },
+          ],
+        },
+
+        // Helpful for testing locally if needed.
+        devOptions: {
+          enabled: false,
+        },
+      }),
+    ],
     ssr: {
       // Most comprehensive external function - catches everything Prisma-related
       external: (id) => {

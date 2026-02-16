@@ -15,7 +15,8 @@
     "@types/node": "^24.1.0",
     "@types/pg": "^8.11.10",
     "prisma": "^7.0.0",
-    "sharp": "^0.34.5"
+    "sharp": "^0.34.5",
+    "vite-plugin-pwa": "^1.2.0"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.3.0",
@@ -25,7 +26,8 @@
     "dotenv": "^16.6.1",
     "pg": "^8.17.2",
     "solid-js": "^1.9.11",
-    "vinxi": "^0.5.11"
+    "vinxi": "^0.5.11",
+    "workbox-window": "^7.4.0"
   },
   "engines": {
     "node": ">=22"
