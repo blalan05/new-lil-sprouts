@@ -78,16 +78,13 @@ export default defineConfig({
         // Basic offline app-shell behavior for navigation requests.
         workbox: {
           navigateFallback: "/",
-          runtimeCaching: [
-            // Never cache server/API endpoints
-            {
-              urlPattern: ({ url }) =>
-                url.pathname.startsWith("/_server") ||
-                url.pathname.startsWith("/api") ||
-                url.pathname.startsWith("/_build"),
-              handler: "NetworkOnly",
-            },
-          ],
+          // Never use app-shell fallback for server endpoints/assets
+          navigateFallbackDenylist: [/^\/_server\b/, /^\/api\b/, /^\/_build\b/],
+
+          // Keep SW lifecycle predictable across deployments
+          clientsClaim: true,
+          skipWaiting: true,
+          cleanupOutdatedCaches: true,
         },
 
         // Helpful for testing locally if needed.
