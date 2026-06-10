@@ -4,6 +4,7 @@ import { getUser } from "~/lib";
 import { getAllServices, getService, createService, updateService } from "~/lib/services";
 import { useSubmission } from "@solidjs/router";
 import { ensureOwner } from "~/lib/route-guards";
+import { moneyDisplay } from "~/lib/money-display";
 
 export const route = {
   preload() {
@@ -530,7 +531,7 @@ export default function Reports() {
                             <div style={{ display: "flex", gap: "1.5rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                               {service.defaultHourlyRate && (
                                 <span>
-                                  <strong style={{ color: "var(--color-text)" }}>Rate:</strong> ${service.defaultHourlyRate.toFixed(2)}/hr
+                                  <strong style={{ color: "var(--color-text)" }}>Rate:</strong> ${moneyDisplay(service.defaultHourlyRate)}/hr
                                   {service.pricingType === "PER_CHILD" && " per child"}
                                 </span>
                               )}
