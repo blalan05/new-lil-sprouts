@@ -24,8 +24,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Prisma
-/generated
+# Prisma generated client (build artifact)
+/src/generated/
 
 # PWA source icon (optional - uncomment if you don't want to commit it)
 # /public/icons/icon-source.png
