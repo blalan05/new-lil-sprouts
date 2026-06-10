@@ -1,9 +1,11 @@
+import { ensureOwner } from "~/lib/route-guards";
 import { createAsync, type RouteDefinition, A, useSubmission } from "@solidjs/router";
 import { Show, For, createSignal, createEffect } from "solid-js";
 import { getAllServices, getService, createService, updateService } from "~/lib/services";
 
 export const route = {
   preload() {
+    ensureOwner();
     getAllServices();
   },
 } satisfies RouteDefinition;
@@ -28,18 +30,11 @@ export default function ServicesPage() {
       setShowCreateForm(false);
       setEditingServiceId(null);
       // Reload services
-      window.location.reload();
     }
   });
 
   return (
-    <main
-      style={{
-        "max-width": "1000px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
+    <main class="page">
       <header
         style={{
           display: "flex",
@@ -49,8 +44,8 @@ export default function ServicesPage() {
         }}
       >
         <div>
-          <h1 style={{ color: "#2d3748", "font-size": "2rem", margin: 0 }}>Services</h1>
-          <p style={{ color: "#718096", "margin-top": "0.5rem" }}>
+          <h1 style={{ color: "var(--color-text)", "font-size": "2rem", margin: 0 }}>Services</h1>
+          <p style={{ color: "var(--color-text-muted)", "margin-top": "0.5rem" }}>
             Manage your service types and pricing
           </p>
         </div>
@@ -76,15 +71,15 @@ export default function ServicesPage() {
       <Show when={showCreateForm() || editingServiceId() !== null}>
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "2rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "margin-bottom": "2rem",
             "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
           }}
         >
-          <h2 style={{ "font-size": "1.25rem", color: "#2d3748", "margin-bottom": "1.5rem" }}>
+          <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)", "margin-bottom": "1.5rem" }}>
             {editingServiceId() ? "Edit Service" : "Create New Service"}
           </h2>
           
@@ -104,7 +99,7 @@ export default function ServicesPage() {
                     display: "block",
                     "margin-bottom": "0.5rem",
                     "font-weight": "600",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                   }}
                 >
                   Service Name *
@@ -133,10 +128,10 @@ export default function ServicesPage() {
                     display: "block",
                     "margin-bottom": "0.5rem",
                     "font-weight": "600",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                   }}
                 >
-                  Code * {!editingServiceId() && <span style={{ color: "#718096", "font-weight": "normal" }}>(e.g., CHILDCARE)</span>}
+                  Code * {!editingServiceId() && <span style={{ color: "var(--color-text-muted)", "font-weight": "normal" }}>(e.g., CHILDCARE)</span>}
                 </label>
                   <input
                   id="code"
@@ -156,7 +151,7 @@ export default function ServicesPage() {
                   }}
                 />
                 {editingServiceId() && (
-                  <p style={{ "font-size": "0.75rem", color: "#718096", "margin-top": "0.25rem" }}>
+                  <p style={{ "font-size": "0.75rem", color: "var(--color-text-muted)", "margin-top": "0.25rem" }}>
                     Code cannot be changed after creation
                   </p>
                 )}
@@ -170,7 +165,7 @@ export default function ServicesPage() {
                   display: "block",
                   "margin-bottom": "0.5rem",
                   "font-weight": "600",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 Description
@@ -200,7 +195,7 @@ export default function ServicesPage() {
                     display: "block",
                     "margin-bottom": "0.5rem",
                     "font-weight": "600",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                   }}
                 >
                   Default Hourly Rate ($)
@@ -230,7 +225,7 @@ export default function ServicesPage() {
                     display: "block",
                     "margin-bottom": "0.5rem",
                     "font-weight": "600",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                   }}
                 >
                   Pricing Type *
@@ -259,7 +254,7 @@ export default function ServicesPage() {
                     display: "block",
                     "margin-bottom": "0.5rem",
                     "font-weight": "600",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                   }}
                 >
                   Options
@@ -342,7 +337,7 @@ export default function ServicesPage() {
                 style={{
                   padding: "0.75rem 1.5rem",
                   "background-color": "#edf2f7",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                   border: "1px solid #cbd5e0",
                   "border-radius": "4px",
                   cursor: "pointer",
@@ -359,7 +354,7 @@ export default function ServicesPage() {
       <Show
         when={allServices()}
         fallback={
-          <div style={{ "text-align": "center", padding: "3rem", color: "#718096" }}>
+          <div style={{ "text-align": "center", padding: "3rem", color: "var(--color-text-muted)" }}>
             Loading services...
           </div>
         }
@@ -369,14 +364,14 @@ export default function ServicesPage() {
           fallback={
             <div
               style={{
-                "background-color": "#fff",
+                "background-color": "var(--color-surface)",
                 padding: "3rem",
                 "border-radius": "8px",
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
                 "text-align": "center",
               }}
             >
-              <p style={{ color: "#718096", "margin-bottom": "1rem" }}>No services yet.</p>
+              <p style={{ color: "var(--color-text-muted)", "margin-bottom": "1rem" }}>No services yet.</p>
               <button
                 onClick={() => setShowCreateForm(true)}
                 style={{
@@ -396,10 +391,10 @@ export default function ServicesPage() {
         >
           <div
             style={{
-              "background-color": "#fff",
+              "background-color": "var(--color-surface)",
               padding: "1.5rem",
               "border-radius": "8px",
-              border: "1px solid #e2e8f0",
+              border: "1px solid var(--color-border)",
               "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
             }}
           >
@@ -409,7 +404,7 @@ export default function ServicesPage() {
                   <div
                     style={{
                       padding: "1.5rem",
-                      border: "1px solid #e2e8f0",
+                      border: "1px solid var(--color-border)",
                       "border-radius": "6px",
                       "background-color": "#f7fafc",
                     }}
@@ -424,7 +419,7 @@ export default function ServicesPage() {
                     >
                       <div style={{ flex: "1" }}>
                         <div style={{ display: "flex", "align-items": "center", gap: "0.75rem", "margin-bottom": "0.5rem" }}>
-                          <h3 style={{ color: "#2d3748", margin: 0, "font-size": "1.125rem" }}>
+                          <h3 style={{ color: "var(--color-text)", margin: 0, "font-size": "1.125rem" }}>
                             {service.name}
                           </h3>
                           <span
@@ -459,16 +454,16 @@ export default function ServicesPage() {
                             {service.description}
                           </p>
                         )}
-                        <div style={{ display: "flex", gap: "1.5rem", "font-size": "0.875rem", color: "#718096" }}>
+                        <div style={{ display: "flex", gap: "1.5rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                           {service.defaultHourlyRate && (
                             <span>
-                              <strong style={{ color: "#2d3748" }}>Rate:</strong> ${service.defaultHourlyRate.toFixed(2)}/hr
+                              <strong style={{ color: "var(--color-text)" }}>Rate:</strong> ${service.defaultHourlyRate.toFixed(2)}/hr
                               {service.pricingType === "PER_CHILD" && " per child"}
                             </span>
                           )}
                           {service.requiresChildren && (
                             <span>
-                              <strong style={{ color: "#2d3748" }}>Requires:</strong> Children
+                              <strong style={{ color: "var(--color-text)" }}>Requires:</strong> Children
                             </span>
                           )}
                         </div>
@@ -481,7 +476,7 @@ export default function ServicesPage() {
                         style={{
                           padding: "0.5rem 1rem",
                           "background-color": "#edf2f7",
-                          color: "#2d3748",
+                          color: "var(--color-text)",
                           border: "1px solid #cbd5e0",
                           "border-radius": "4px",
                           cursor: "pointer",

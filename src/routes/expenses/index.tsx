@@ -1,6 +1,7 @@
 import { createAsync, type RouteDefinition, A, useSubmission } from "@solidjs/router";
 import { Show, For, createSignal } from "solid-js";
 import { getFamilies } from "~/lib/families";
+import { ensureOwner } from "~/lib/route-guards";
 import {
   getExpenses,
   createStandaloneExpense,
@@ -11,6 +12,7 @@ import { formatDateLocal } from "~/lib/datetime";
 
 export const route = {
   preload() {
+    ensureOwner();
     getFamilies();
     getExpenses();
   },
@@ -132,7 +134,7 @@ export default function ExpensesPage() {
   };
 
   return (
-    <div style={{ padding: "1.5rem", "max-width": "1400px", margin: "0 auto" }}>
+    <main class="page">
       <header style={{ "margin-bottom": "0.75rem" }}>
         <div
           style={{
@@ -155,7 +157,7 @@ export default function ExpensesPage() {
             >
               ← Back to Dashboard
             </A>
-            <h1 style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748", margin: 0 }}>
+            <h1 style={{ "font-size": "1.5rem", "font-weight": "700", color: "var(--color-text)", margin: 0 }}>
               Expenses
             </h1>
           </div>
@@ -180,10 +182,10 @@ export default function ExpensesPage() {
       {/* Filters */}
       <div
         style={{
-          "background-color": "#fff",
+          "background-color": "var(--color-surface)",
           padding: "0.75rem",
           "border-radius": "8px",
-          border: "1px solid #e2e8f0",
+          border: "1px solid var(--color-border)",
           "margin-bottom": "1rem",
         }}
       >
@@ -253,23 +255,23 @@ export default function ExpensesPage() {
       {/* Summary */}
       <div
         style={{
-          "background-color": "#fff",
+          "background-color": "var(--color-surface)",
           padding: "0.75rem",
           "border-radius": "8px",
-          border: "1px solid #e2e8f0",
+          border: "1px solid var(--color-border)",
           "margin-bottom": "1rem",
         }}
       >
         <div style={{ display: "flex", gap: "2rem", "flex-wrap": "wrap" }}>
           <div>
-            <div style={{ color: "#718096", "font-size": "0.875rem" }}>Total Expenses</div>
-            <div style={{ color: "#2d3748", "font-size": "1.5rem", "font-weight": "700" }}>
+            <div style={{ color: "var(--color-text-muted)", "font-size": "0.875rem" }}>Total Expenses</div>
+            <div style={{ color: "var(--color-text)", "font-size": "1.5rem", "font-weight": "700" }}>
               {formatCurrency(totalExpenses())}
             </div>
           </div>
           <div>
-            <div style={{ color: "#718096", "font-size": "0.875rem" }}>Number of Expenses</div>
-            <div style={{ color: "#2d3748", "font-size": "1.5rem", "font-weight": "700" }}>
+            <div style={{ color: "var(--color-text-muted)", "font-size": "0.875rem" }}>Number of Expenses</div>
+            <div style={{ color: "var(--color-text)", "font-size": "1.5rem", "font-weight": "700" }}>
               {filteredExpenses().length}
             </div>
           </div>
@@ -279,9 +281,9 @@ export default function ExpensesPage() {
       {/* Expenses Table */}
       <div
         style={{
-          "background-color": "#fff",
+          "background-color": "var(--color-surface)",
           "border-radius": "8px",
-          border: "1px solid #e2e8f0",
+          border: "1px solid var(--color-border)",
           overflow: "hidden",
         }}
       >
@@ -293,7 +295,7 @@ export default function ExpensesPage() {
                   padding: "0.75rem",
                   "text-align": "left",
                   "font-weight": "600",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                   cursor: "pointer",
                 }}
                 onClick={() => handleSort("date")}
@@ -305,7 +307,7 @@ export default function ExpensesPage() {
                   padding: "0.75rem",
                   "text-align": "left",
                   "font-weight": "600",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                   cursor: "pointer",
                 }}
                 onClick={() => handleSort("description")}
@@ -317,7 +319,7 @@ export default function ExpensesPage() {
                   padding: "0.75rem",
                   "text-align": "left",
                   "font-weight": "600",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                   cursor: "pointer",
                 }}
                 onClick={() => handleSort("category")}
@@ -329,7 +331,7 @@ export default function ExpensesPage() {
                   padding: "0.75rem",
                   "text-align": "left",
                   "font-weight": "600",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                   cursor: "pointer",
                 }}
                 onClick={() => handleSort("family")}
@@ -341,7 +343,7 @@ export default function ExpensesPage() {
                   padding: "0.75rem",
                   "text-align": "right",
                   "font-weight": "600",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                   cursor: "pointer",
                 }}
                 onClick={() => handleSort("amount")}
@@ -353,7 +355,7 @@ export default function ExpensesPage() {
                   padding: "0.75rem",
                   "text-align": "center",
                   "font-weight": "600",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 Actions
@@ -365,7 +367,7 @@ export default function ExpensesPage() {
               when={filteredExpenses().length > 0}
               fallback={
                 <tr>
-                  <td colSpan={6} style={{ padding: "2rem", "text-align": "center", color: "#718096" }}>
+                  <td colSpan={6} style={{ padding: "2rem", "text-align": "center", color: "var(--color-text-muted)" }}>
                     No expenses found
                   </td>
                 </tr>
@@ -378,20 +380,14 @@ export default function ExpensesPage() {
                       "border-bottom": "1px solid #e2e8f0",
                       transition: "background-color 0.2s",
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f7fafc";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
-                  >
+>
                     <td style={{ padding: "1rem" }}>{formatDate(expense.expenseDate)}</td>
                     <td style={{ padding: "1rem" }}>
-                      <div style={{ "font-weight": "600", color: "#2d3748" }}>
+                      <div style={{ "font-weight": "600", color: "var(--color-text)" }}>
                         {expense.description}
                       </div>
                       <Show when={expense.notes}>
-                        <div style={{ color: "#718096", "font-size": "0.875rem", "margin-top": "0.25rem" }}>
+                        <div style={{ color: "var(--color-text-muted)", "font-size": "0.875rem", "margin-top": "0.25rem" }}>
                           {expense.notes}
                         </div>
                       </Show>
@@ -414,7 +410,7 @@ export default function ExpensesPage() {
                     <td style={{ padding: "1rem" }}>
                       <Show
                         when={expense.family}
-                        fallback={<span style={{ color: "#718096" }}>General</span>}
+                        fallback={<span style={{ color: "var(--color-text-muted)" }}>General</span>}
                       >
                         <A
                           href={`/families/${expense.family!.id}`}
@@ -437,7 +433,7 @@ export default function ExpensesPage() {
                           style={{
                             padding: "0.5rem",
                             border: "1px solid #cbd5e0",
-                            "background-color": "#fff",
+                            "background-color": "var(--color-surface)",
                             "border-radius": "4px",
                             cursor: "pointer",
                             color: "#4299e1",
@@ -450,7 +446,7 @@ export default function ExpensesPage() {
                           style={{
                             padding: "0.5rem",
                             border: "1px solid #cbd5e0",
-                            "background-color": "#fff",
+                            "background-color": "var(--color-surface)",
                             "border-radius": "4px",
                             cursor: "pointer",
                             color: "#e53e3e",
@@ -488,7 +484,7 @@ export default function ExpensesPage() {
         >
           <div
             style={{
-              "background-color": "#fff",
+              "background-color": "var(--color-surface)",
               padding: "1.5rem",
               "border-radius": "8px",
               "max-width": "500px",
@@ -661,7 +657,7 @@ export default function ExpensesPage() {
                   style={{
                     padding: "0.75rem 1.5rem",
                     border: "1px solid #cbd5e0",
-                    "background-color": "#fff",
+                    "background-color": "var(--color-surface)",
                     "border-radius": "6px",
                     cursor: "pointer",
                   }}
@@ -713,7 +709,7 @@ export default function ExpensesPage() {
             >
               <div
                 style={{
-                  "background-color": "#fff",
+                  "background-color": "var(--color-surface)",
                   padding: "1.5rem",
                   "border-radius": "8px",
                   "max-width": "500px",
@@ -892,7 +888,7 @@ export default function ExpensesPage() {
                       style={{
                         padding: "0.75rem 1.5rem",
                         border: "1px solid #cbd5e0",
-                        "background-color": "#fff",
+                        "background-color": "var(--color-surface)",
                         "border-radius": "6px",
                         cursor: "pointer",
                       }}
@@ -920,7 +916,7 @@ export default function ExpensesPage() {
           );
         }}
       </Show>
-    </div>
+    </main>
   );
 }
 

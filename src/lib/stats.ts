@@ -1,17 +1,22 @@
 import { query } from "@solidjs/router";
 import { db } from "./db";
+import { requireOwner } from "./auth";
 import {
   calculateHours as calcHours,
   calculateSessionCost,
   sumMoney,
   addMoney,
   roundMoney,
+  isPositiveMoney,
+  toDecimal,
+  serializeMoneyDeep,
 } from "./money";
 
 // Get stats for a specific time period
 export const getStatsForPeriod = query(
   async (period: "lastWeek" | "thisWeek" | "month" | "ytd") => {
     "use server";
+    await requireOwner();
     const now = new Date();
     let startDate: Date;
     let endDate: Date = new Date(now);
@@ -99,8 +104,8 @@ export const getStatsForPeriod = query(
 
       // Add expenses
       const expenses = session.expenses || [];
-      const expenseTotal = sumMoney(expenses.map((exp: any) => exp.amount));
-      if (expenseTotal > 0) {
+      const expenseTotal = sumMoney(expenses.map((exp: { amount: unknown }) => exp.amount));
+      if (isPositiveMoney(expenseTotal)) {
         moneyAmounts.push(expenseTotal);
       }
     }
@@ -118,6 +123,7 @@ export const getStatsForPeriod = query(
 // Get weekly stats (hours worked and money made) - kept for backward compatibility
 export const getWeeklyStats = query(async () => {
   "use server";
+  await requireOwner();
   const now = new Date();
 
   // Calculate this week (Monday to Sunday)
@@ -195,8 +201,8 @@ export const getWeeklyStats = query(async () => {
 
       // Add expenses
       const expenses = session.expenses || [];
-      const expenseTotal = sumMoney(expenses.map((exp: any) => exp.amount));
-      if (expenseTotal > 0) {
+      const expenseTotal = sumMoney(expenses.map((exp: { amount: unknown }) => exp.amount));
+      if (isPositiveMoney(expenseTotal)) {
         moneyAmounts.push(expenseTotal);
       }
     }
@@ -223,6 +229,7 @@ export const getWeeklyStats = query(async () => {
 // Get dashboard stats
 export const getDashboardStats = query(async () => {
   "use server";
+  await requireOwner();
   const now = new Date();
 
   // This month
@@ -318,19 +325,19 @@ export const getDashboardStats = query(async () => {
     thisMonthMoneyAmounts.push(sessionAmount);
 
     const expenses = session.expenses || [];
-    const expenseTotal = sumMoney(expenses.map((exp: any) => exp.amount));
-    if (expenseTotal > 0) {
+    const expenseTotal = sumMoney(expenses.map((exp: { amount: unknown }) => exp.amount));
+    if (isPositiveMoney(expenseTotal)) {
       thisMonthMoneyAmounts.push(expenseTotal);
     }
   }
   const thisMonthMoney = roundMoney(sumMoney(thisMonthMoneyAmounts));
 
-  // Calculate average hourly rate
-  const sessionsWithRates = thisMonthSessions.filter((s) => s.hourlyRate && s.hourlyRate > 0);
+  const sessionsWithRates = thisMonthSessions.filter((s) => isPositiveMoney(s.hourlyRate));
   const averageHourlyRate =
     sessionsWithRates.length > 0
-      ? sessionsWithRates.reduce((sum, s) => sum + (s.hourlyRate || 0), 0) /
-        sessionsWithRates.length
+      ? toDecimal(
+          sumMoney(sessionsWithRates.map((s) => s.hourlyRate)).dividedBy(sessionsWithRates.length),
+        ).toNumber()
       : 0;
 
   return {

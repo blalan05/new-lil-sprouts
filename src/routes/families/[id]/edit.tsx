@@ -2,6 +2,7 @@ import { createAsync, type RouteDefinition, A, useParams, useSubmission } from "
 import { Show, For } from "solid-js";
 import { getFamily, updateFamily } from "~/lib/families";
 import { getServices } from "~/lib/services";
+import { ensureOwner } from "~/lib/route-guards";
 
 export const route = {
   preload({ params }) {
@@ -18,13 +19,7 @@ export default function EditFamily() {
   const submission = useSubmission(updateFamily);
 
   return (
-    <main
-      style={{
-        "max-width": "800px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
+    <main class="page-form">
       <header style={{ "margin-bottom": "2rem" }}>
         <A
           href={`/families/${params.id}`}
@@ -37,7 +32,7 @@ export default function EditFamily() {
         >
           ← Back to Family Details
         </A>
-        <h1 style={{ color: "#2d3748", "font-size": "2rem" }}>Edit Family</h1>
+        <h1 style={{ color: "var(--color-text)", "font-size": "2rem" }}>Edit Family</h1>
       </header>
 
       <Show when={family()}>
@@ -46,10 +41,10 @@ export default function EditFamily() {
             action={updateFamily}
             method="post"
             style={{
-              "background-color": "#fff",
+              "background-color": "var(--color-surface)",
               padding: "2rem",
               "border-radius": "8px",
-              border: "1px solid #e2e8f0",
+              border: "1px solid var(--color-border)",
             }}
           >
             <input type="hidden" name="id" value={familyData().id} />
@@ -61,7 +56,7 @@ export default function EditFamily() {
                   display: "block",
                   "margin-bottom": "0.5rem",
                   "font-weight": "600",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 Family Name *
@@ -85,13 +80,13 @@ export default function EditFamily() {
 
             <fieldset
               style={{
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
                 "border-radius": "4px",
                 padding: "1.5rem",
                 "margin-bottom": "1.5rem",
               }}
             >
-              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
                 Parent/Guardian Information
               </legend>
 
@@ -221,13 +216,13 @@ export default function EditFamily() {
 
             <fieldset
               style={{
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
                 "border-radius": "4px",
                 padding: "1.5rem",
                 "margin-bottom": "1.5rem",
               }}
             >
-              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
                 Address Information
               </legend>
 
@@ -352,13 +347,13 @@ export default function EditFamily() {
 
             <fieldset
               style={{
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
                 "border-radius": "4px",
                 padding: "1.5rem",
                 "margin-bottom": "1.5rem",
               }}
             >
-              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
                 Emergency Contact
               </legend>
 
@@ -421,22 +416,22 @@ export default function EditFamily() {
 
             <fieldset
               style={{
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
                 "border-radius": "4px",
                 padding: "1.5rem",
                 "margin-bottom": "1.5rem",
               }}
             >
-              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
                 Services
               </legend>
-              <p style={{ "margin-bottom": "1rem", "font-size": "0.875rem", color: "#718096" }}>
+              <p style={{ "margin-bottom": "1rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                 Select which services this family uses. This will default when creating new schedules.
               </p>
               <Show
                 when={services()}
                 fallback={
-                  <div style={{ padding: "1rem", color: "#718096" }}>Loading services...</div>
+                  <div style={{ padding: "1rem", color: "var(--color-text-muted)" }}>Loading services...</div>
                 }
               >
                 <div style={{ display: "flex", "flex-direction": "column", gap: "0.75rem" }}>
@@ -456,13 +451,7 @@ export default function EditFamily() {
                             "border-radius": "4px",
                             transition: "background-color 0.2s",
                           }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = "#f7fafc";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "transparent";
-                          }}
-                        >
+>
                           <input
                             type="checkbox"
                             name="serviceIds"
@@ -475,7 +464,7 @@ export default function EditFamily() {
                             }}
                           />
                           <div style={{ flex: "1" }}>
-                            <span style={{ "font-weight": "500", color: "#2d3748" }}>
+                            <span style={{ "font-weight": "500", color: "var(--color-text)" }}>
                               {service.name}
                             </span>
                             {service.defaultHourlyRate && (
@@ -483,7 +472,7 @@ export default function EditFamily() {
                                 style={{
                                   "margin-left": "0.5rem",
                                   "font-size": "0.875rem",
-                                  color: "#718096",
+                                  color: "var(--color-text-muted)",
                                 }}
                               >
                                 (${service.defaultHourlyRate}/hr
@@ -506,7 +495,7 @@ export default function EditFamily() {
                   display: "block",
                   "margin-bottom": "0.5rem",
                   "font-weight": "600",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 Notes
@@ -556,7 +545,7 @@ export default function EditFamily() {
                 style={{
                   padding: "0.75rem 1.5rem",
                   "background-color": "#edf2f7",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                   border: "1px solid #cbd5e0",
                   "border-radius": "4px",
                   "text-decoration": "none",

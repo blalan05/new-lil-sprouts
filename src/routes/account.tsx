@@ -1,3 +1,4 @@
+import { ensureAuth } from "~/lib/route-guards";
 import { createAsync, type RouteDefinition, A, useSubmission } from "@solidjs/router";
 import { Show, createSignal, createEffect } from "solid-js";
 import { getUser, updateUser, updatePassword } from "~/lib";
@@ -5,9 +6,8 @@ import { getDefaultHourlyRate, getDefaultPianoLessonRate, setSetting } from "~/l
 
 export const route = {
   preload() {
+    ensureAuth();
     getUser();
-    getDefaultHourlyRate();
-    getDefaultPianoLessonRate();
   },
 } satisfies RouteDefinition;
 
@@ -17,8 +17,14 @@ export default function AccountPage() {
   const passwordSubmission = useSubmission(updatePassword);
   const settingSubmission = useSubmission(setSetting);
   
-  const defaultHourlyRate = createAsync(() => getDefaultHourlyRate());
-  const defaultPianoLessonRate = createAsync(() => getDefaultPianoLessonRate());
+  const defaultHourlyRate = createAsync(async () => {
+    const u = await getUser();
+    return u.isOwner ? getDefaultHourlyRate() : null;
+  });
+  const defaultPianoLessonRate = createAsync(async () => {
+    const u = await getUser();
+    return u.isOwner ? getDefaultPianoLessonRate() : null;
+  });
   const [hourlyRateValue, setHourlyRateValue] = createSignal<string>("");
   const [pianoLessonRateValue, setPianoLessonRateValue] = createSignal<string>("");
 
@@ -37,16 +43,10 @@ export default function AccountPage() {
   });
 
   return (
-    <main
-      style={{
-        "max-width": "800px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
+    <main class="page-form">
       <header style={{ "margin-bottom": "2rem" }}>
-        <h1 style={{ color: "#2d3748", "font-size": "2rem" }}>Account Settings</h1>
-        <p style={{ color: "#718096", "margin-top": "0.5rem" }}>
+        <h1 style={{ color: "var(--color-text)", "font-size": "2rem" }}>Account Settings</h1>
+        <p style={{ color: "var(--color-text-muted)", "margin-top": "0.5rem" }}>
           Manage your account information and password
         </p>
       </header>
@@ -62,10 +62,10 @@ export default function AccountPage() {
             {/* Profile Information */}
             <div
               style={{
-                "background-color": "#fff",
+                "background-color": "var(--color-surface)",
                 padding: "2rem",
                 "border-radius": "8px",
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
                 "margin-bottom": "2rem",
               }}
             >
@@ -73,7 +73,7 @@ export default function AccountPage() {
                 style={{
                   "font-size": "1.25rem",
                   "margin-bottom": "1.5rem",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 Profile Information
@@ -95,7 +95,7 @@ export default function AccountPage() {
                         display: "block",
                         "margin-bottom": "0.5rem",
                         "font-weight": "600",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                       }}
                     >
                       First Name
@@ -122,7 +122,7 @@ export default function AccountPage() {
                         display: "block",
                         "margin-bottom": "0.5rem",
                         "font-weight": "600",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                       }}
                     >
                       Last Name
@@ -151,7 +151,7 @@ export default function AccountPage() {
                       display: "block",
                       "margin-bottom": "0.5rem",
                       "font-weight": "600",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                     }}
                   >
                     Email *
@@ -180,7 +180,7 @@ export default function AccountPage() {
                       display: "block",
                       "margin-bottom": "0.5rem",
                       "font-weight": "600",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                     }}
                   >
                     Phone
@@ -204,10 +204,10 @@ export default function AccountPage() {
                 <Show when={userData().isOwner}>
                   <div
                     style={{
-                      "background-color": "#fff",
+                      "background-color": "var(--color-surface)",
                       padding: "2rem",
                       "border-radius": "8px",
-                      border: "1px solid #e2e8f0",
+                      border: "1px solid var(--color-border)",
                       "margin-bottom": "2rem",
                     }}
                   >
@@ -215,7 +215,7 @@ export default function AccountPage() {
                       style={{
                         "font-size": "1.25rem",
                         "margin-bottom": "1.5rem",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                       }}
                     >
                       Business Settings
@@ -232,7 +232,7 @@ export default function AccountPage() {
                             display: "block",
                             "margin-bottom": "0.5rem",
                             "font-weight": "600",
-                            color: "#2d3748",
+                            color: "var(--color-text)",
                           }}
                         >
                           Default Hourly Rate (per child)
@@ -244,7 +244,7 @@ export default function AccountPage() {
                               left: "0.75rem",
                               top: "50%",
                               transform: "translateY(-50%)",
-                              color: "#718096",
+                              color: "var(--color-text-muted)",
                               "font-size": "1rem",
                             }}
                           >
@@ -268,7 +268,7 @@ export default function AccountPage() {
                             }}
                           />
                         </div>
-                        <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "#718096" }}>
+                        <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                           This default rate will be used when creating sessions if no specific rate is provided. The rate is per child per hour.
                         </p>
                       </div>
@@ -286,13 +286,7 @@ export default function AccountPage() {
                           cursor: "pointer",
                           transition: "background-color 0.2s",
                         }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#3182ce";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "#4299e1";
-                        }}
-                      >
+>
                         Save Settings
                       </button>
                     </form>
@@ -315,13 +309,7 @@ export default function AccountPage() {
                           cursor: "pointer",
                           transition: "background-color 0.2s",
                         }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#3182ce";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "#4299e1";
-                        }}
-                      >
+>
                         Save Piano Lesson Rate
                       </button>
                     </form>
@@ -353,7 +341,7 @@ export default function AccountPage() {
                       display: "block",
                       "margin-bottom": "0.5rem",
                       "font-weight": "600",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                     }}
                   >
                     Username
@@ -369,10 +357,10 @@ export default function AccountPage() {
                       "border-radius": "4px",
                       "font-size": "1rem",
                       "background-color": "#f7fafc",
-                      color: "#718096",
+                      color: "var(--color-text-muted)",
                     }}
                   />
-                  <p style={{ "font-size": "0.875rem", color: "#718096", "margin-top": "0.25rem" }}>
+                  <p style={{ "font-size": "0.875rem", color: "var(--color-text-muted)", "margin-top": "0.25rem" }}>
                     Username cannot be changed
                   </p>
                 </div>
@@ -420,17 +408,17 @@ export default function AccountPage() {
             {/* Password Change */}
             <div
               style={{
-                "background-color": "#fff",
+                "background-color": "var(--color-surface)",
                 padding: "2rem",
                 "border-radius": "8px",
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
               }}
             >
               <h2
                 style={{
                   "font-size": "1.25rem",
                   "margin-bottom": "1.5rem",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 Change Password
@@ -444,7 +432,7 @@ export default function AccountPage() {
                       display: "block",
                       "margin-bottom": "0.5rem",
                       "font-weight": "600",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                     }}
                   >
                     Current Password *
@@ -480,7 +468,7 @@ export default function AccountPage() {
                         display: "block",
                         "margin-bottom": "0.5rem",
                         "font-weight": "600",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                       }}
                     >
                       New Password *
@@ -499,7 +487,7 @@ export default function AccountPage() {
                         "font-size": "1rem",
                       }}
                     />
-                    <p style={{ "font-size": "0.875rem", color: "#718096", "margin-top": "0.25rem" }}>
+                    <p style={{ "font-size": "0.875rem", color: "var(--color-text-muted)", "margin-top": "0.25rem" }}>
                       Must be at least 6 characters
                     </p>
                   </div>
@@ -510,7 +498,7 @@ export default function AccountPage() {
                         display: "block",
                         "margin-bottom": "0.5rem",
                         "font-weight": "600",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                       }}
                     >
                       Confirm New Password *

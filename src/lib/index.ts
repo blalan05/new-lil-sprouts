@@ -1,5 +1,7 @@
 import { action, query } from "@solidjs/router";
 import { db } from "./db";
+import { requireUser } from "./auth";
+import { hashPassword, verifyPassword } from "./password";
 import { serverRedirect } from "./server-redirect";
 import {
   getSession,
@@ -17,7 +19,14 @@ export const getUser = query(async () => {
     const session = await getSession();
     const userId = session.data.userId;
     if (userId === undefined) throw new Error("User not found");
-    const user = await db.user.findUnique({ where: { id: userId } });
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      include: {
+        familyMember: {
+          select: { familyId: true },
+        },
+      },
+    });
     if (!user) throw new Error("User not found");
     return {
       id: user.id,
@@ -27,6 +36,8 @@ export const getUser = query(async () => {
       lastName: user.lastName,
       phone: user.phone,
       isOwner: user.isOwner,
+      role: user.isOwner ? ("owner" as const) : ("parent" as const),
+      familyId: user.familyMember?.familyId ?? null,
     };
   } catch {
     await logoutSession();
@@ -36,10 +47,9 @@ export const getUser = query(async () => {
 
 export const updateUser = action(async (formData: FormData) => {
   "use server";
+  const user = await requireUser();
+  const userId = user.id;
   try {
-    const session = await getSession();
-    const userId = session.data.userId;
-    if (userId === undefined) throw new Error("User not found");
 
     const firstName = String(formData.get("firstName") || "");
     const lastName = String(formData.get("lastName") || "");
@@ -75,10 +85,9 @@ export const updateUser = action(async (formData: FormData) => {
 
 export const updatePassword = action(async (formData: FormData) => {
   "use server";
+  const sessionUser = await requireUser();
+  const userId = sessionUser.id;
   try {
-    const session = await getSession();
-    const userId = session.data.userId;
-    if (userId === undefined) throw new Error("User not found");
 
     const currentPassword = String(formData.get("currentPassword"));
     const newPassword = String(formData.get("newPassword"));
@@ -97,14 +106,14 @@ export const updatePassword = action(async (formData: FormData) => {
 
     // Verify current password
     const user = await db.user.findUnique({ where: { id: userId } });
-    if (!user || user.password !== currentPassword) {
+    if (!user || !verifyPassword(currentPassword, user.password)) {
       return new Error("Current password is incorrect");
     }
 
     await db.user.update({
       where: { id: userId },
       data: {
-        password: newPassword,
+        password: hashPassword(newPassword),
       },
     });
 
@@ -128,6 +137,11 @@ export const loginOrRegister = action(async (formData: FormData) => {
   if (loginType !== "login") {
     const emailError = validateEmail(email);
     if (emailError) return new Error(emailError);
+
+    const userCount = await db.user.count();
+    if (userCount > 0) {
+      return new Error("Registration is closed. Ask the owner for a parent account.");
+    }
   }
 
   try {
@@ -138,6 +152,10 @@ export const loginOrRegister = action(async (formData: FormData) => {
     await session.update((d) => {
       d.userId = user.id;
     });
+
+    if (!user.isOwner) {
+      return serverRedirect("/portal");
+    }
   } catch (err) {
     return err as Error;
   }

@@ -1,3 +1,4 @@
+import { ensureOwner } from "~/lib/route-guards";
 import { useSubmission, A, createAsync } from "@solidjs/router";
 import { Show, createSignal, For } from "solid-js";
 import { createFamily } from "~/lib/families";
@@ -10,6 +11,12 @@ type ChildData = {
   gender: string;
 };
 
+export const route = {
+  preload() {
+    ensureOwner();
+  },
+} satisfies import("@solidjs/router").RouteDefinition;
+
 export default function NewFamily() {
   const submission = useSubmission(createFamily);
   const services = createAsync(() => getServices());
@@ -20,13 +27,7 @@ export default function NewFamily() {
   ]);
 
   return (
-    <main
-      style={{
-        "max-width": "800px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
+    <main class="page-form">
       <header style={{ "margin-bottom": "2rem" }}>
         <A
           href="/families"
@@ -39,17 +40,17 @@ export default function NewFamily() {
         >
           ← Back to Families
         </A>
-        <h1 style={{ color: "#2d3748", "font-size": "2rem" }}>Add New Family</h1>
+        <h1 style={{ color: "var(--color-text)", "font-size": "2rem" }}>Add New Family</h1>
       </header>
 
       <form
         action={createFamily}
         method="post"
         style={{
-          "background-color": "#fff",
+          "background-color": "var(--color-surface)",
           padding: "2rem",
           "border-radius": "8px",
-          border: "1px solid #e2e8f0",
+          border: "1px solid var(--color-border)",
         }}
       >
         <div style={{ "margin-bottom": "1.5rem" }}>
@@ -59,7 +60,7 @@ export default function NewFamily() {
               display: "block",
               "margin-bottom": "0.5rem",
               "font-weight": "600",
-              color: "#2d3748",
+              color: "var(--color-text)",
             }}
           >
             Family Name *
@@ -82,13 +83,13 @@ export default function NewFamily() {
 
         <fieldset
           style={{
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "border-radius": "4px",
             padding: "1.5rem",
             "margin-bottom": "1.5rem",
           }}
         >
-          <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+          <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
             Parent/Guardian Information
           </legend>
 
@@ -221,7 +222,7 @@ export default function NewFamily() {
               gap: "0.5rem",
               cursor: "pointer",
               padding: "0.75rem",
-              border: "1px solid #e2e8f0",
+              border: "1px solid var(--color-border)",
               "border-radius": "4px",
               "background-color": "#f7fafc",
             }}
@@ -236,7 +237,7 @@ export default function NewFamily() {
                 cursor: "pointer",
               }}
             />
-            <span style={{ "font-weight": "600", color: "#2d3748" }}>
+            <span style={{ "font-weight": "600", color: "var(--color-text)" }}>
               Add Spouse/Partner Information
             </span>
           </label>
@@ -245,14 +246,14 @@ export default function NewFamily() {
         <Show when={includeSpouse()}>
           <fieldset
             style={{
-              border: "1px solid #e2e8f0",
+              border: "1px solid var(--color-border)",
               "border-radius": "4px",
               padding: "1.5rem",
               "margin-bottom": "1.5rem",
               "background-color": "#f7fafc",
             }}
           >
-            <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+            <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
               Spouse/Partner Information
             </legend>
 
@@ -378,7 +379,7 @@ export default function NewFamily() {
                 />
               </div>
             </div>
-            <p style={{ "margin-top": "0.75rem", "font-size": "0.875rem", color: "#718096" }}>
+            <p style={{ "margin-top": "0.75rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
               Spouse/partner will be added as a family member with pickup authorization enabled by default.
             </p>
           </fieldset>
@@ -393,7 +394,7 @@ export default function NewFamily() {
               gap: "0.5rem",
               cursor: "pointer",
               padding: "0.75rem",
-              border: "1px solid #e2e8f0",
+              border: "1px solid var(--color-border)",
               "border-radius": "4px",
               "background-color": "#f7fafc",
             }}
@@ -413,7 +414,7 @@ export default function NewFamily() {
                 cursor: "pointer",
               }}
             />
-            <span style={{ "font-weight": "600", color: "#2d3748" }}>
+            <span style={{ "font-weight": "600", color: "var(--color-text)" }}>
               Add Children Information
             </span>
           </label>
@@ -422,14 +423,14 @@ export default function NewFamily() {
         <Show when={includeChildren()}>
           <fieldset
             style={{
-              border: "1px solid #e2e8f0",
+              border: "1px solid var(--color-border)",
               "border-radius": "4px",
               padding: "1.5rem",
               "margin-bottom": "1.5rem",
               "background-color": "#f7fafc",
             }}
           >
-            <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+            <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
               Children Information
             </legend>
 
@@ -438,10 +439,10 @@ export default function NewFamily() {
                 <div
                   style={{
                     padding: "1rem",
-                    border: "1px solid #e2e8f0",
+                    border: "1px solid var(--color-border)",
                     "border-radius": "4px",
                     "margin-bottom": "1rem",
-                    "background-color": "#fff",
+                    "background-color": "var(--color-surface)",
                   }}
                 >
                   <div
@@ -452,7 +453,7 @@ export default function NewFamily() {
                       "margin-bottom": "0.75rem",
                     }}
                   >
-                    <h3 style={{ color: "#2d3748", "font-size": "1rem", margin: 0 }}>
+                    <h3 style={{ color: "var(--color-text)", "font-size": "1rem", margin: 0 }}>
                       Child {index() + 1}
                     </h3>
                     <Show when={children().length > 1}>
@@ -640,7 +641,7 @@ export default function NewFamily() {
               style={{
                 padding: "0.75rem 1.5rem",
                 "background-color": "#edf2f7",
-                color: "#2d3748",
+                color: "var(--color-text)",
                 border: "1px solid #cbd5e0",
                 "border-radius": "4px",
                 cursor: "pointer",
@@ -650,7 +651,7 @@ export default function NewFamily() {
             >
               + Add Another Child
             </button>
-            <p style={{ "margin-top": "0.75rem", "font-size": "0.875rem", color: "#718096" }}>
+            <p style={{ "margin-top": "0.75rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
               You can add more children later or provide additional information (allergies, medications, etc.) after creating the family.
             </p>
           </fieldset>
@@ -658,22 +659,22 @@ export default function NewFamily() {
 
         <fieldset
           style={{
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "border-radius": "4px",
             padding: "1.5rem",
             "margin-bottom": "1.5rem",
           }}
         >
-          <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+          <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
             Services
           </legend>
-          <p style={{ "margin-bottom": "1rem", "font-size": "0.875rem", color: "#718096" }}>
+          <p style={{ "margin-bottom": "1rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
             Select which services this family will use. This will default when creating new schedules.
           </p>
           <Show
             when={services()}
             fallback={
-              <div style={{ padding: "1rem", color: "#718096" }}>Loading services...</div>
+              <div style={{ padding: "1rem", color: "var(--color-text-muted)" }}>Loading services...</div>
             }
           >
             <div style={{ display: "flex", "flex-direction": "column", gap: "0.75rem" }}>
@@ -692,13 +693,7 @@ export default function NewFamily() {
                         "border-radius": "4px",
                         transition: "background-color 0.2s",
                       }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#f7fafc";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                      }}
-                    >
+>
                       <input
                         type="checkbox"
                         name="serviceIds"
@@ -711,7 +706,7 @@ export default function NewFamily() {
                         }}
                       />
                       <div style={{ flex: "1" }}>
-                        <span style={{ "font-weight": "500", color: "#2d3748" }}>
+                        <span style={{ "font-weight": "500", color: "var(--color-text)" }}>
                           {service.name}
                         </span>
                         {service.defaultHourlyRate && (
@@ -719,7 +714,7 @@ export default function NewFamily() {
                             style={{
                               "margin-left": "0.5rem",
                               "font-size": "0.875rem",
-                              color: "#718096",
+                              color: "var(--color-text-muted)",
                             }}
                           >
                             (${service.defaultHourlyRate}/hr
@@ -737,13 +732,13 @@ export default function NewFamily() {
 
         <fieldset
           style={{
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "border-radius": "4px",
             padding: "1.5rem",
             "margin-bottom": "1.5rem",
           }}
         >
-          <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+          <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
             Address Information
           </legend>
 
@@ -864,13 +859,13 @@ export default function NewFamily() {
 
         <fieldset
           style={{
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "border-radius": "4px",
             padding: "1.5rem",
             "margin-bottom": "1.5rem",
           }}
         >
-          <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+          <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
             Emergency Contact
           </legend>
 
@@ -936,7 +931,7 @@ export default function NewFamily() {
               display: "block",
               "margin-bottom": "0.5rem",
               "font-weight": "600",
-              color: "#2d3748",
+              color: "var(--color-text)",
             }}
           >
             Notes
@@ -984,7 +979,7 @@ export default function NewFamily() {
             style={{
               padding: "0.75rem 1.5rem",
               "background-color": "#edf2f7",
-              color: "#2d3748",
+              color: "var(--color-text)",
               border: "1px solid #cbd5e0",
               "border-radius": "4px",
               "text-decoration": "none",

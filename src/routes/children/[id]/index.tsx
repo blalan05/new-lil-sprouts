@@ -1,3 +1,4 @@
+import { ensureOwner } from "~/lib/route-guards";
 import { createAsync, type RouteDefinition, A, useParams } from "@solidjs/router";
 import { Show, For } from "solid-js";
 import { getChild } from "~/lib/children";
@@ -54,18 +55,12 @@ export default function ChildDetailPage() {
       case "CANCELLED":
         return { bg: "#fed7d7", color: "#c53030" };
       default:
-        return { bg: "#e2e8f0", color: "#2d3748" };
+        return { bg: "#e2e8f0", color: "var(--color-text)" };
     }
   };
 
   return (
-    <main
-      style={{
-        "max-width": "1200px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
+    <main class="page">
       <Show
         when={child()}
         fallback={
@@ -92,7 +87,7 @@ export default function ChildDetailPage() {
             }}
           >
             <div>
-              <h1 style={{ color: "#2d3748", "font-size": "2rem", margin: "0 0 0.5rem 0" }}>
+              <h1 style={{ color: "var(--color-text)", "font-size": "2rem", margin: "0 0 0.5rem 0" }}>
                 {child()?.firstName} {child()?.lastName}
               </h1>
               <A
@@ -126,10 +121,10 @@ export default function ChildDetailPage() {
         {/* Basic Information */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "1.5rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "margin-bottom": "2rem",
           }}
         >
@@ -137,7 +132,7 @@ export default function ChildDetailPage() {
             style={{
               "font-size": "1.25rem",
               "margin-bottom": "1rem",
-              color: "#2d3748",
+              color: "var(--color-text)",
             }}
           >
             Basic Information
@@ -179,10 +174,10 @@ export default function ChildDetailPage() {
         <Show when={child()?.schoolName || child()?.schoolGrade || child()?.schoolTeacher}>
           <div
             style={{
-              "background-color": "#fff",
+              "background-color": "var(--color-surface)",
               padding: "1.5rem",
               "border-radius": "8px",
-              border: "1px solid #e2e8f0",
+              border: "1px solid var(--color-border)",
               "margin-bottom": "2rem",
             }}
           >
@@ -190,7 +185,7 @@ export default function ChildDetailPage() {
               style={{
                 "font-size": "1.25rem",
                 "margin-bottom": "1rem",
-                color: "#2d3748",
+                color: "var(--color-text)",
               }}
             >
               School Information
@@ -275,10 +270,10 @@ export default function ChildDetailPage() {
         <Show when={child()?.notes}>
           <div
             style={{
-              "background-color": "#fff",
+              "background-color": "var(--color-surface)",
               padding: "1.5rem",
               "border-radius": "8px",
-              border: "1px solid #e2e8f0",
+              border: "1px solid var(--color-border)",
               "margin-bottom": "2rem",
             }}
           >
@@ -286,7 +281,7 @@ export default function ChildDetailPage() {
               style={{
                 "font-size": "1.25rem",
                 "margin-bottom": "1rem",
-                color: "#2d3748",
+                color: "var(--color-text)",
               }}
             >
               Additional Notes
@@ -298,10 +293,10 @@ export default function ChildDetailPage() {
         {/* Care Session History */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "1.5rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
           }}
         >
           <div
@@ -312,7 +307,7 @@ export default function ChildDetailPage() {
               "margin-bottom": "1rem",
             }}
           >
-            <h2 style={{ "font-size": "1.25rem", color: "#2d3748" }}>
+            <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)" }}>
               Recent Care Sessions ({child()?.careSessions?.length || 0})
             </h2>
           </div>
@@ -320,7 +315,7 @@ export default function ChildDetailPage() {
           <Show
             when={child()?.careSessions?.length}
             fallback={
-              <p style={{ color: "#718096", "text-align": "center", padding: "2rem" }}>
+              <p style={{ color: "var(--color-text-muted)", "text-align": "center", padding: "2rem" }}>
                 No care sessions recorded yet.
               </p>
             }

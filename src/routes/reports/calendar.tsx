@@ -1,3 +1,4 @@
+import { ensureOwner } from "~/lib/route-guards";
 import { type RouteDefinition, A, createAsync } from "@solidjs/router";
 import { Show, For, createSignal, createMemo, createEffect } from "solid-js";
 import { getCareSessionsForRange } from "~/lib/schedule";
@@ -5,6 +6,7 @@ import { formatTimeLocal, ensureDate, isSameDay } from "~/lib/datetime";
 
 export const route = {
   preload() {
+    ensureOwner();
     const today = new Date();
     const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
     const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59);
@@ -124,7 +126,7 @@ export default function CalendarReport() {
   });
 
   return (
-    <div style={{ "max-width": "1200px", margin: "0 auto", padding: "1.5rem" }}>
+    <div class="page">
       {/* Print Controls - Hidden when printing */}
       <div style={{ "margin-bottom": "1rem" }} class="no-print">
         <A
@@ -233,7 +235,7 @@ export default function CalendarReport() {
           style={{
             "font-size": "1.75rem",
             "font-weight": "700",
-            color: "#2d3748",
+            color: "var(--color-text)",
             margin: "0 0 0.5rem 0",
           }}
           class="print-title no-print"
@@ -246,7 +248,7 @@ export default function CalendarReport() {
         >
           {monthName()}
         </div>
-        <div style={{ "font-size": "0.875rem", color: "#718096" }} class="print-summary">
+        <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)" }} class="print-summary">
           Total Sessions: {totalSessions()} | Total Hours: {totalHours()}h
         </div>
       </div>
@@ -254,9 +256,9 @@ export default function CalendarReport() {
       {/* Calendar */}
       <div
         style={{
-          "background-color": "#fff",
+          "background-color": "var(--color-surface)",
           "border-radius": "8px",
-          border: "1px solid #e2e8f0",
+          border: "1px solid var(--color-border)",
           overflow: "hidden",
         }}
         class="calendar-container"
@@ -293,7 +295,7 @@ export default function CalendarReport() {
         <Show
           when={sessions() !== undefined}
           fallback={
-            <div style={{ padding: "2rem", "text-align": "center", color: "#718096" }}>
+            <div style={{ padding: "2rem", "text-align": "center", color: "var(--color-text-muted)" }}>
               Loading sessions...
             </div>
           }
@@ -320,7 +322,7 @@ export default function CalendarReport() {
                   <div
                     style={{
                       minHeight: "120px",
-                      border: "1px solid #e2e8f0",
+                      border: "1px solid var(--color-border)",
                       padding: "0.5rem",
                       "background-color": isCurrentMonthDay ? "#fff" : "#f7fafc",
                       position: "relative",

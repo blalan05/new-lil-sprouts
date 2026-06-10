@@ -1,11 +1,14 @@
 import { query, action, reload } from "@solidjs/router";
 import { db } from "./db";
+import { requireOwner, requireSessionFamilyAccess, assertSessionInFamily } from "./auth";
 import { startOfDayUTC, endOfDayUTC } from "./datetime";
 import { serverRedirect } from "./server-redirect";
+import { parseMoney, serializeMoneyDeep } from "./money";
 
 // Get care sessions for a date range
 export const getCareSessionsForRange = query(async (startDate: Date, endDate: Date) => {
   "use server";
+  await requireOwner();
   const sessions = await db.careSession.findMany({
     where: {
       scheduledStart: {
@@ -42,7 +45,7 @@ export const getCareSessionsForRange = query(async (startDate: Date, endDate: Da
   
   // Convert all Date objects to ISO strings to ensure proper UTC serialization
   // This prevents timezone issues during client-server data transfer
-  return sessions.map(session => ({
+  return serializeMoneyDeep(sessions.map(session => ({
     ...session,
     scheduledStart: session.scheduledStart instanceof Date 
       ? session.scheduledStart.toISOString() 
@@ -68,12 +71,13 @@ export const getCareSessionsForRange = query(async (startDate: Date, endDate: Da
     updatedAt: session.updatedAt instanceof Date 
       ? session.updatedAt.toISOString() 
       : session.updatedAt,
-  }));
+  })));
 }, "care-sessions-range");
 
 // Get sessions for a specific day
 export const getSessionsForDay = query(async (date: Date) => {
   "use server";
+  await requireOwner();
   const startOfDay = startOfDayUTC(date);
   const endOfDay = endOfDayUTC(date);
 
@@ -113,12 +117,13 @@ export const getSessionsForDay = query(async (date: Date) => {
       scheduledStart: "asc",
     },
   });
-  return sessions;
+  return serializeMoneyDeep(sessions);
 }, "sessions-for-day");
 
 // Get upcoming care sessions (next 7 days)
 export const getUpcomingSessions = query(async (limit: number = 10) => {
   "use server";
+  await requireOwner();
   const now = new Date();
   const futureDate = new Date();
   futureDate.setDate(futureDate.getDate() + 7);
@@ -160,12 +165,14 @@ export const getUpcomingSessions = query(async (limit: number = 10) => {
     },
     take: limit,
   });
-  return sessions;
+  return serializeMoneyDeep(sessions);
 }, "upcoming-sessions");
 
 // Get a single care session by ID
 export const getCareSession = query(async (id: string) => {
   "use server";
+  await requireOwner();
+  await requireSessionFamilyAccess(id);
   const session = await db.careSession.findUnique({
     where: { id },
     include: {
@@ -201,12 +208,13 @@ export const getCareSession = query(async (id: string) => {
     },
   });
   if (!session) throw new Error("Care session not found");
-  return session;
+  return serializeMoneyDeep(session);
 }, "care-session");
 
 // Get unavailabilities for a date range
 export const getUnavailabilitiesForRange = query(async (startDate: Date, endDate: Date) => {
   "use server";
+  await requireOwner();
   const unavailabilities = await db.unavailability.findMany({
     where: {
       OR: [
@@ -251,6 +259,7 @@ export const getUnavailabilitiesForRange = query(async (startDate: Date, endDate
 // Update a care session (including meal counts)
 export const updateCareSession = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const sessionId = String(formData.get("sessionId"));
     const breakfastCount = parseInt(String(formData.get("breakfastCount") || "0"));
@@ -263,6 +272,8 @@ export const updateCareSession = action(async (formData: FormData) => {
     if (!sessionId) {
       return new Error("Session ID is required");
     }
+
+    await requireSessionFamilyAccess(sessionId);
 
     const updatedSession = await db.careSession.update({
       where: { id: sessionId },
@@ -289,12 +300,13 @@ export const updateCareSession = action(async (formData: FormData) => {
 // Edit full care session details (dates, times, children, etc.)
 export const editCareSessionFull = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const sessionId = String(formData.get("sessionId"));
     const scheduledStart = String(formData.get("scheduledStart"));
     const scheduledEnd = String(formData.get("scheduledEnd"));
     const hourlyRate = formData.get("hourlyRate")
-      ? parseFloat(String(formData.get("hourlyRate")))
+      ? parseMoney(String(formData.get("hourlyRate")))
       : null;
     const notes = String(formData.get("notes") || "");
     const isConfirmed = formData.get("isConfirmed") === "true";
@@ -311,6 +323,8 @@ export const editCareSessionFull = action(async (formData: FormData) => {
     if (!sessionId || !scheduledStart || !scheduledEnd) {
       return new Error("Session ID, start time, and end time are required");
     }
+
+    await requireSessionFamilyAccess(sessionId);
 
     // Import datetime utility
     const { datetimeLocalToUTC } = await import("./datetime");
@@ -349,12 +363,15 @@ export const editCareSessionFull = action(async (formData: FormData) => {
 // Delete a care session
 export const deleteCareSession = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const id = String(formData.get("id"));
 
     if (!id) {
       return new Error("Session ID is required");
     }
+
+    await requireSessionFamilyAccess(id);
 
     await db.careSession.delete({
       where: { id },

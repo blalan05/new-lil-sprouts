@@ -1,10 +1,14 @@
 import { action, query, reload } from "@solidjs/router";
 import { db } from "./db";
+import { requireOwner, assertFamilyExists, requireFamilyMemberAccess, assertFamilyMemberInFamily } from "./auth";
+import { hashPassword } from "./password";
 import type { MemberRelationship } from "../generated/prisma-client/client.js";
 import { serverRedirect } from "./server-redirect";
 
 export const getFamilyMembers = query(async (familyId: string) => {
   "use server";
+  await requireOwner();
+  await assertFamilyExists(familyId);
   const members = await db.familyMember.findMany({
     where: { familyId },
     include: {
@@ -25,6 +29,8 @@ export const getFamilyMembers = query(async (familyId: string) => {
 
 export const getFamilyMember = query(async (id: string) => {
   "use server";
+  await requireOwner();
+  await requireFamilyMemberAccess(id);
   const member = await db.familyMember.findUnique({
     where: { id },
     include: {
@@ -44,6 +50,7 @@ export const getFamilyMember = query(async (id: string) => {
 
 export const createFamilyMember = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const familyId = String(formData.get("familyId"));
     const firstName = String(formData.get("firstName"));
@@ -62,6 +69,8 @@ export const createFamilyMember = action(async (formData: FormData) => {
     if (!relationship) {
       return new Error("Relationship is required");
     }
+
+    await assertFamilyExists(familyId);
 
     const member = await db.familyMember.create({
       data: {
@@ -86,6 +95,7 @@ export const createFamilyMember = action(async (formData: FormData) => {
 
 export const updateFamilyMember = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const id = String(formData.get("id"));
     const familyId = String(formData.get("familyId"));
@@ -105,6 +115,8 @@ export const updateFamilyMember = action(async (formData: FormData) => {
     if (!relationship) {
       return new Error("Relationship is required");
     }
+
+    await assertFamilyMemberInFamily(id, familyId);
 
     await db.familyMember.update({
       where: { id },
@@ -129,7 +141,9 @@ export const updateFamilyMember = action(async (formData: FormData) => {
 
 export const deleteFamilyMember = action(async (id: string) => {
   "use server";
+  await requireOwner();
   try {
+    await requireFamilyMemberAccess(id);
     await db.familyMember.delete({
       where: { id },
     });
@@ -142,6 +156,7 @@ export const deleteFamilyMember = action(async (id: string) => {
 
 export const inviteFamilyMember = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const memberId = String(formData.get("memberId"));
     const username = String(formData.get("username"));
@@ -180,7 +195,7 @@ export const inviteFamilyMember = action(async (formData: FormData) => {
       data: {
         email: member.email,
         username,
-        password, // In production, this should be hashed
+        password: hashPassword(password),
         firstName: member.firstName,
         lastName: member.lastName,
         phone: member.phone,
@@ -205,6 +220,7 @@ export const inviteFamilyMember = action(async (formData: FormData) => {
 
 export const revokeAccess = action(async (memberId: string) => {
   "use server";
+  await requireOwner();
   try {
     const member = await db.familyMember.findUnique({
       where: { id: memberId },

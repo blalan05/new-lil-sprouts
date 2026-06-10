@@ -1,3 +1,4 @@
+import { ensureOwner } from "~/lib/route-guards";
 import { createAsync, type RouteDefinition, A, useSubmission } from "@solidjs/router";
 import { Show, For, createSignal, createEffect } from "solid-js";
 import { getFamilies } from "~/lib/families";
@@ -6,6 +7,7 @@ import { formatTimeLocal } from "~/lib/datetime";
 
 export const route = {
   preload() {
+    ensureOwner();
     getFamilies();
     const currentYear = new Date().getFullYear();
     getPayments(currentYear);
@@ -208,19 +210,12 @@ export default function PaymentsPage() {
       setMethod("");
       setNotes("");
       setShowRecordPayment(false);
-      window.location.reload();
     }
   });
 
   return (
-    <main
-      style={{
-        "max-width": "1200px",
-        margin: "0 auto",
-        padding: "1.5rem",
-      }}
-    >
-      <header style={{ "margin-bottom": "0.75rem" }}>
+    <main class="page">
+      <header style={{ "margin-bottom": "1rem" }}>
         <div
           style={{
             display: "flex",
@@ -242,7 +237,7 @@ export default function PaymentsPage() {
             >
               ← Back to Dashboard
             </A>
-            <h1 style={{ color: "#2d3748", "font-size": "1.5rem", margin: 0, "font-weight": "700" }}>
+            <h1 style={{ color: "var(--color-text)", "font-size": "1.5rem", margin: 0, "font-weight": "700" }}>
               Payments
             </h1>
           </div>
@@ -267,10 +262,10 @@ export default function PaymentsPage() {
       {/* Payments Table */}
       <div
         style={{
-          "background-color": "#fff",
+          "background-color": "var(--color-surface)",
           padding: "0.75rem",
           "border-radius": "8px",
-          border: "1px solid #e2e8f0",
+          border: "1px solid var(--color-border)",
           "margin-bottom": "1rem",
         }}
       >
@@ -348,7 +343,7 @@ export default function PaymentsPage() {
         <Show
           when={allPayments()}
           fallback={
-            <div style={{ "text-align": "center", padding: "3rem", color: "#718096" }}>
+            <div style={{ "text-align": "center", padding: "3rem", color: "var(--color-text-muted)" }}>
               Loading payments...
             </div>
           }
@@ -356,7 +351,7 @@ export default function PaymentsPage() {
           <Show
             when={filteredAndSortedPayments().length > 0}
             fallback={
-              <div style={{ "text-align": "center", padding: "2rem", color: "#718096" }}>
+              <div style={{ "text-align": "center", padding: "2rem", color: "var(--color-text-muted)" }}>
                 No payments found for {selectedYear()}.
               </div>
             }
@@ -452,20 +447,14 @@ export default function PaymentsPage() {
                             "border-bottom": "1px solid #e2e8f0",
                             transition: "background-color 0.2s",
                           }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = "#f7fafc";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "transparent";
-                          }}
-                        >
+>
                           <td style={{ padding: "0.75rem" }}>
                             {formatDate(payment.paidDate || payment.createdAt)}
                           </td>
                           <td style={{ padding: "0.75rem" }}>
                             {payment.family?.familyName || "N/A"}
                           </td>
-                          <td style={{ padding: "0.75rem", "font-size": "0.875rem", color: "#718096" }}>
+                          <td style={{ padding: "0.75rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                             {payment.invoiceNumber || "-"}
                           </td>
                           <td style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600" }}>
@@ -553,7 +542,7 @@ export default function PaymentsPage() {
         >
           <div
             style={{
-              "background-color": "#fff",
+              "background-color": "var(--color-surface)",
               "border-radius": "8px",
               padding: "1.5rem",
               "max-width": "900px",
@@ -573,7 +562,7 @@ export default function PaymentsPage() {
                 "margin-bottom": "1rem",
               }}
             >
-              <h2 style={{ color: "#2d3748", "font-size": "1.25rem", margin: 0 }}>
+              <h2 style={{ color: "var(--color-text)", "font-size": "1.25rem", margin: 0 }}>
                 Record Payment
               </h2>
               <button
@@ -582,7 +571,7 @@ export default function PaymentsPage() {
                   background: "none",
                   border: "none",
                   "font-size": "1.5rem",
-                  color: "#718096",
+                  color: "var(--color-text-muted)",
                   cursor: "pointer",
                   padding: "0.25rem 0.5rem",
                   "line-height": 1,
@@ -607,7 +596,7 @@ export default function PaymentsPage() {
               display: "block",
               "margin-bottom": "0.5rem",
               "font-weight": "600",
-              color: "#2d3748",
+              color: "var(--color-text)",
             }}
           >
             Select Family *
@@ -643,7 +632,7 @@ export default function PaymentsPage() {
                   "text-align": "center",
                   "background-color": "#f7fafc",
                   "border-radius": "4px",
-                  color: "#718096",
+                  color: "var(--color-text-muted)",
                   "margin-bottom": "1rem",
                 }}
               >
@@ -663,7 +652,7 @@ export default function PaymentsPage() {
                 <label
                   style={{
                     "font-weight": "600",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                   }}
                 >
                   Select Unpaid Sessions *
@@ -675,7 +664,7 @@ export default function PaymentsPage() {
                     style={{
                       padding: "0.5rem 1rem",
                       "background-color": "#edf2f7",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                       border: "1px solid #cbd5e0",
                       "border-radius": "4px",
                       cursor: "pointer",
@@ -693,7 +682,7 @@ export default function PaymentsPage() {
                   style={{
                     "max-height": "400px",
                     overflow: "auto",
-                    border: "1px solid #e2e8f0",
+                    border: "1px solid var(--color-border)",
                     "border-radius": "4px",
                   }}
                   class="table-responsive"
@@ -807,7 +796,7 @@ export default function PaymentsPage() {
                                 <div style={{ "font-weight": "500" }}>
                                   {formatDate(session.scheduledStart)}
                                 </div>
-                                <div style={{ "font-size": "0.875rem", color: "#718096" }}>
+                                <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                                   {formatTime(session.scheduledStart)} - {formatTime(session.scheduledEnd)}
                                 </div>
                                 <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.25rem" }}>
@@ -849,7 +838,7 @@ export default function PaymentsPage() {
               "margin-bottom": "1rem",
             }}
           >
-            <h3 style={{ color: "#2d3748", "font-size": "1rem", "margin-bottom": "0.5rem" }}>
+            <h3 style={{ color: "var(--color-text)", "font-size": "1rem", "margin-bottom": "0.5rem" }}>
               Payment Summary
             </h3>
 
@@ -955,7 +944,7 @@ export default function PaymentsPage() {
             <div
               style={{
                 padding: "0.75rem",
-                "background-color": "#fff",
+                "background-color": "var(--color-surface)",
                 "border-radius": "4px",
                 border: "2px solid #48bb78",
               }}
@@ -967,7 +956,7 @@ export default function PaymentsPage() {
                   "align-items": "center",
                   "font-size": "1.25rem",
                   "font-weight": "700",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 <span>Total Amount:</span>
@@ -1001,7 +990,7 @@ export default function PaymentsPage() {
                   style={{
                     padding: "0.75rem 1.5rem",
                     "background-color": "#edf2f7",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                     border: "1px solid #cbd5e0",
                     "border-radius": "4px",
                     cursor: "pointer",

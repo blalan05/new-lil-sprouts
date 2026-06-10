@@ -1,7 +1,8 @@
+import { ensureOwner } from "~/lib/route-guards";
 import { createAsync, type RouteDefinition, A, useSubmission } from "@solidjs/router";
-import { Show, For, createSignal, createEffect } from "solid-js";
+import { Show, For, createSignal, createEffect, createMemo } from "solid-js";
 import { getUser } from "~/lib";
-import { getUpcomingSessions, getSessionsForDay } from "~/lib/schedule";
+import { getUpcomingSessions, getSessionsForDay, getCareSessionsForRange } from "~/lib/schedule";
 import { getRecentReports } from "~/lib/session-reports";
 import { getFamilies } from "~/lib/families";
 import { getFamily } from "~/lib/families";
@@ -9,9 +10,24 @@ import { createCareSchedule } from "~/lib/care-schedules";
 import { getServices } from "~/lib/services";
 import { getWeeklyStats, getDashboardStats, getStatsForPeriod } from "~/lib/stats";
 import { formatTimeLocal, ensureDate, isSameDay } from "~/lib/datetime";
+import EmptyState from "~/components/EmptyState";
+
+function getVisibleCalendarRange(month: Date) {
+  const year = month.getFullYear();
+  const monthIndex = month.getMonth();
+  const firstDay = new Date(year, monthIndex, 1);
+  const startDate = new Date(firstDay);
+  startDate.setDate(startDate.getDate() - startDate.getDay());
+  const endDate = new Date(startDate);
+  endDate.setDate(endDate.getDate() + 41);
+  endDate.setHours(23, 59, 59, 999);
+  startDate.setHours(0, 0, 0, 0);
+  return { start: startDate, end: endDate };
+}
 
 export const route = {
   preload() {
+    ensureOwner();
     getUser();
     getUpcomingSessions(10);
     getRecentReports(10);
@@ -31,6 +47,9 @@ export const route = {
     getSessionsForDay(yesterday);
     getSessionsForDay(today);
     getSessionsForDay(tomorrow);
+
+    const { start, end } = getVisibleCalendarRange(new Date());
+    getCareSessionsForRange(start, end);
   },
   info: {
     ssr: false, // Disable SSR to prevent timezone mismatch between server and client
@@ -60,6 +79,26 @@ export default function Home() {
   const [selectedFamilyId, setSelectedFamilyId] = createSignal<string>("");
   const [selectedDate, setSelectedDate] = createSignal<string>("");
   const [calendarMonth, setCalendarMonth] = createSignal(new Date());
+
+  const calendarRange = createMemo(() => getVisibleCalendarRange(calendarMonth()));
+  const monthSessions = createAsync(() => {
+    const { start, end } = calendarRange();
+    return getCareSessionsForRange(start, end);
+  });
+
+  const sessionCountByDay = createMemo(() => {
+    const sessions = monthSessions();
+    const map = new Map<string, number>();
+    if (!sessions) return map;
+    for (const session of sessions) {
+      const d = ensureDate(session.scheduledStart);
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      map.set(key, (map.get(key) || 0) + 1);
+    }
+    return map;
+  });
+
+  const dayKey = (date: Date) => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 
   // Get sessions for yesterday, today, and tomorrow
   const today = new Date();
@@ -183,18 +222,11 @@ export default function Home() {
   createEffect(() => {
     if (submission.result && !(submission.result instanceof Error)) {
       handleCloseModal();
-      window.location.reload();
     }
   });
 
   return (
-    <main
-      style={{
-        "max-width": "1200px",
-        margin: "0 auto",
-        padding: "1.5rem",
-      }}
-    >
+    <main class="page">
       <header
         style={{
           "margin-bottom": "0.75rem",
@@ -213,7 +245,7 @@ export default function Home() {
         >
           <h1
             style={{
-              color: "#2d3748",
+              color: "var(--color-text)",
               "font-size": "1.5rem",
               margin: 0,
               "font-weight": "700",
@@ -222,7 +254,7 @@ export default function Home() {
             Dashboard
           </h1>
           <Show when={user()}>
-            <span style={{ color: "#718096", "font-size": "0.875rem" }}>
+            <span style={{ color: "var(--color-text-muted)", "font-size": "0.875rem" }}>
               Welcome back, <strong>{user()?.firstName || user()?.username}</strong>
             </span>
           </Show>
@@ -247,17 +279,7 @@ export default function Home() {
             transition: "all 0.2s",
             cursor: "pointer",
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = "#38a169";
-            e.currentTarget.style.transform = "translateY(-1px)";
-            e.currentTarget.style.boxShadow = "0 4px 6px rgba(72, 187, 120, 0.4)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "#48bb78";
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "0 2px 4px rgba(72, 187, 120, 0.3)";
-          }}
-        >
+>
           <span>+</span>
           <span>Add Care Session</span>
         </button>
@@ -266,10 +288,10 @@ export default function Home() {
       {/* Mini Calendar */}
       <div
         style={{
-          "background-color": "#fff",
+          "background-color": "var(--color-surface)",
           padding: "0.75rem",
           "border-radius": "8px",
-          border: "1px solid #e2e8f0",
+          border: "1px solid var(--color-border)",
           "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
           "margin-bottom": "1rem",
           "max-width": "350px",
@@ -292,7 +314,7 @@ export default function Home() {
             style={{
               padding: "0.25rem 0.5rem",
               "background-color": "#edf2f7",
-              color: "#2d3748",
+              color: "var(--color-text)",
               border: "1px solid #cbd5e0",
               "border-radius": "4px",
               cursor: "pointer",
@@ -305,7 +327,7 @@ export default function Home() {
             style={{
               "font-size": "0.875rem",
               "font-weight": "600",
-              color: "#2d3748",
+              color: "var(--color-text)",
               margin: 0,
             }}
           >
@@ -320,7 +342,7 @@ export default function Home() {
             style={{
               padding: "0.25rem 0.5rem",
               "background-color": "#edf2f7",
-              color: "#2d3748",
+              color: "var(--color-text)",
               border: "1px solid #cbd5e0",
               "border-radius": "4px",
               cursor: "pointer",
@@ -345,7 +367,7 @@ export default function Home() {
                   "text-align": "center",
                   "font-size": "0.75rem",
                   "font-weight": "600",
-                  color: "#718096",
+                  color: "var(--color-text-muted)",
                 }}
               >
                 {day}
@@ -356,43 +378,26 @@ export default function Home() {
             {(day) => {
               const isCurrentMonthDay = isCurrentMonth(day);
               const isTodayDay = isToday(day);
+              const count = sessionCountByDay().get(dayKey(day)) || 0;
 
               return (
                 <button
+                  type="button"
                   onClick={() => handleDateClick(day)}
-                  style={{
-                    padding: "0.5rem",
-                    "background-color": isTodayDay
-                      ? "#bee3f8"
-                      : isCurrentMonthDay
-                        ? "#fff"
-                        : "#f7fafc",
-                    color: isCurrentMonthDay ? "#2d3748" : "#a0aec0",
-                    border: isTodayDay ? "2px solid #4299e1" : "1px solid #e2e8f0",
-                    "border-radius": "4px",
-                    cursor: "pointer",
-                    "font-size": "0.75rem",
-                    "font-weight": isTodayDay ? "700" : "400",
-                    transition: "all 0.2s",
-                    "min-height": "32px",
-                    display: "flex",
-                    "align-items": "center",
-                    "justify-content": "center",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (isCurrentMonthDay) {
-                      e.currentTarget.style.backgroundColor = "#edf2f7";
-                      e.currentTarget.style.borderColor = "#cbd5e0";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (isCurrentMonthDay) {
-                      e.currentTarget.style.backgroundColor = isTodayDay ? "#bee3f8" : "#fff";
-                      e.currentTarget.style.borderColor = isTodayDay ? "#4299e1" : "#e2e8f0";
-                    }
-                  }}
+                  class={`calendar-day${isCurrentMonthDay ? "" : " other-month"}${isTodayDay ? " today" : ""}`}
+                  aria-label={
+                    count > 0
+                      ? `${day.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} — ${count} session${count === 1 ? "" : "s"}`
+                      : day.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
+                  }
+                  title={count > 0 ? `${count} session${count === 1 ? "" : "s"}` : undefined}
                 >
-                  {day.getDate()}
+                  <span>{day.getDate()}</span>
+                  <span class="calendar-day-dots" aria-hidden="true">
+                    {count > 0 && <span class="calendar-dot" />}
+                    {count > 1 && <span class="calendar-dot" />}
+                    {count > 2 && <span class="calendar-dot" />}
+                  </span>
                 </button>
               );
             }}
@@ -413,10 +418,10 @@ export default function Home() {
         {/* Yesterday Sessions */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "1rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
           }}
         >
@@ -429,7 +434,7 @@ export default function Home() {
             }}
           >
             <h2
-              style={{ "font-size": "1.125rem", "font-weight": "600", color: "#2d3748", margin: 0 }}
+              style={{ "font-size": "1.125rem", "font-weight": "600", color: "var(--color-text)", margin: 0 }}
             >
               Yesterday
             </h2>
@@ -449,16 +454,7 @@ export default function Home() {
           <Show
             when={yesterdaySessions() && yesterdaySessions()!.length > 0}
             fallback={
-              <p
-                style={{
-                  color: "#a0aec0",
-                  "font-size": "0.875rem",
-                  "text-align": "center",
-                  padding: "0.75rem",
-                }}
-              >
-                No sessions
-              </p>
+              <EmptyState icon="📅" message="No sessions yesterday" />
             }
           >
             <div style={{ display: "flex", "flex-direction": "column", gap: "0.375rem" }}>
@@ -470,31 +466,23 @@ export default function Home() {
                       padding: "0.5rem 0.75rem",
                       "background-color": "#f7fafc",
                       "border-radius": "4px",
-                      border: "1px solid #e2e8f0",
+                      border: "1px solid var(--color-border)",
                       "text-decoration": "none",
                       color: "inherit",
                       transition: "all 0.2s",
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#edf2f7";
-                      e.currentTarget.style.borderColor = "#cbd5e0";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f7fafc";
-                      e.currentTarget.style.borderColor = "#e2e8f0";
-                    }}
-                  >
+>
                     <div
                       style={{
                         "font-weight": "600",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                         "margin-bottom": "0.125rem",
                         "font-size": "0.875rem",
                       }}
                     >
                       {session.family.familyName}
                     </div>
-                    <div style={{ "font-size": "0.8125rem", color: "#718096" }}>
+                    <div style={{ "font-size": "0.8125rem", color: "var(--color-text-muted)" }}>
                       {formatTimeLocal(session.scheduledStart)}{" "}
                       -{" "}
                       {formatTimeLocal(session.scheduledEnd)}
@@ -516,7 +504,7 @@ export default function Home() {
         {/* Today Sessions */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "1rem",
             "border-radius": "8px",
             border: "2px solid #4299e1",
@@ -532,7 +520,7 @@ export default function Home() {
             }}
           >
             <h2
-              style={{ "font-size": "1.125rem", "font-weight": "600", color: "#2d3748", margin: 0 }}
+              style={{ "font-size": "1.125rem", "font-weight": "600", color: "var(--color-text)", margin: 0 }}
             >
               Today
             </h2>
@@ -552,16 +540,15 @@ export default function Home() {
           <Show
             when={todaySessions() && todaySessions()!.length > 0}
             fallback={
-              <p
-                style={{
-                  color: "#a0aec0",
-                  "font-size": "0.875rem",
-                  "text-align": "center",
-                  padding: "0.75rem",
+              <EmptyState
+                icon="☀️"
+                message="No sessions today"
+                actionLabel="+ Add a session"
+                onAction={() => {
+                  setSelectedDate(new Date().toISOString().split("T")[0]);
+                  setShowQuickAddModal(true);
                 }}
-              >
-                No sessions
-              </p>
+              />
             }
           >
             <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem" }}>
@@ -573,31 +560,23 @@ export default function Home() {
                       padding: "0.5rem",
                       "background-color": "#f7fafc",
                       "border-radius": "4px",
-                      border: "1px solid #e2e8f0",
+                      border: "1px solid var(--color-border)",
                       "text-decoration": "none",
                       color: "inherit",
                       transition: "all 0.2s",
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#edf2f7";
-                      e.currentTarget.style.borderColor = "#cbd5e0";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f7fafc";
-                      e.currentTarget.style.borderColor = "#e2e8f0";
-                    }}
-                  >
+>
                     <div
                       style={{
                         "font-weight": "600",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                         "margin-bottom": "0.125rem",
                         "font-size": "0.875rem",
                       }}
                     >
                       {session.family.familyName}
                     </div>
-                    <div style={{ "font-size": "0.8125rem", color: "#718096" }}>
+                    <div style={{ "font-size": "0.8125rem", color: "var(--color-text-muted)" }}>
                       {formatTimeLocal(session.scheduledStart)}{" "}
                       -{" "}
                       {formatTimeLocal(session.scheduledEnd)}
@@ -619,10 +598,10 @@ export default function Home() {
         {/* Tomorrow Sessions */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "1rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
           }}
         >
@@ -635,7 +614,7 @@ export default function Home() {
             }}
           >
             <h2
-              style={{ "font-size": "1.125rem", "font-weight": "600", color: "#2d3748", margin: 0 }}
+              style={{ "font-size": "1.125rem", "font-weight": "600", color: "var(--color-text)", margin: 0 }}
             >
               Tomorrow
             </h2>
@@ -654,18 +633,7 @@ export default function Home() {
           </div>
           <Show
             when={tomorrowSessions() && tomorrowSessions()!.length > 0}
-            fallback={
-              <p
-                style={{
-                  color: "#a0aec0",
-                  "font-size": "0.875rem",
-                  "text-align": "center",
-                  padding: "0.75rem",
-                }}
-              >
-                No sessions
-              </p>
-            }
+            fallback={<EmptyState icon="🌅" message="No sessions tomorrow" />}
           >
             <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem" }}>
               <For each={tomorrowSessions()}>
@@ -676,31 +644,23 @@ export default function Home() {
                       padding: "0.5rem",
                       "background-color": "#f7fafc",
                       "border-radius": "4px",
-                      border: "1px solid #e2e8f0",
+                      border: "1px solid var(--color-border)",
                       "text-decoration": "none",
                       color: "inherit",
                       transition: "all 0.2s",
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#edf2f7";
-                      e.currentTarget.style.borderColor = "#cbd5e0";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f7fafc";
-                      e.currentTarget.style.borderColor = "#e2e8f0";
-                    }}
-                  >
+>
                     <div
                       style={{
                         "font-weight": "600",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                         "margin-bottom": "0.125rem",
                         "font-size": "0.875rem",
                       }}
                     >
                       {session.family.familyName}
                     </div>
-                    <div style={{ "font-size": "0.8125rem", color: "#718096" }}>
+                    <div style={{ "font-size": "0.8125rem", color: "var(--color-text-muted)" }}>
                       {formatTimeLocal(session.scheduledStart)}{" "}
                       -{" "}
                       {formatTimeLocal(session.scheduledEnd)}
@@ -732,10 +692,10 @@ export default function Home() {
         {/* Hours Widget */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "0.75rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
           }}
         >
@@ -747,7 +707,7 @@ export default function Home() {
               "margin-bottom": "0.5rem",
             }}
           >
-            <div style={{ "font-size": "1rem", "font-weight": "600", color: "#2d3748" }}>Hours</div>
+            <div style={{ "font-size": "1rem", "font-weight": "600", color: "var(--color-text)" }}>Hours</div>
             <div style={{ display: "flex", gap: "0.25rem" }}>
               <button
                 onClick={() => setHoursPeriod("lastWeek")}
@@ -816,7 +776,7 @@ export default function Home() {
             </div>
           </div>
           <Show when={hoursStats()}>
-            <div style={{ "font-size": "2.5rem", "font-weight": "700", color: "#2d3748" }}>
+            <div style={{ "font-size": "2.5rem", "font-weight": "700", color: "var(--color-text)" }}>
               {hoursStats()?.hours.toFixed(1) || "0.0"}
             </div>
           </Show>
@@ -825,10 +785,10 @@ export default function Home() {
         {/* Money Widget */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "0.75rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
           }}
         >
@@ -840,7 +800,7 @@ export default function Home() {
               "margin-bottom": "0.5rem",
             }}
           >
-            <div style={{ "font-size": "1rem", "font-weight": "600", color: "#2d3748" }}>Money</div>
+            <div style={{ "font-size": "1rem", "font-weight": "600", color: "var(--color-text)" }}>Money</div>
             <div style={{ display: "flex", gap: "0.25rem" }}>
               <button
                 onClick={() => setMoneyPeriod("lastWeek")}
@@ -929,19 +889,19 @@ export default function Home() {
           <Show when={dashboardStats()}>
             <div
               style={{
-                "background-color": "#fff",
+                "background-color": "var(--color-surface)",
                 padding: "1rem",
                 "border-radius": "8px",
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
                 "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
               }}
             >
               <div
-                style={{ "font-size": "0.8125rem", color: "#718096", "margin-bottom": "0.375rem" }}
+                style={{ "font-size": "0.8125rem", color: "var(--color-text-muted)", "margin-bottom": "0.375rem" }}
               >
                 Hours This Month
               </div>
-              <div style={{ "font-size": "1.75rem", "font-weight": "700", color: "#2d3748" }}>
+              <div style={{ "font-size": "1.75rem", "font-weight": "700", color: "var(--color-text)" }}>
                 {dashboardStats()?.thisMonthHours.toFixed(1) || "0.0"}
               </div>
               <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}>
@@ -951,15 +911,15 @@ export default function Home() {
 
             <div
               style={{
-                "background-color": "#fff",
+                "background-color": "var(--color-surface)",
                 padding: "1rem",
                 "border-radius": "8px",
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
                 "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
               }}
             >
               <div
-                style={{ "font-size": "0.8125rem", color: "#718096", "margin-bottom": "0.375rem" }}
+                style={{ "font-size": "0.8125rem", color: "var(--color-text-muted)", "margin-bottom": "0.375rem" }}
               >
                 Upcoming Sessions
               </div>
@@ -973,15 +933,15 @@ export default function Home() {
 
             <div
               style={{
-                "background-color": "#fff",
+                "background-color": "var(--color-surface)",
                 padding: "1rem",
                 "border-radius": "8px",
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
                 "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
               }}
             >
               <div
-                style={{ "font-size": "0.8125rem", color: "#718096", "margin-bottom": "0.375rem" }}
+                style={{ "font-size": "0.8125rem", color: "var(--color-text-muted)", "margin-bottom": "0.375rem" }}
               >
                 Unpaid Sessions
               </div>
@@ -995,15 +955,15 @@ export default function Home() {
 
             <div
               style={{
-                "background-color": "#fff",
+                "background-color": "var(--color-surface)",
                 padding: "1rem",
                 "border-radius": "8px",
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
                 "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
               }}
             >
               <div
-                style={{ "font-size": "0.8125rem", color: "#718096", "margin-bottom": "0.375rem" }}
+                style={{ "font-size": "0.8125rem", color: "var(--color-text-muted)", "margin-bottom": "0.375rem" }}
               >
                 Active Families
               </div>
@@ -1020,23 +980,23 @@ export default function Home() {
             >
               <div
                 style={{
-                  "background-color": "#fff",
+                  "background-color": "var(--color-surface)",
                   padding: "1rem",
                   "border-radius": "8px",
-                  border: "1px solid #e2e8f0",
+                  border: "1px solid var(--color-border)",
                   "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
                 }}
               >
                 <div
                   style={{
                     "font-size": "0.8125rem",
-                    color: "#718096",
+                    color: "var(--color-text-muted)",
                     "margin-bottom": "0.375rem",
                   }}
                 >
                   Avg Hourly Rate
                 </div>
-                <div style={{ "font-size": "1.75rem", "font-weight": "700", color: "#2d3748" }}>
+                <div style={{ "font-size": "1.75rem", "font-weight": "700", color: "var(--color-text)" }}>
                   ${dashboardStats()?.averageHourlyRate.toFixed(2) || "0.00"}
                 </div>
                 <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}>
@@ -1061,10 +1021,10 @@ export default function Home() {
         {/* Upcoming Sessions */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "0.75rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
           }}
         >
@@ -1079,7 +1039,7 @@ export default function Home() {
             <h2
               style={{
                 "font-size": "1.125rem",
-                color: "#2d3748",
+                color: "var(--color-text)",
                 margin: 0,
               }}
             >
@@ -1099,7 +1059,7 @@ export default function Home() {
           <Show
             when={!upcomingSessions.loading && upcomingSessions()}
             fallback={
-              <div style={{ "text-align": "center", padding: "1.5rem", color: "#718096" }}>
+              <div style={{ "text-align": "center", padding: "1.5rem", color: "var(--color-text-muted)" }}>
                 Loading...
               </div>
             }
@@ -1107,9 +1067,15 @@ export default function Home() {
             <Show
               when={upcomingSessions()?.length}
               fallback={
-                <div style={{ "text-align": "center", padding: "1.5rem", color: "#718096" }}>
-                  No upcoming sessions scheduled
-                </div>
+                <EmptyState
+                  icon="📅"
+                  message="No upcoming sessions scheduled"
+                  actionLabel="+ Add a session"
+                  onAction={() => {
+                    setSelectedDate("");
+                    setShowQuickAddModal(true);
+                  }}
+                />
               }
             >
               <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem" }}>
@@ -1127,7 +1093,7 @@ export default function Home() {
                       IN_PROGRESS: { bg: "#feebc8", color: "#7c2d12" },
                       COMPLETED: { bg: "#c6f6d5", color: "#276749" },
                       CANCELLED: { bg: "#fed7d7", color: "#c53030" },
-                    }[session.status] || { bg: "#e2e8f0", color: "#2d3748" };
+                    }[session.status] || { bg: "#e2e8f0", color: "var(--color-text)" };
 
                     return (
                       <A
@@ -1135,22 +1101,14 @@ export default function Home() {
                         style={{
                           padding: "0.75rem",
                           "background-color": "#f7fafc",
-                          border: "1px solid #e2e8f0",
+                          border: "1px solid var(--color-border)",
                           "border-radius": "6px",
                           "text-decoration": "none",
                           color: "inherit",
                           display: "block",
                           transition: "all 0.2s",
                         }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#edf2f7";
-                          e.currentTarget.style.borderColor = "#cbd5e0";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f7fafc";
-                          e.currentTarget.style.borderColor = "#e2e8f0";
-                        }}
-                      >
+>
                         <div
                           style={{
                             display: "flex",
@@ -1171,7 +1129,7 @@ export default function Home() {
                               <h3
                                 style={{
                                   "font-size": "1rem",
-                                  color: "#2d3748",
+                                  color: "var(--color-text)",
                                   margin: 0,
                                   "font-weight": "600",
                                 }}
@@ -1227,7 +1185,7 @@ export default function Home() {
                                       day: "numeric",
                                     })}
                             </div>
-                            <div style={{ "font-size": "0.875rem", color: "#718096" }}>
+                            <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                               {formatTimeLocal(sessionDate)}
                             </div>
                           </div>
@@ -1244,10 +1202,10 @@ export default function Home() {
         {/* Recent Incidents */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "0.75rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
           }}
         >
@@ -1262,7 +1220,7 @@ export default function Home() {
             <h2
               style={{
                 "font-size": "1.125rem",
-                color: "#2d3748",
+                color: "var(--color-text)",
                 margin: 0,
               }}
             >
@@ -1282,7 +1240,7 @@ export default function Home() {
           <Show
             when={!recentIncidents.loading && recentIncidents()}
             fallback={
-              <div style={{ "text-align": "center", padding: "1.5rem", color: "#718096" }}>
+              <div style={{ "text-align": "center", padding: "1.5rem", color: "var(--color-text-muted)" }}>
                 Loading...
               </div>
             }
@@ -1290,9 +1248,7 @@ export default function Home() {
             <Show
               when={recentIncidents()?.length}
               fallback={
-                <div style={{ "text-align": "center", padding: "1.5rem", color: "#718096" }}>
-                  No recent incidents or reports
-                </div>
+                <EmptyState icon="📋" message="No recent incidents or reports" actionLabel="View schedule" actionHref="/schedule" />
               }
             >
               <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem" }}>
@@ -1303,7 +1259,7 @@ export default function Home() {
                       MINOR: { bg: "#feebc8", color: "#7c2d12", icon: "⚠️" },
                       MODERATE: { bg: "#fed7aa", color: "#7c2d12", icon: "⚡" },
                       SEVERE: { bg: "#fed7d7", color: "#c53030", icon: "🚨" },
-                    }[report.severity] || { bg: "#e2e8f0", color: "#2d3748", icon: "📝" };
+                    }[report.severity] || { bg: "#e2e8f0", color: "var(--color-text)", icon: "📝" };
 
                     const typeLabels: Record<string, string> = {
                       INCIDENT: "Incident",
@@ -1326,22 +1282,14 @@ export default function Home() {
                         style={{
                           padding: "0.75rem",
                           "background-color": "#f7fafc",
-                          border: "1px solid #e2e8f0",
+                          border: "1px solid var(--color-border)",
                           "border-radius": "6px",
                           "text-decoration": "none",
                           color: "inherit",
                           display: "block",
                           transition: "all 0.2s",
                         }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#edf2f7";
-                          e.currentTarget.style.borderColor = "#cbd5e0";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f7fafc";
-                          e.currentTarget.style.borderColor = "#e2e8f0";
-                        }}
-                      >
+>
                         <div
                           style={{
                             display: "flex",
@@ -1363,7 +1311,7 @@ export default function Home() {
                               <h3
                                 style={{
                                   "font-size": "1rem",
-                                  color: "#2d3748",
+                                  color: "var(--color-text)",
                                   margin: 0,
                                   "font-weight": "600",
                                 }}
@@ -1404,7 +1352,7 @@ export default function Home() {
                             <div
                               style={{
                                 "font-size": "0.875rem",
-                                color: "#718096",
+                                color: "var(--color-text-muted)",
                                 "margin-top": "0.25rem",
                               }}
                             >
@@ -1468,7 +1416,7 @@ export default function Home() {
         >
           <div
             style={{
-              "background-color": "#fff",
+              "background-color": "var(--color-surface)",
               "border-radius": "8px",
               padding: "2rem",
               "max-width": "500px",
@@ -1488,7 +1436,7 @@ export default function Home() {
                 "margin-bottom": "1.5rem",
               }}
             >
-              <h2 style={{ color: "#2d3748", "font-size": "1.5rem", margin: 0 }}>
+              <h2 style={{ color: "var(--color-text)", "font-size": "1.5rem", margin: 0 }}>
                 Quick Add Session
               </h2>
               <button
@@ -1497,7 +1445,7 @@ export default function Home() {
                   background: "none",
                   border: "none",
                   "font-size": "1.5rem",
-                  color: "#718096",
+                  color: "var(--color-text-muted)",
                   cursor: "pointer",
                   padding: "0.25rem 0.5rem",
                   "line-height": 1,
@@ -1518,7 +1466,7 @@ export default function Home() {
                     display: "block",
                     "margin-bottom": "0.5rem",
                     "font-weight": "600",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                   }}
                 >
                   Service *
@@ -1526,7 +1474,7 @@ export default function Home() {
                 <Show
                   when={services()}
                   fallback={
-                    <div style={{ padding: "0.75rem", color: "#718096" }}>Loading services...</div>
+                    <div style={{ padding: "0.75rem", color: "var(--color-text-muted)" }}>Loading services...</div>
                   }
                 >
                   <select
@@ -1579,7 +1527,7 @@ export default function Home() {
                     }
                   >
                     <p
-                      style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "#718096" }}
+                      style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}
                     >
                       No services assigned to this family.{" "}
                       <A href={`/families/${selectedFamilyId()}/edit`} style={{ color: "#4299e1" }}>
@@ -1598,7 +1546,7 @@ export default function Home() {
                     display: "block",
                     "margin-bottom": "0.5rem",
                     "font-weight": "600",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                   }}
                 >
                   Family *
@@ -1638,7 +1586,7 @@ export default function Home() {
                           display: "block",
                           "margin-bottom": "0.5rem",
                           "font-weight": "600",
-                          color: "#2d3748",
+                          color: "var(--color-text)",
                         }}
                       >
                         {(() => {
@@ -1661,13 +1609,7 @@ export default function Home() {
                                 "border-radius": "4px",
                                 transition: "background-color 0.2s",
                               }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = "#f7fafc";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = "transparent";
-                              }}
-                            >
+>
                               <input
                                 type="checkbox"
                                 name="childIds"
@@ -1698,7 +1640,7 @@ export default function Home() {
                     display: "block",
                     "margin-bottom": "0.5rem",
                     "font-weight": "600",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                   }}
                 >
                   Date *
@@ -1734,7 +1676,7 @@ export default function Home() {
                       display: "block",
                       "margin-bottom": "0.5rem",
                       "font-weight": "600",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                     }}
                   >
                     Start Time *
@@ -1761,7 +1703,7 @@ export default function Home() {
                       display: "block",
                       "margin-bottom": "0.5rem",
                       "font-weight": "600",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                     }}
                   >
                     End Time *
@@ -1810,7 +1752,7 @@ export default function Home() {
                   style={{
                     padding: "0.75rem 1.5rem",
                     "background-color": "#edf2f7",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                     border: "1px solid #cbd5e0",
                     "border-radius": "4px",
                     cursor: "pointer",

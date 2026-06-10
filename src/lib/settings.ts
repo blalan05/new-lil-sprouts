@@ -1,9 +1,11 @@
 import { action, query } from "@solidjs/router";
 import { db } from "./db";
+import { requireOwner } from "./auth";
 
 // Get a setting value by key
 export const getSetting = query(async (key: string) => {
   "use server";
+  await requireOwner();
   const setting = await db.setting.findUnique({
     where: { key },
   });
@@ -13,6 +15,7 @@ export const getSetting = query(async (key: string) => {
 // Get all settings
 export const getAllSettings = query(async () => {
   "use server";
+  await requireOwner();
   const settings = await db.setting.findMany({
     orderBy: { key: "asc" },
   });
@@ -22,6 +25,7 @@ export const getAllSettings = query(async () => {
 // Get setting value with type conversion
 export const getSettingValue = async (key: string, defaultValue?: any) => {
   "use server";
+  await requireOwner();
   const setting = await db.setting.findUnique({
     where: { key },
   });
@@ -47,6 +51,7 @@ export const getSettingValue = async (key: string, defaultValue?: any) => {
 // Set a setting value
 export const setSetting = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const key = String(formData.get("key"));
     const value = String(formData.get("value"));
@@ -79,6 +84,7 @@ export const setSetting = action(async (formData: FormData) => {
 // Helper function to get default hourly rate (query for client-side)
 export const getDefaultHourlyRate = query(async () => {
   "use server";
+  await requireOwner();
   const rate = await getSettingValue("defaultHourlyRate", null);
   return rate;
 }, "defaultHourlyRate");
@@ -86,6 +92,7 @@ export const getDefaultHourlyRate = query(async () => {
 // Helper function to get default piano lesson rate
 export const getDefaultPianoLessonRate = query(async () => {
   "use server";
+  await requireOwner();
   const rate = await getSettingValue("defaultPianoLessonRate", null);
   return rate;
 }, "defaultPianoLessonRate");

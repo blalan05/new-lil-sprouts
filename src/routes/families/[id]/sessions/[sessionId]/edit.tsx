@@ -1,3 +1,4 @@
+import { ensureOwner } from "~/lib/route-guards";
 import { createAsync, type RouteDefinition, A, useParams, useSubmission } from "@solidjs/router";
 import { Show, For } from "solid-js";
 import { getCareSession } from "~/lib/schedule";
@@ -25,13 +26,7 @@ export default function EditCareSession() {
   };
 
   return (
-    <main
-      style={{
-        "max-width": "800px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
+    <main class="page-form">
       <Show
         when={session() && children()}
         fallback={
@@ -50,20 +45,20 @@ export default function EditCareSession() {
           >
             ← Back to Session
           </A>
-          <h1 style={{ color: "#2d3748", "font-size": "2rem", "margin-bottom": "0.5rem" }}>
+          <h1 style={{ color: "var(--color-text)", "font-size": "2rem", "margin-bottom": "0.5rem" }}>
             Edit Care Session
           </h1>
-          <p style={{ color: "#718096", margin: 0 }}>
+          <p style={{ color: "var(--color-text-muted)", margin: 0 }}>
             Update session details, times, and assigned children
           </p>
         </header>
 
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "2rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
           }}
         >
           <form action={editCareSessionFull} method="post">
@@ -78,7 +73,7 @@ export default function EditCareSession() {
                   display: "block",
                   "margin-bottom": "0.5rem",
                   "font-weight": "500",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 Scheduled Start Time *
@@ -107,7 +102,7 @@ export default function EditCareSession() {
                   display: "block",
                   "margin-bottom": "0.5rem",
                   "font-weight": "500",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 Scheduled End Time *
@@ -136,7 +131,7 @@ export default function EditCareSession() {
                   display: "block",
                   "margin-bottom": "0.5rem",
                   "font-weight": "500",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 Status *
@@ -169,7 +164,7 @@ export default function EditCareSession() {
                   display: "block",
                   "margin-bottom": "0.5rem",
                   "font-weight": "500",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 Hourly Rate (optional)
@@ -213,7 +208,7 @@ export default function EditCareSession() {
                     cursor: "pointer",
                   }}
                 />
-                <span style={{ color: "#2d3748", "font-weight": "500" }}>
+                <span style={{ color: "var(--color-text)", "font-weight": "500" }}>
                   Session Confirmed
                 </span>
               </label>
@@ -227,7 +222,7 @@ export default function EditCareSession() {
                     display: "block",
                     "margin-bottom": "0.5rem",
                     "font-weight": "500",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                   }}
                 >
                   Children (select all that apply)
@@ -240,7 +235,7 @@ export default function EditCareSession() {
                     padding: "1rem",
                     "background-color": "#f7fafc",
                     "border-radius": "4px",
-                    border: "1px solid #e2e8f0",
+                    border: "1px solid var(--color-border)",
                   }}
                 >
                   <For each={children()}>
@@ -264,7 +259,7 @@ export default function EditCareSession() {
                             cursor: "pointer",
                           }}
                         />
-                        <span style={{ color: "#2d3748" }}>
+                        <span style={{ color: "var(--color-text)" }}>
                           {child.firstName} {child.lastName}
                         </span>
                       </label>
@@ -282,7 +277,7 @@ export default function EditCareSession() {
                   display: "block",
                   "margin-bottom": "0.5rem",
                   "font-weight": "500",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 Notes
@@ -312,7 +307,7 @@ export default function EditCareSession() {
                 href={`/families/${params.id}/sessions/${params.sessionId}`}
                 style={{
                   padding: "0.75rem 1.5rem",
-                  "background-color": "#fff",
+                  "background-color": "var(--color-surface)",
                   color: "#4a5568",
                   border: "1px solid #cbd5e0",
                   "border-radius": "4px",

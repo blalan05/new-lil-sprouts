@@ -1,12 +1,15 @@
 import { action, query } from "@solidjs/router";
 import { db } from "./db";
+import { requireOwner, assertFamilyExists } from "./auth";
 import { getSessionExpenseTotal } from "./expenses";
-import { calculateHours, calculateSessionCost, sumMoney, addMoney, roundMoney } from "./money";
+import { calculateHours, calculateSessionCost, sumMoney, addMoney, roundMoney, parseMoney, isPositiveMoney, serializeMoneyDeep } from "./money";
 import { serverRedirect } from "./server-redirect";
 
 // Get unpaid confirmed sessions for a family
 export const getUnpaidSessions = query(async (familyId: string) => {
   "use server";
+  await requireOwner();
+  await assertFamilyExists(familyId);
 
   console.log("[getUnpaidSessions] ========== START ==========");
   console.log("[getUnpaidSessions] familyId:", familyId);
@@ -62,12 +65,13 @@ export const getUnpaidSessions = query(async (familyId: string) => {
   console.log("[getUnpaidSessions] unpaidSessions count:", unpaidSessions.length);
   console.log("[getUnpaidSessions] ========== END ==========");
 
-  return unpaidSessions;
+  return serializeMoneyDeep(unpaidSessions);
 }, "unpaidSessions");
 
 // Create a payment for multiple sessions
 export const createPayment = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const familyId = String(formData.get("familyId"));
     const sessionIds = formData.getAll("sessionIds") as string[];
@@ -79,6 +83,8 @@ export const createPayment = action(async (formData: FormData) => {
     if (!familyId) {
       return new Error("Family is required");
     }
+
+    await assertFamilyExists(familyId);
 
     if (sessionIds.length === 0) {
       return new Error("Please select at least one session");
@@ -103,7 +109,7 @@ export const createPayment = action(async (formData: FormData) => {
 
     // Calculate total amount using precise money math
     // Note: hourlyRate is already the total rate (per-child rate * number of children)
-    const sessionAmounts: number[] = [];
+    const sessionAmounts: ReturnType<typeof calculateSessionCost>[] = [];
 
     for (const session of sessions) {
       const hours = calculateHours(
@@ -111,30 +117,24 @@ export const createPayment = action(async (formData: FormData) => {
         new Date(session.scheduledEnd),
       );
 
-      // Use session hourly rate (which is already total rate for all children)
-      const rate = session.hourlyRate || 0;
-      const sessionCost = calculateSessionCost(hours, rate);
+      const sessionCost = calculateSessionCost(hours, session.hourlyRate);
       sessionAmounts.push(sessionCost);
 
-      // Add expenses for this session
       const expenses = await db.sessionExpense.findMany({
         where: { sessionId: session.id },
         select: { amount: true },
       });
-      const expenseTotal = sumMoney(expenses.map((exp) => exp.amount));
-      sessionAmounts.push(expenseTotal);
+      sessionAmounts.push(sumMoney(expenses.map((exp) => exp.amount)));
     }
 
-    // Add tips/bonuses
-    const tipsAmount = parseFloat(tips) || 0;
-    if (tipsAmount > 0) {
+    const tipsAmount = parseMoney(tips);
+    if (isPositiveMoney(tipsAmount)) {
       sessionAmounts.push(tipsAmount);
     }
 
-    // Sum all amounts precisely
-    const totalAmount = roundMoney(sumMoney(sessionAmounts));
+    const totalAmount = sumMoney(sessionAmounts);
 
-    if (totalAmount <= 0) {
+    if (!isPositiveMoney(totalAmount)) {
       return new Error("Total amount must be greater than 0");
     }
 
@@ -155,16 +155,13 @@ export const createPayment = action(async (formData: FormData) => {
           new Date(session.scheduledStart),
           new Date(session.scheduledEnd),
         );
-        const rate = session.hourlyRate || 0;
-        const sessionAmount = calculateSessionCost(hours, rate);
+        const sessionAmount = calculateSessionCost(hours, session.hourlyRate);
 
-        // Get expenses for this session
         const expenses = await db.sessionExpense.findMany({
           where: { sessionId },
           select: { amount: true },
         });
-        const expenseTotal = sumMoney(expenses.map((exp) => exp.amount));
-        const totalSessionAmount = roundMoney(addMoney(sessionAmount, expenseTotal));
+        const totalSessionAmount = addMoney(sessionAmount, sumMoney(expenses.map((exp) => exp.amount)));
 
         await db.payment.create({
           data: {
@@ -184,7 +181,7 @@ export const createPayment = action(async (formData: FormData) => {
     }
 
     // Create a separate payment record for tips if there are tips
-    if (tipsAmount > 0) {
+    if (isPositiveMoney(tipsAmount)) {
       await db.payment.create({
         data: {
           familyId,
@@ -209,6 +206,7 @@ export const createPayment = action(async (formData: FormData) => {
 // Get all payments with optional year filter
 export const getPayments = query(async (year?: number) => {
   "use server";
+  await requireOwner();
   const where: any = {};
 
   // Filter by year if provided (based on paidDate or createdAt)
@@ -242,5 +240,5 @@ export const getPayments = query(async (year?: number) => {
       createdAt: "desc",
     },
   });
-  return payments;
+  return serializeMoneyDeep(payments);
 }, "payments");

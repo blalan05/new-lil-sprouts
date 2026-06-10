@@ -1,6 +1,7 @@
 import { createAsync, type RouteDefinition, A, useParams, useSubmission } from "@solidjs/router";
 import { Show, For, createSignal, createMemo, createEffect } from "solid-js";
 import { getCareSession, updateCareSession } from "~/lib/schedule";
+import { ensureOwner } from "~/lib/route-guards";
 import {
   formatDateLocal,
   formatDateTimeLocal,
@@ -20,6 +21,7 @@ import {
 
 export const route = {
   preload({ params }) {
+    ensureOwner();
     if (params.sessionId) {
       getCareSession(params.sessionId);
       getSessionReports(params.sessionId);
@@ -125,7 +127,7 @@ export default function CareSessionDetail() {
       case "CANCELLED":
         return { bg: "#fed7d7", color: "#c53030" };
       default:
-        return { bg: "#e2e8f0", color: "#2d3748" };
+        return { bg: "#e2e8f0", color: "var(--color-text)" };
     }
   };
 
@@ -140,18 +142,12 @@ export default function CareSessionDetail() {
       case "SEVERE":
         return { bg: "#fed7d7", color: "#c53030" };
       default:
-        return { bg: "#e2e8f0", color: "#2d3748" };
+        return { bg: "#e2e8f0", color: "var(--color-text)" };
     }
   };
 
   return (
-    <main
-      style={{
-        "max-width": "1200px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
+    <main class="page">
       <Show
         when={session()}
         fallback={
@@ -178,10 +174,10 @@ export default function CareSessionDetail() {
             }}
           >
             <div>
-              <h1 style={{ color: "#2d3748", "font-size": "2rem", "margin-bottom": "0.5rem" }}>
+              <h1 style={{ color: "var(--color-text)", "font-size": "2rem", "margin-bottom": "0.5rem" }}>
                 Care Session
               </h1>
-              <p style={{ color: "#718096", margin: 0 }}>
+              <p style={{ color: "var(--color-text-muted)", margin: 0 }}>
                 {session()?.scheduledStart && formatDateTime(session()!.scheduledStart)}
               </p>
             </div>
@@ -242,10 +238,10 @@ export default function CareSessionDetail() {
         {/* Session Details */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "1.5rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "margin-bottom": "2rem",
           }}
         >
@@ -253,7 +249,7 @@ export default function CareSessionDetail() {
             style={{
               "font-size": "1.25rem",
               "margin-bottom": "1rem",
-              color: "#2d3748",
+              color: "var(--color-text)",
             }}
           >
             Session Information
@@ -300,7 +296,7 @@ export default function CareSessionDetail() {
           <Show when={session()?.notes}>
             <div style={{ "margin-top": "1rem" }}>
               <strong style={{ color: "#4a5568" }}>Notes:</strong>
-              <p style={{ margin: "0.25rem 0 0 0", color: "#718096" }}>{session()?.notes}</p>
+              <p style={{ margin: "0.25rem 0 0 0", color: "var(--color-text-muted)" }}>{session()?.notes}</p>
             </div>
           </Show>
         </div>
@@ -308,10 +304,10 @@ export default function CareSessionDetail() {
         {/* Drop-off Tracking */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "1.5rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "margin-bottom": "2rem",
           }}
         >
@@ -323,7 +319,7 @@ export default function CareSessionDetail() {
               "margin-bottom": "1rem",
             }}
           >
-            <h2 style={{ "font-size": "1.25rem", color: "#2d3748", margin: 0 }}>Drop-off</h2>
+            <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)", margin: 0 }}>Drop-off</h2>
             <Show when={!session()?.dropOffTime && !showDropOffForm()}>
               <button
                 onClick={() => setShowDropOffForm(true)}
@@ -348,7 +344,7 @@ export default function CareSessionDetail() {
             fallback={
               <Show
                 when={showDropOffForm()}
-                fallback={<p style={{ color: "#718096", margin: 0 }}>Not yet recorded</p>}
+                fallback={<p style={{ color: "var(--color-text-muted)", margin: 0 }}>Not yet recorded</p>}
               >
                 <form
                   action={recordDropOff}
@@ -368,7 +364,7 @@ export default function CareSessionDetail() {
                         display: "block",
                         "margin-bottom": "0.5rem",
                         "font-weight": "600",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                       }}
                     >
                       Dropped off by: *
@@ -403,7 +399,7 @@ export default function CareSessionDetail() {
                         display: "block",
                         "margin-bottom": "0.5rem",
                         "font-weight": "600",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                       }}
                     >
                       Time:
@@ -444,7 +440,7 @@ export default function CareSessionDetail() {
                       style={{
                         padding: "0.5rem 1rem",
                         "background-color": "#edf2f7",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                         border: "1px solid #cbd5e0",
                         "border-radius": "4px",
                         cursor: "pointer",
@@ -467,13 +463,13 @@ export default function CareSessionDetail() {
             >
               <div style={{ "margin-bottom": "0.5rem" }}>
                 <strong style={{ color: "#276749" }}>Time:</strong>{" "}
-                <span style={{ color: "#2d3748" }}>
+                <span style={{ color: "var(--color-text)" }}>
                   {session()?.dropOffTime ? formatDateTime(session()!.dropOffTime!) : "N/A"}
                 </span>
               </div>
               <div>
                 <strong style={{ color: "#276749" }}>Dropped off by:</strong>{" "}
-                <span style={{ color: "#2d3748" }}>{session()?.dropOffBy}</span>
+                <span style={{ color: "var(--color-text)" }}>{session()?.dropOffBy}</span>
               </div>
             </div>
           </Show>
@@ -482,10 +478,10 @@ export default function CareSessionDetail() {
         {/* Pick-up Tracking */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "1.5rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "margin-bottom": "2rem",
           }}
         >
@@ -497,7 +493,7 @@ export default function CareSessionDetail() {
               "margin-bottom": "1rem",
             }}
           >
-            <h2 style={{ "font-size": "1.25rem", color: "#2d3748", margin: 0 }}>Pick-up</h2>
+            <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)", margin: 0 }}>Pick-up</h2>
             <Show when={!session()?.pickUpTime && !showPickUpForm()}>
               <button
                 onClick={() => setShowPickUpForm(true)}
@@ -522,7 +518,7 @@ export default function CareSessionDetail() {
             fallback={
               <Show
                 when={showPickUpForm()}
-                fallback={<p style={{ color: "#718096", margin: 0 }}>Not yet recorded</p>}
+                fallback={<p style={{ color: "var(--color-text-muted)", margin: 0 }}>Not yet recorded</p>}
               >
                 <form
                   action={recordPickUp}
@@ -542,7 +538,7 @@ export default function CareSessionDetail() {
                         display: "block",
                         "margin-bottom": "0.5rem",
                         "font-weight": "600",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                       }}
                     >
                       Picked up by: *
@@ -577,7 +573,7 @@ export default function CareSessionDetail() {
                         display: "block",
                         "margin-bottom": "0.5rem",
                         "font-weight": "600",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                       }}
                     >
                       Time:
@@ -618,7 +614,7 @@ export default function CareSessionDetail() {
                       style={{
                         padding: "0.5rem 1rem",
                         "background-color": "#edf2f7",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                         border: "1px solid #cbd5e0",
                         "border-radius": "4px",
                         cursor: "pointer",
@@ -641,13 +637,13 @@ export default function CareSessionDetail() {
             >
               <div style={{ "margin-bottom": "0.5rem" }}>
                 <strong style={{ color: "#2c5282" }}>Time:</strong>{" "}
-                <span style={{ color: "#2d3748" }}>
+                <span style={{ color: "var(--color-text)" }}>
                   {session()?.pickUpTime ? formatDateTime(session()!.pickUpTime!) : "N/A"}
                 </span>
               </div>
               <div>
                 <strong style={{ color: "#2c5282" }}>Picked up by:</strong>{" "}
-                <span style={{ color: "#2d3748" }}>{session()?.pickUpBy}</span>
+                <span style={{ color: "var(--color-text)" }}>{session()?.pickUpBy}</span>
               </div>
             </div>
           </Show>
@@ -656,10 +652,10 @@ export default function CareSessionDetail() {
         {/* Meal Counts */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "1.5rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "margin-bottom": "2rem",
           }}
         >
@@ -671,7 +667,7 @@ export default function CareSessionDetail() {
               "margin-bottom": "1rem",
             }}
           >
-            <h2 style={{ "font-size": "1.25rem", color: "#2d3748", margin: 0 }}>Meal Counts</h2>
+            <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)", margin: 0 }}>Meal Counts</h2>
             <Show when={!editingMeals()}>
               <button
                 onClick={() => {
@@ -716,19 +712,19 @@ export default function CareSessionDetail() {
                     padding: "1rem",
                     "background-color": "#f7fafc",
                     "border-radius": "4px",
-                    border: "1px solid #e2e8f0",
+                    border: "1px solid var(--color-border)",
                   }}
                 >
                   <div
                     style={{
-                      color: "#718096",
+                      color: "var(--color-text-muted)",
                       "font-size": "0.875rem",
                       "margin-bottom": "0.25rem",
                     }}
                   >
                     Breakfast
                   </div>
-                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
+                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "var(--color-text)" }}>
                     {session()?.breakfastCount || 0}
                   </div>
                 </div>
@@ -737,19 +733,19 @@ export default function CareSessionDetail() {
                     padding: "1rem",
                     "background-color": "#f7fafc",
                     "border-radius": "4px",
-                    border: "1px solid #e2e8f0",
+                    border: "1px solid var(--color-border)",
                   }}
                 >
                   <div
                     style={{
-                      color: "#718096",
+                      color: "var(--color-text-muted)",
                       "font-size": "0.875rem",
                       "margin-bottom": "0.25rem",
                     }}
                   >
                     Morning Snack
                   </div>
-                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
+                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "var(--color-text)" }}>
                     {session()?.morningSnackCount || 0}
                   </div>
                 </div>
@@ -758,19 +754,19 @@ export default function CareSessionDetail() {
                     padding: "1rem",
                     "background-color": "#f7fafc",
                     "border-radius": "4px",
-                    border: "1px solid #e2e8f0",
+                    border: "1px solid var(--color-border)",
                   }}
                 >
                   <div
                     style={{
-                      color: "#718096",
+                      color: "var(--color-text-muted)",
                       "font-size": "0.875rem",
                       "margin-bottom": "0.25rem",
                     }}
                   >
                     Lunch
                   </div>
-                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
+                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "var(--color-text)" }}>
                     {session()?.lunchCount || 0}
                   </div>
                 </div>
@@ -779,19 +775,19 @@ export default function CareSessionDetail() {
                     padding: "1rem",
                     "background-color": "#f7fafc",
                     "border-radius": "4px",
-                    border: "1px solid #e2e8f0",
+                    border: "1px solid var(--color-border)",
                   }}
                 >
                   <div
                     style={{
-                      color: "#718096",
+                      color: "var(--color-text-muted)",
                       "font-size": "0.875rem",
                       "margin-bottom": "0.25rem",
                     }}
                   >
                     Afternoon Snack
                   </div>
-                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
+                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "var(--color-text)" }}>
                     {session()?.afternoonSnackCount || 0}
                   </div>
                 </div>
@@ -800,19 +796,19 @@ export default function CareSessionDetail() {
                     padding: "1rem",
                     "background-color": "#f7fafc",
                     "border-radius": "4px",
-                    border: "1px solid #e2e8f0",
+                    border: "1px solid var(--color-border)",
                   }}
                 >
                   <div
                     style={{
-                      color: "#718096",
+                      color: "var(--color-text-muted)",
                       "font-size": "0.875rem",
                       "margin-bottom": "0.25rem",
                     }}
                   >
                     Dinner
                   </div>
-                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
+                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "var(--color-text)" }}>
                     {session()?.dinnerCount || 0}
                   </div>
                 </div>
@@ -845,7 +841,7 @@ export default function CareSessionDetail() {
                       display: "block",
                       "margin-bottom": "0.5rem",
                       "font-weight": "600",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                     }}
                   >
                     Breakfast
@@ -870,7 +866,7 @@ export default function CareSessionDetail() {
                       display: "block",
                       "margin-bottom": "0.5rem",
                       "font-weight": "600",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                     }}
                   >
                     Morning Snack
@@ -895,7 +891,7 @@ export default function CareSessionDetail() {
                       display: "block",
                       "margin-bottom": "0.5rem",
                       "font-weight": "600",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                     }}
                   >
                     Lunch
@@ -920,7 +916,7 @@ export default function CareSessionDetail() {
                       display: "block",
                       "margin-bottom": "0.5rem",
                       "font-weight": "600",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                     }}
                   >
                     Afternoon Snack
@@ -945,7 +941,7 @@ export default function CareSessionDetail() {
                       display: "block",
                       "margin-bottom": "0.5rem",
                       "font-weight": "600",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                     }}
                   >
                     Dinner
@@ -992,7 +988,7 @@ export default function CareSessionDetail() {
                   style={{
                     padding: "0.5rem 1rem",
                     "background-color": "#edf2f7",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                     border: "1px solid #cbd5e0",
                     "border-radius": "4px",
                     cursor: "pointer",
@@ -1008,10 +1004,10 @@ export default function CareSessionDetail() {
         {/* Session Reports */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "1.5rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "margin-bottom": "2rem",
           }}
         >
@@ -1023,7 +1019,7 @@ export default function CareSessionDetail() {
               "margin-bottom": "1rem",
             }}
           >
-            <h2 style={{ "font-size": "1.25rem", color: "#2d3748", margin: 0 }}>
+            <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)", margin: 0 }}>
               Reports & Notes ({reports()?.length || 0})
             </h2>
             <A
@@ -1046,7 +1042,7 @@ export default function CareSessionDetail() {
           <Show
             when={reports()?.length}
             fallback={
-              <p style={{ color: "#718096", "text-align": "center", padding: "2rem" }}>
+              <p style={{ color: "var(--color-text-muted)", "text-align": "center", padding: "2rem" }}>
                 No reports yet. Add incidents, meals, naps, or activities.
               </p>
             }
@@ -1059,7 +1055,7 @@ export default function CareSessionDetail() {
                     <div
                       style={{
                         padding: "1rem",
-                        border: "1px solid #e2e8f0",
+                        border: "1px solid var(--color-border)",
                         "border-radius": "4px",
                         "background-color": "#f7fafc",
                       }}
@@ -1072,7 +1068,7 @@ export default function CareSessionDetail() {
                         }}
                       >
                         <div style={{ display: "flex", "align-items": "center", gap: "0.5rem" }}>
-                          <h3 style={{ color: "#2d3748", margin: 0 }}>{report.title}</h3>
+                          <h3 style={{ color: "var(--color-text)", margin: 0 }}>{report.title}</h3>
                           <span
                             style={{
                               padding: "0.25rem 0.5rem",
@@ -1100,14 +1096,14 @@ export default function CareSessionDetail() {
                             </span>
                           </Show>
                         </div>
-                        <span style={{ color: "#718096", "font-size": "0.875rem" }}>
+                        <span style={{ color: "var(--color-text-muted)", "font-size": "0.875rem" }}>
                           {formatTime(report.timestamp)}
                         </span>
                       </div>
                       <p style={{ color: "#4a5568", "margin-bottom": "0.5rem" }}>
                         {report.description}
                       </p>
-                      <div style={{ "font-size": "0.875rem", color: "#718096" }}>
+                      <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                         Child: {report.child.firstName} {report.child.lastName}
                       </div>
                       <Show when={report.actionTaken}>
@@ -1123,7 +1119,7 @@ export default function CareSessionDetail() {
                           </strong>
                           <p
                             style={{
-                              color: "#718096",
+                              color: "var(--color-text-muted)",
                               "font-size": "0.875rem",
                               margin: "0.25rem 0 0 0",
                             }}
@@ -1143,10 +1139,10 @@ export default function CareSessionDetail() {
         {/* Session Expenses */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "1.5rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "margin-bottom": "2rem",
           }}
         >
@@ -1159,12 +1155,12 @@ export default function CareSessionDetail() {
             }}
           >
             <div>
-              <h2 style={{ "font-size": "1.25rem", color: "#2d3748", margin: 0 }}>
+              <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)", margin: 0 }}>
                 Expenses ({expenses()?.length || 0})
               </h2>
               <Show when={expenseTotal() && expenseTotal()! > 0}>
-                <p style={{ margin: "0.25rem 0 0 0", color: "#718096", "font-size": "0.875rem" }}>
-                  Total: <strong style={{ color: "#2d3748" }}>${expenseTotal()?.toFixed(2)}</strong>
+                <p style={{ margin: "0.25rem 0 0 0", color: "var(--color-text-muted)", "font-size": "0.875rem" }}>
+                  Total: <strong style={{ color: "var(--color-text)" }}>${expenseTotal()?.toFixed(2)}</strong>
                 </p>
               </Show>
             </div>
@@ -1218,7 +1214,7 @@ export default function CareSessionDetail() {
                       display: "block",
                       "margin-bottom": "0.5rem",
                       "font-weight": "600",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                       "font-size": "0.875rem",
                     }}
                   >
@@ -1245,7 +1241,7 @@ export default function CareSessionDetail() {
                       display: "block",
                       "margin-bottom": "0.5rem",
                       "font-weight": "600",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                       "font-size": "0.875rem",
                     }}
                   >
@@ -1274,7 +1270,7 @@ export default function CareSessionDetail() {
                       display: "block",
                       "margin-bottom": "0.5rem",
                       "font-weight": "600",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                       "font-size": "0.875rem",
                     }}
                   >
@@ -1307,7 +1303,7 @@ export default function CareSessionDetail() {
                     display: "block",
                     "margin-bottom": "0.5rem",
                     "font-weight": "600",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                     "font-size": "0.875rem",
                   }}
                 >
@@ -1360,7 +1356,7 @@ export default function CareSessionDetail() {
                   style={{
                     padding: "0.5rem 1rem",
                     "background-color": "#edf2f7",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                     border: "1px solid #cbd5e0",
                     "border-radius": "4px",
                     cursor: "pointer",
@@ -1375,7 +1371,7 @@ export default function CareSessionDetail() {
           <Show
             when={expenses()?.length}
             fallback={
-              <p style={{ color: "#718096", "text-align": "center", padding: "2rem" }}>
+              <p style={{ color: "var(--color-text-muted)", "text-align": "center", padding: "2rem" }}>
                 No expenses recorded yet. Add lunch, trips, supplies, or other expenses.
               </p>
             }
@@ -1397,7 +1393,7 @@ export default function CareSessionDetail() {
                         "justify-content": "space-between",
                         "align-items": "flex-start",
                         padding: "1rem",
-                        border: "1px solid #e2e8f0",
+                        border: "1px solid var(--color-border)",
                         "border-radius": "4px",
                         "background-color": "#f7fafc",
                       }}
@@ -1411,7 +1407,7 @@ export default function CareSessionDetail() {
                             "margin-bottom": "0.25rem",
                           }}
                         >
-                          <strong style={{ color: "#2d3748" }}>{expense.description}</strong>
+                          <strong style={{ color: "var(--color-text)" }}>{expense.description}</strong>
                           {expense.category && (
                             <span
                               style={{
@@ -1427,7 +1423,7 @@ export default function CareSessionDetail() {
                             </span>
                           )}
                         </div>
-                        <div style={{ "font-size": "0.875rem", color: "#718096" }}>
+                        <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                           {formatTime(expense.createdAt)}
                         </div>
                         <Show when={expense.notes}>
@@ -1448,7 +1444,7 @@ export default function CareSessionDetail() {
                             style={{
                               "font-size": "1.125rem",
                               "font-weight": "600",
-                              color: "#2d3748",
+                              color: "var(--color-text)",
                             }}
                           >
                             ${expense.amount.toFixed(2)}
@@ -1463,7 +1459,7 @@ export default function CareSessionDetail() {
                             style={{
                               padding: "0.25rem 0.5rem",
                               "background-color": "#edf2f7",
-                              color: "#2d3748",
+                              color: "var(--color-text)",
                               border: "1px solid #cbd5e0",
                               "border-radius": "4px",
                               cursor: "pointer",

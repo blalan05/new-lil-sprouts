@@ -1,9 +1,12 @@
 import { action, query, reload } from "@solidjs/router";
 import { db } from "./db";
+import { requireOwner, assertFamilyExists, requireChildAccess, assertChildInFamily } from "./auth";
 import { serverRedirect } from "./server-redirect";
 
 export const getChildren = query(async (familyId: string) => {
   "use server";
+  await requireOwner();
+  await assertFamilyExists(familyId);
   const children = await db.child.findMany({
     where: { familyId },
     orderBy: {
@@ -15,6 +18,8 @@ export const getChildren = query(async (familyId: string) => {
 
 export const getChild = query(async (id: string) => {
   "use server";
+  await requireOwner();
+  await requireChildAccess(id);
   const child = await db.child.findUnique({
     where: { id },
     include: {
@@ -33,6 +38,7 @@ export const getChild = query(async (id: string) => {
 
 export const getAllChildren = query(async () => {
   "use server";
+  await requireOwner();
   const children = await db.child.findMany({
     include: {
       family: {
@@ -51,6 +57,7 @@ export const getAllChildren = query(async () => {
 
 export const createChild = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const familyId = String(formData.get("familyId"));
     const firstName = String(formData.get("firstName"));
@@ -72,6 +79,8 @@ export const createChild = action(async (formData: FormData) => {
     if (!dateOfBirth) {
       return new Error("Date of birth is required");
     }
+
+    await assertFamilyExists(familyId);
 
     await db.child.create({
       data: {
@@ -99,6 +108,7 @@ export const createChild = action(async (formData: FormData) => {
 
 export const updateChild = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const id = String(formData.get("id"));
     const familyId = String(formData.get("familyId"));
@@ -121,6 +131,8 @@ export const updateChild = action(async (formData: FormData) => {
     if (!dateOfBirth) {
       return new Error("Date of birth is required");
     }
+
+    await assertChildInFamily(id, familyId);
 
     await db.child.update({
       where: { id },
@@ -148,7 +160,9 @@ export const updateChild = action(async (formData: FormData) => {
 
 export const deleteChild = action(async (id: string) => {
   "use server";
+  await requireOwner();
   try {
+    await requireChildAccess(id);
     await db.child.delete({
       where: { id },
     });

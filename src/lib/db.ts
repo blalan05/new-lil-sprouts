@@ -136,10 +136,122 @@ const prismaClientSingleton = () => {
   });
 };
 
+const SOFT_DELETE_MODELS = new Set([
+  "Family",
+  "Child",
+  "FamilyMember",
+  "FamilyService",
+  "CareSchedule",
+  "CareSession",
+  "Service",
+  "Payment",
+  "SessionReport",
+  "Expense",
+  "SessionExpense",
+  "Document",
+  "Unavailability",
+]);
+
+function withActiveOnly<T extends { where?: Record<string, unknown> }>(args: T): T {
+  if (!args.where) {
+    return { ...args, where: { deletedAt: null } };
+  }
+  if (Object.prototype.hasOwnProperty.call(args.where, "deletedAt")) {
+    return args;
+  }
+  return {
+    ...args,
+    where: { ...args.where, deletedAt: null },
+  };
+}
+
+function modelDelegateName(model: string): string {
+  return model.charAt(0).toLowerCase() + model.slice(1);
+}
+
+function createSoftDeleteExtension(client: PrismaClient) {
+  return client.$extends({
+    query: {
+      $allModels: {
+        async findMany({ model, args, query }) {
+          if (SOFT_DELETE_MODELS.has(model)) {
+            return query(withActiveOnly(args));
+          }
+          return query(args);
+        },
+        async findFirst({ model, args, query }) {
+          if (SOFT_DELETE_MODELS.has(model)) {
+            return query(withActiveOnly(args));
+          }
+          return query(args);
+        },
+        async findUnique({ model, args, query }) {
+          if (SOFT_DELETE_MODELS.has(model)) {
+            return query(withActiveOnly(args));
+          }
+          return query(args);
+        },
+        async count({ model, args, query }) {
+          if (SOFT_DELETE_MODELS.has(model)) {
+            return query(withActiveOnly(args));
+          }
+          return query(args);
+        },
+        async aggregate({ model, args, query }) {
+          if (SOFT_DELETE_MODELS.has(model)) {
+            return query(withActiveOnly(args));
+          }
+          return query(args);
+        },
+        async groupBy({ model, args, query }) {
+          if (SOFT_DELETE_MODELS.has(model)) {
+            return query(withActiveOnly(args));
+          }
+          return query(args);
+        },
+        async delete({ model, args }) {
+          if (SOFT_DELETE_MODELS.has(model)) {
+            const delegate = (client as Record<string, { update: (args: unknown) => Promise<unknown> }>)[
+              modelDelegateName(model)
+            ];
+            return delegate.update({
+              where: args.where,
+              data: { deletedAt: new Date() },
+            });
+          }
+          return (client as Record<string, { delete: (args: unknown) => Promise<unknown> }>)[
+            modelDelegateName(model)
+          ].delete(args);
+        },
+        async deleteMany({ model, args }) {
+          if (SOFT_DELETE_MODELS.has(model)) {
+            const delegate = (client as Record<string, { updateMany: (args: unknown) => Promise<unknown> }>)[
+              modelDelegateName(model)
+            ];
+            return delegate.updateMany({
+              where: withActiveOnly(args).where,
+              data: { deletedAt: new Date() },
+            });
+          }
+          return (client as Record<string, { deleteMany: (args: unknown) => Promise<unknown> }>)[
+            modelDelegateName(model)
+          ].deleteMany(args);
+        },
+      },
+    },
+  });
+}
+
 declare const globalThis: {
   prismaGlobal: ReturnType<typeof prismaClientSingleton> | undefined;
+  dbGlobal: ReturnType<typeof createSoftDeleteExtension> | undefined;
 } & typeof global;
 
-export const db = globalThis.prismaGlobal ?? prismaClientSingleton();
+const baseClient = globalThis.prismaGlobal ?? prismaClientSingleton();
+export const dbIncludingDeleted = baseClient;
+export const db = globalThis.dbGlobal ?? createSoftDeleteExtension(baseClient);
 
-if (process.env.NODE_ENV !== "production") globalThis.prismaGlobal = db;
+if (process.env.NODE_ENV !== "production") {
+  globalThis.prismaGlobal = baseClient;
+  globalThis.dbGlobal = db;
+}

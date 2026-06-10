@@ -1,10 +1,14 @@
 import { action, query, reload } from "@solidjs/router";
 import { db } from "./db";
+import { requireOwner, requireSessionFamilyAccess, requireChildAccess, assertFamilyExists } from "./auth";
 import type { ReportType, ReportSeverity } from "../generated/prisma-client/client.js";
+import { notifyIncidentReport } from "./notification-helpers";
 import { serverRedirect } from "./server-redirect";
 
 export const getSessionReports = query(async (careSessionId: string) => {
   "use server";
+  await requireOwner();
+  await requireSessionFamilyAccess(careSessionId);
   const reports = await db.sessionReport.findMany({
     where: { careSessionId },
     include: {
@@ -32,6 +36,8 @@ export const getSessionReports = query(async (careSessionId: string) => {
 
 export const getChildReports = query(async (childId: string, limit?: number) => {
   "use server";
+  await requireOwner();
+  await requireChildAccess(childId);
   const reports = await db.sessionReport.findMany({
     where: { childId },
     include: {
@@ -60,6 +66,8 @@ export const getChildReports = query(async (childId: string, limit?: number) => 
 
 export const getFamilyReports = query(async (familyId: string, limit?: number) => {
   "use server";
+  await requireOwner();
+  await assertFamilyExists(familyId);
   const reports = await db.sessionReport.findMany({
     where: {
       careSession: {
@@ -99,6 +107,7 @@ export const getFamilyReports = query(async (familyId: string, limit?: number) =
 
 export const getSessionReport = query(async (id: string) => {
   "use server";
+  await requireOwner();
   const report = await db.sessionReport.findUnique({
     where: { id },
     include: {
@@ -124,6 +133,7 @@ export const getSessionReport = query(async (id: string) => {
 
 export const createSessionReport = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const careSessionId = String(formData.get("careSessionId"));
     const childId = String(formData.get("childId"));
@@ -152,6 +162,9 @@ export const createSessionReport = action(async (formData: FormData) => {
       return new Error("Child is required");
     }
 
+    await requireSessionFamilyAccess(careSessionId);
+    await requireChildAccess(childId);
+
     const report = await db.sessionReport.create({
       data: {
         careSessionId,
@@ -167,11 +180,21 @@ export const createSessionReport = action(async (formData: FormData) => {
       },
     });
 
-    // Get the family ID for redirect
     const session = await db.careSession.findUnique({
       where: { id: careSessionId },
       select: { familyId: true },
     });
+
+    if (session && (severity === "SEVERE" || followUpNeeded)) {
+      await notifyIncidentReport({
+        familyId: session.familyId,
+        careSessionId,
+        title,
+        body: description,
+        severity,
+        followUpNeeded,
+      });
+    }
 
     return serverRedirect(`/families/${session?.familyId}/sessions/${careSessionId}`);
   } catch (err) {
@@ -182,6 +205,7 @@ export const createSessionReport = action(async (formData: FormData) => {
 
 export const updateSessionReport = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const id = String(formData.get("id"));
     const type = String(formData.get("type")) as ReportType;
@@ -222,6 +246,7 @@ export const updateSessionReport = action(async (formData: FormData) => {
 
 export const deleteSessionReport = action(async (id: string) => {
   "use server";
+  await requireOwner();
   try {
     await db.sessionReport.delete({
       where: { id },
@@ -236,6 +261,7 @@ export const deleteSessionReport = action(async (id: string) => {
 // Get reports that need follow-up
 export const getFollowUpReports = query(async () => {
   "use server";
+  await requireOwner();
   const reports = await db.sessionReport.findMany({
     where: {
       followUpNeeded: true,
@@ -276,6 +302,7 @@ export const getFollowUpReports = query(async () => {
 // Get recent reports across all families
 export const getRecentReports = query(async (limit: number = 10) => {
   "use server";
+  await requireOwner();
   const reports = await db.sessionReport.findMany({
     include: {
       child: {

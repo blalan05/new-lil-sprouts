@@ -1,220 +1,241 @@
 import { A, useSubmission, createAsync } from "@solidjs/router";
-import { Show, createSignal } from "solid-js";
+import { Show, createSignal, createEffect, onCleanup, For } from "solid-js";
 import { getUser, logout } from "~/lib";
+import { getStoredTheme, initTheme, resolveTheme, setTheme, type Theme } from "~/lib/theme";
+import { getMyNotifications, getUnreadCount, markNotificationRead } from "~/lib/notifications";
+
+const OWNER_NAV_LINKS = [
+  { href: "/families", label: "Families" },
+  { href: "/schedule", label: "Schedule" },
+  { href: "/payments", label: "Payments" },
+  { href: "/expenses", label: "Expenses" },
+  { href: "/reports", label: "Reports" },
+] as const;
+
+const PARENT_NAV_LINKS = [
+  { href: "/portal", label: "Portal" },
+  { href: "/portal/today", label: "Today" },
+] as const;
 
 export default function Topbar() {
   const user = createAsync(() => getUser(), { deferStream: true });
+  const notifications = createAsync(() => getMyNotifications(10), { deferStream: true });
+  const unreadCount = createAsync(() => getUnreadCount(), { deferStream: true });
   const logoutSubmission = useSubmission(logout);
   const [mobileMenuOpen, setMobileMenuOpen] = createSignal(false);
+  const [menuClosing, setMenuClosing] = createSignal(false);
+  const [notifOpen, setNotifOpen] = createSignal(false);
+  const navLinks = () => (user()?.isOwner ? OWNER_NAV_LINKS : PARENT_NAV_LINKS);
+  const homeHref = () => (user()?.isOwner ? "/" : "/portal");
+  const [theme, setThemeState] = createSignal<Theme>("system");
+  let menuRef: HTMLDivElement | undefined;
+  let toggleRef: HTMLButtonElement | undefined;
+  let closeBtnRef: HTMLButtonElement | undefined;
+
+  createEffect(() => {
+    initTheme();
+    setThemeState(getStoredTheme());
+  });
+
+  createEffect(() => {
+    if (mobileMenuOpen() && !menuClosing()) {
+      document.body.classList.add("mobile-menu-open");
+      queueMicrotask(() => closeBtnRef?.focus());
+    } else if (!mobileMenuOpen()) {
+      document.body.classList.remove("mobile-menu-open");
+    }
+  });
+
+  onCleanup(() => {
+    document.body.classList.remove("mobile-menu-open");
+  });
+
+  const closeMobileMenu = (restoreFocus = true) => {
+    if (!mobileMenuOpen() || menuClosing()) return;
+    setMenuClosing(true);
+    const finish = () => {
+      setMobileMenuOpen(false);
+      setMenuClosing(false);
+      if (restoreFocus) toggleRef?.focus();
+    };
+    const sidebar = menuRef;
+    if (sidebar) {
+      const onEnd = (e: AnimationEvent) => {
+        if (e.target === sidebar) {
+          sidebar.removeEventListener("animationend", onEnd);
+          finish();
+        }
+      };
+      sidebar.addEventListener("animationend", onEnd);
+    } else {
+      finish();
+    }
+  };
+
+  const openMobileMenu = () => {
+    setMenuClosing(false);
+    setMobileMenuOpen(true);
+  };
+
+  const cycleTheme = () => {
+    const order: Theme[] = ["light", "dark", "system"];
+    const next = order[(order.indexOf(theme()) + 1) % order.length];
+    setTheme(next);
+    setThemeState(next);
+  };
+
+  const themeLabel = () => {
+    const t = theme();
+    if (t === "system") return `Theme: system (${resolveTheme("system")})`;
+    return `Theme: ${t}`;
+  };
+
+  createEffect(() => {
+    if (!mobileMenuOpen()) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeMobileMenu();
+        return;
+      }
+      if (e.key !== "Tab" || !menuRef) return;
+      const focusable = menuRef.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    onCleanup(() => document.removeEventListener("keydown", onKeyDown));
+  });
 
   return (
     <>
-      <nav
-        class="no-print"
-        style={{
-          "background-color": "#2d3748",
-          color: "#fff",
-          padding: "0.75rem 2rem",
-          "box-shadow": "0 2px 4px rgba(0,0,0,0.1)",
-          position: "sticky",
-          top: 0,
-          "z-index": 1000,
-        }}
-      >
-        <div
-          style={{
-            "max-width": "1600px",
-            margin: "0 auto",
-            display: "flex",
-            "justify-content": "space-between",
-            "align-items": "center",
-          }}
-        >
+      <nav class="topbar no-print">
+        <div class="topbar-inner">
           <div style={{ display: "flex", "align-items": "center", gap: "2rem", "flex-wrap": "wrap" }}>
-            <A
-              href="/"
-              style={{
-                display: "flex",
-                "align-items": "center",
-                gap: "0.75rem",
-                "font-size": "1.25rem",
-                "font-weight": "700",
-                color: "#fff",
-                "text-decoration": "none",
-              }}
-            >
-              <img
-                src="/icons/icon-96x96.png"
-                alt="Lil Sprouts"
-                style={{
-                  width: "32px",
-                  height: "32px",
-                }}
-              />
+            <A href={homeHref()} class="topbar-brand">
+              <img src="/icons/icon-96x96.png" alt="Lil Sprouts" />
               Lil Sprouts
             </A>
-            {/* Desktop Navigation */}
-            <div style={{ display: "flex", gap: "0.5rem", "flex-wrap": "wrap" }} class="nav-links desktop-nav">
-              <A
-                href="/families"
-                style={{
-                  padding: "0.5rem 1rem",
-                  color: "#fff",
-                  "text-decoration": "none",
-                  "border-radius": "4px",
-                  transition: "background-color 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-              >
-                Families
-              </A>
-              <A
-                href="/schedule"
-                style={{
-                  padding: "0.5rem 1rem",
-                  color: "#fff",
-                  "text-decoration": "none",
-                  "border-radius": "4px",
-                  transition: "background-color 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-              >
-                Schedule
-              </A>
-              <A
-                href="/payments"
-                style={{
-                  padding: "0.5rem 1rem",
-                  color: "#fff",
-                  "text-decoration": "none",
-                  "border-radius": "4px",
-                  transition: "background-color 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-              >
-                Payments
-              </A>
-              <A
-                href="/expenses"
-                style={{
-                  padding: "0.5rem 1rem",
-                  color: "#fff",
-                  "text-decoration": "none",
-                  "border-radius": "4px",
-                  transition: "background-color 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-              >
-                Expenses
-              </A>
-              <A
-                href="/reports"
-                style={{
-                  padding: "0.5rem 1rem",
-                  color: "#fff",
-                  "text-decoration": "none",
-                  "border-radius": "4px",
-                  transition: "background-color 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-              >
-                Settings
-              </A>
+            <div class="nav-links desktop-nav" style={{ display: "flex", gap: "0.5rem", "flex-wrap": "wrap" }}>
+              <For each={navLinks()}>
+                {(link) => (
+                  <A href={link.href} class="nav-link">
+                    {link.label}
+                  </A>
+                )}
+              </For>
             </div>
           </div>
           <div style={{ display: "flex", "align-items": "center", gap: "1rem" }}>
-            {/* Desktop User Menu */}
             <div class="desktop-nav" style={{ display: "flex", "align-items": "center", gap: "1rem" }}>
-              <Show when={user()}>
-                <A
-                  href="/account"
-                  style={{
-                    padding: "0.5rem 1rem",
-                    color: "#fff",
-                    "text-decoration": "none",
-                    "border-radius": "4px",
-                    transition: "background-color 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                  }}
+              <button
+                type="button"
+                class="btn btn-toggle"
+                onClick={cycleTheme}
+                aria-label={themeLabel()}
+                title={themeLabel()}
+              >
+                {resolveTheme(theme()) === "dark" ? "☾" : "☀"}
+              </button>
+              <div style={{ position: "relative" }}>
+                <button
+                  type="button"
+                  class="btn btn-toggle"
+                  aria-label="Notifications"
+                  aria-expanded={notifOpen()}
+                  onClick={() => setNotifOpen((open) => !open)}
                 >
+                  🔔
+                  <Show when={(unreadCount() ?? 0) > 0}>
+                    <span
+                      style={{
+                        "margin-left": "0.25rem",
+                        "font-size": "0.75rem",
+                        "font-weight": "700",
+                        color: "var(--color-danger)",
+                      }}
+                    >
+                      {unreadCount()}
+                    </span>
+                  </Show>
+                </button>
+                <Show when={notifOpen()}>
+                  <div
+                    class="card"
+                    style={{
+                      position: "absolute",
+                      right: 0,
+                      top: "calc(100% + 0.5rem)",
+                      width: "320px",
+                      "max-height": "360px",
+                      overflow: "auto",
+                      "z-index": 200,
+                      padding: "0.75rem",
+                    }}
+                  >
+                    <Show when={notifications()?.length} fallback={<p style={{ margin: 0 }}>No notifications</p>}>
+                      <For each={notifications()}>
+                        {(notification) => (
+                          <button
+                            type="button"
+                            class="nav-link"
+                            style={{
+                              display: "block",
+                              width: "100%",
+                              "text-align": "left",
+                              opacity: notification.read ? 0.7 : 1,
+                              "margin-bottom": "0.5rem",
+                            }}
+                            onClick={async () => {
+                              await markNotificationRead(notification.id);
+                              setNotifOpen(false);
+                              if (notification.careSessionId && user()?.isOwner) {
+                                window.location.href = `/families/${notification.familyId}/sessions/${notification.careSessionId}`;
+                              } else if (notification.careSessionId) {
+                                window.location.href = "/portal";
+                              }
+                            }}
+                          >
+                            <div style={{ "font-weight": "600" }}>{notification.title}</div>
+                            <div style={{ "font-size": "0.8125rem", color: "var(--color-text-muted)" }}>
+                              {notification.body.slice(0, 80)}
+                              {notification.body.length > 80 ? "…" : ""}
+                            </div>
+                          </button>
+                        )}
+                      </For>
+                    </Show>
+                  </div>
+                </Show>
+              </div>
+              <Show when={user()}>
+                <A href="/account" class="nav-link">
                   {user()?.firstName || user()?.username}
                 </A>
               </Show>
               <form action={logout} method="post">
-                <button
-                  type="submit"
-                  disabled={logoutSubmission.pending}
-                  style={{
-                    padding: "0.5rem 1rem",
-                    "background-color": "#e53e3e",
-                    color: "#fff",
-                    border: "none",
-                    "border-radius": "4px",
-                    cursor: logoutSubmission.pending ? "not-allowed" : "pointer",
-                    opacity: logoutSubmission.pending ? "0.6" : "1",
-                    "font-weight": "600",
-                    transition: "background-color 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!logoutSubmission.pending) {
-                      e.currentTarget.style.backgroundColor = "#c53030";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!logoutSubmission.pending) {
-                      e.currentTarget.style.backgroundColor = "#e53e3e";
-                    }
-                  }}
-                >
+                <button type="submit" class="btn btn-danger" disabled={logoutSubmission.pending}>
                   {logoutSubmission.pending ? "Logging out..." : "Logout"}
                 </button>
               </form>
             </div>
-            {/* Mobile Hamburger Button */}
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen())}
-              class="mobile-menu-toggle"
-              style={{
-                display: "none",
-                "background-color": "transparent",
-                border: "none",
-                color: "#fff",
-                cursor: "pointer",
-                padding: "0.5rem",
-                "font-size": "1.5rem",
-                "line-height": 1,
-              }}
+              ref={toggleRef}
+              type="button"
+              onClick={() => (mobileMenuOpen() ? closeMobileMenu(false) : openMobileMenu())}
+              class="mobile-menu-toggle btn btn-toggle"
               aria-label="Toggle menu"
+              aria-expanded={mobileMenuOpen()}
             >
               {mobileMenuOpen() ? "✕" : "☰"}
             </button>
@@ -222,36 +243,18 @@ export default function Topbar() {
         </div>
       </nav>
 
-      {/* Mobile Off-Canvas Menu */}
-      <Show when={mobileMenuOpen()}>
+      <Show when={mobileMenuOpen() || menuClosing()}>
         <div
-          class="mobile-menu-overlay"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            "background-color": "rgba(0, 0, 0, 0.5)",
-            "z-index": 999,
-          }}
-          onClick={() => setMobileMenuOpen(false)}
+          class={`mobile-menu-overlay${menuClosing() ? " closing" : ""}`}
+          onClick={() => closeMobileMenu()}
+          aria-hidden="true"
         />
         <div
-          class="mobile-menu-sidebar"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            bottom: 0,
-            width: "280px",
-            "max-width": "85vw",
-            "background-color": "#2d3748",
-            "z-index": 1001,
-            padding: "2rem 1.5rem",
-            "box-shadow": "2px 0 10px rgba(0,0,0,0.3)",
-            overflow: "auto",
-          }}
+          ref={menuRef}
+          class={`mobile-menu-sidebar${menuClosing() ? " closing" : ""}`}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigation menu"
         >
           <div
             style={{
@@ -261,146 +264,36 @@ export default function Topbar() {
               "margin-bottom": "2rem",
             }}
           >
-            <A
-              href="/"
-              style={{
-                display: "flex",
-                "align-items": "center",
-                gap: "0.75rem",
-                "font-size": "1.25rem",
-                "font-weight": "700",
-                color: "#fff",
-                "text-decoration": "none",
-              }}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <img
-                src="/icons/icon-96x96.png"
-                alt="Lil Sprouts"
-                style={{
-                  width: "32px",
-                  height: "32px",
-                }}
-              />
+            <A href={homeHref()} class="topbar-brand" onClick={() => closeMobileMenu(false)}>
+              <img src="/icons/icon-96x96.png" alt="Lil Sprouts" />
               Lil Sprouts
             </A>
             <button
-              onClick={() => setMobileMenuOpen(false)}
-              style={{
-                "background-color": "transparent",
-                border: "none",
-                color: "#fff",
-                cursor: "pointer",
-                padding: "0.5rem",
-                "font-size": "1.5rem",
-                "line-height": 1,
-              }}
+              ref={closeBtnRef}
+              type="button"
+              class="btn btn-toggle"
+              onClick={() => closeMobileMenu()}
               aria-label="Close menu"
             >
               ✕
             </button>
           </div>
           <nav style={{ display: "flex", "flex-direction": "column", gap: "0.5rem" }}>
-            <A
-              href="/families"
-              style={{
-                padding: "1rem",
-                color: "#fff",
-                "text-decoration": "none",
-                "border-radius": "4px",
-                transition: "background-color 0.2s",
-                display: "block",
-              }}
-              onClick={() => setMobileMenuOpen(false)}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
-              }}
+            <For each={navLinks()}>
+              {(link) => (
+                <A href={link.href} class="nav-link nav-link-mobile" onClick={() => closeMobileMenu(false)}>
+                  {link.label}
+                </A>
+              )}
+            </For>
+            <button
+              type="button"
+              class="nav-link nav-link-mobile btn btn-toggle"
+              style={{ "text-align": "left", width: "100%" }}
+              onClick={cycleTheme}
             >
-              Families
-            </A>
-            <A
-              href="/schedule"
-              style={{
-                padding: "1rem",
-                color: "#fff",
-                "text-decoration": "none",
-                "border-radius": "4px",
-                transition: "background-color 0.2s",
-                display: "block",
-              }}
-              onClick={() => setMobileMenuOpen(false)}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
-              }}
-            >
-              Schedule
-            </A>
-            <A
-              href="/payments"
-              style={{
-                padding: "1rem",
-                color: "#fff",
-                "text-decoration": "none",
-                "border-radius": "4px",
-                transition: "background-color 0.2s",
-                display: "block",
-              }}
-              onClick={() => setMobileMenuOpen(false)}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
-              }}
-            >
-              Payments
-            </A>
-            <A
-              href="/expenses"
-              style={{
-                padding: "1rem",
-                color: "#fff",
-                "text-decoration": "none",
-                "border-radius": "4px",
-                transition: "background-color 0.2s",
-                display: "block",
-              }}
-              onClick={() => setMobileMenuOpen(false)}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
-              }}
-            >
-              Expenses
-            </A>
-            <A
-              href="/reports"
-              style={{
-                padding: "1rem",
-                color: "#fff",
-                "text-decoration": "none",
-                "border-radius": "4px",
-                transition: "background-color 0.2s",
-                display: "block",
-              }}
-              onClick={() => setMobileMenuOpen(false)}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
-              }}
-            >
-              Settings
-            </A>
+              {themeLabel()}
+            </button>
             <div
               style={{
                 "margin-top": "1rem",
@@ -411,22 +304,9 @@ export default function Topbar() {
               <Show when={user()}>
                 <A
                   href="/account"
-                  style={{
-                    padding: "1rem",
-                    color: "#fff",
-                    "text-decoration": "none",
-                    "border-radius": "4px",
-                    transition: "background-color 0.2s",
-                    display: "block",
-                    "margin-bottom": "0.5rem",
-                  }}
-                  onClick={() => setMobileMenuOpen(false)}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                  }}
+                  class="nav-link nav-link-mobile"
+                  style={{ "margin-bottom": "0.5rem" }}
+                  onClick={() => closeMobileMenu(false)}
                 >
                   {user()?.firstName || user()?.username}
                 </A>
@@ -434,31 +314,10 @@ export default function Topbar() {
               <form action={logout} method="post">
                 <button
                   type="submit"
+                  class="btn btn-danger"
+                  style={{ width: "100%", "text-align": "left" }}
                   disabled={logoutSubmission.pending}
-                  style={{
-                    width: "100%",
-                    padding: "1rem",
-                    "background-color": "#e53e3e",
-                    color: "#fff",
-                    border: "none",
-                    "border-radius": "4px",
-                    cursor: logoutSubmission.pending ? "not-allowed" : "pointer",
-                    opacity: logoutSubmission.pending ? "0.6" : "1",
-                    "font-weight": "600",
-                    transition: "background-color 0.2s",
-                    "text-align": "left",
-                  }}
-                  onClick={() => setMobileMenuOpen(false)}
-                  onMouseEnter={(e) => {
-                    if (!logoutSubmission.pending) {
-                      e.currentTarget.style.backgroundColor = "#c53030";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!logoutSubmission.pending) {
-                      e.currentTarget.style.backgroundColor = "#e53e3e";
-                    }
-                  }}
+                  onClick={() => closeMobileMenu(false)}
                 >
                   {logoutSubmission.pending ? "Logging out..." : "Logout"}
                 </button>
@@ -470,4 +329,3 @@ export default function Topbar() {
     </>
   );
 }
-

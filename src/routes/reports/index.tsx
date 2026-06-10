@@ -3,9 +3,11 @@ import { Show, For, createSignal, createEffect } from "solid-js";
 import { getUser } from "~/lib";
 import { getAllServices, getService, createService, updateService } from "~/lib/services";
 import { useSubmission } from "@solidjs/router";
+import { ensureOwner } from "~/lib/route-guards";
 
 export const route = {
   preload() {
+    ensureOwner();
     getUser();
     getAllServices();
   },
@@ -32,65 +34,31 @@ export default function Reports() {
       setShowCreateForm(false);
       setEditingServiceId(null);
       // Reload services
-      window.location.reload();
     }
   });
 
   return (
-    <main
-      style={{
-        "max-width": "1600px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
+    <main class="page">
       <div style={{ "margin-bottom": "2rem" }}>
-        <h1 style={{ "font-size": "2rem", "font-weight": "700", color: "#2d3748", "margin-bottom": "0.5rem" }}>
+        <h1 class="page-title" style={{ "margin-bottom": "0.5rem" }}>
           Settings & Reports
         </h1>
-        <p style={{ color: "#718096", "font-size": "1rem" }}>
+        <p class="page-lead">
           Manage services and generate reports for your business.
         </p>
       </div>
 
       {/* Tab Navigation */}
-      <div
-        style={{
-          display: "flex",
-          gap: "0.5rem",
-          "margin-bottom": "2rem",
-          "background-color": "#fff",
-          padding: "0.5rem",
-          "border-radius": "8px",
-          border: "1px solid #e2e8f0",
-          width: "fit-content",
-        }}
-      >
+      <div class="tab-bar">
         <button
           onClick={() => setActiveTab("reports")}
-          style={{
-            padding: "0.5rem 1rem",
-            "background-color": activeTab() === "reports" ? "#4299e1" : "transparent",
-            color: activeTab() === "reports" ? "white" : "#2d3748",
-            border: "none",
-            "border-radius": "4px",
-            cursor: "pointer",
-            "font-weight": activeTab() === "reports" ? "600" : "400",
-          }}
+          class={`tab-btn${activeTab() === "reports" ? " tab-btn--active" : ""}`}
         >
           Reports
         </button>
         <button
           onClick={() => setActiveTab("services")}
-          style={{
-            padding: "0.5rem 1rem",
-            "background-color": activeTab() === "services" ? "#4299e1" : "transparent",
-            color: activeTab() === "services" ? "white" : "#2d3748",
-            border: "none",
-            "border-radius": "4px",
-            cursor: "pointer",
-            "font-weight": activeTab() === "services" ? "600" : "400",
-          }}
+          class={`tab-btn${activeTab() === "services" ? " tab-btn--active" : ""}`}
         >
           Services
         </button>
@@ -100,98 +68,38 @@ export default function Reports() {
       <Show when={activeTab() === "reports"}>
         <div style={{ display: "grid", "grid-template-columns": "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.5rem" }}>
           {/* Year-End Receipt Report */}
-          <A
-            href="/reports/year-end"
-            style={{
-              "background-color": "#fff",
-              padding: "2rem",
-              "border-radius": "8px",
-              border: "1px solid #e2e8f0",
-              "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
-              "text-decoration": "none",
-              color: "inherit",
-              display: "block",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-            }}
-          >
+          <A href="/reports/year-end" class="report-card">
             <div style={{ "font-size": "2rem", "margin-bottom": "1rem" }}>📄</div>
-            <h2 style={{ "font-size": "1.25rem", "font-weight": "600", color: "#2d3748", "margin-bottom": "0.5rem" }}>
-              Year-End Receipt Report
-            </h2>
-            <p style={{ color: "#718096", "font-size": "0.875rem", "line-height": "1.5" }}>
+            <h2>Year-End Receipt Report</h2>
+            <p>
               Generate detailed year-end reports for families including dates, children, hours worked, and money paid. Exportable to PDF.
             </p>
           </A>
 
           {/* Calendar Report */}
-          <A
-            href="/reports/calendar"
-            style={{
-              "background-color": "#fff",
-              padding: "2rem",
-              "border-radius": "8px",
-              border: "1px solid #e2e8f0",
-              "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
-              "text-decoration": "none",
-              color: "inherit",
-              display: "block",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-            }}
-          >
+          <A href="/reports/calendar" class="report-card">
             <div style={{ "font-size": "2rem", "margin-bottom": "1rem" }}>📅</div>
-            <h2 style={{ "font-size": "1.25rem", "font-weight": "600", color: "#2d3748", "margin-bottom": "0.5rem" }}>
-              Calendar View Report
-            </h2>
-            <p style={{ color: "#718096", "font-size": "0.875rem", "line-height": "1.5" }}>
+            <h2>Calendar View Report</h2>
+            <p>
               View all care sessions in a calendar format for any month. Perfect for printing to show how busy you were.
             </p>
           </A>
 
           {/* Income Report */}
-          <A
-            href="/reports/income"
-            style={{
-              "background-color": "#fff",
-              padding: "2rem",
-              "border-radius": "8px",
-              border: "1px solid #e2e8f0",
-              "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
-              "text-decoration": "none",
-              color: "inherit",
-              display: "block",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-            }}
-          >
+          <A href="/reports/income" class="report-card">
             <div style={{ "font-size": "2rem", "margin-bottom": "1rem" }}>💰</div>
-            <h2 style={{ "font-size": "1.25rem", "font-weight": "600", color: "#2d3748", "margin-bottom": "0.5rem" }}>
-              Income Report (Gross & Net)
-            </h2>
-            <p style={{ color: "#718096", "font-size": "0.875rem", "line-height": "1.5" }}>
+            <h2>Income Report (Gross & Net)</h2>
+            <p>
               View gross income, expenses, and net income for your business. Breakdown by family and month. Exportable to PDF and CSV.
+            </p>
+          </A>
+
+          {/* Tax Summary */}
+          <A href="/reports/tax-summary" class="report-card">
+            <div style={{ "font-size": "2rem", "margin-bottom": "1rem" }}>🧾</div>
+            <h2>Annual Tax Summary</h2>
+            <p>
+              Cash-basis gross income, expense totals by category, and net income for a tax year. Filter by family or view all.
             </p>
           </A>
         </div>
@@ -209,8 +117,8 @@ export default function Reports() {
             }}
           >
             <div>
-              <h2 style={{ color: "#2d3748", "font-size": "1.5rem", margin: 0 }}>Services</h2>
-              <p style={{ color: "#718096", "margin-top": "0.5rem" }}>
+              <h2 style={{ color: "var(--color-text)", "font-size": "1.5rem", margin: 0 }}>Services</h2>
+              <p style={{ color: "var(--color-text-muted)", "margin-top": "0.5rem" }}>
                 Manage your service types and pricing
               </p>
             </div>
@@ -236,15 +144,15 @@ export default function Reports() {
           <Show when={showCreateForm() || editingServiceId() !== null}>
             <div
               style={{
-                "background-color": "#fff",
+                "background-color": "var(--color-surface)",
                 padding: "2rem",
                 "border-radius": "8px",
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
                 "margin-bottom": "2rem",
                 "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
               }}
             >
-              <h2 style={{ "font-size": "1.25rem", color: "#2d3748", "margin-bottom": "1.5rem" }}>
+              <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)", "margin-bottom": "1.5rem" }}>
                 {editingServiceId() ? "Edit Service" : "Create New Service"}
               </h2>
               
@@ -264,7 +172,7 @@ export default function Reports() {
                         display: "block",
                         "margin-bottom": "0.5rem",
                         "font-weight": "600",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                       }}
                     >
                       Service Name *
@@ -293,10 +201,10 @@ export default function Reports() {
                         display: "block",
                         "margin-bottom": "0.5rem",
                         "font-weight": "600",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                       }}
                     >
-                      Code * {!editingServiceId() && <span style={{ color: "#718096", "font-weight": "normal" }}>(e.g., CHILDCARE)</span>}
+                      Code * {!editingServiceId() && <span style={{ color: "var(--color-text-muted)", "font-weight": "normal" }}>(e.g., CHILDCARE)</span>}
                     </label>
                     <input
                       id="code"
@@ -316,7 +224,7 @@ export default function Reports() {
                       }}
                     />
                     {editingServiceId() && (
-                      <p style={{ "font-size": "0.75rem", color: "#718096", "margin-top": "0.25rem" }}>
+                      <p style={{ "font-size": "0.75rem", color: "var(--color-text-muted)", "margin-top": "0.25rem" }}>
                         Code cannot be changed after creation
                       </p>
                     )}
@@ -330,7 +238,7 @@ export default function Reports() {
                       display: "block",
                       "margin-bottom": "0.5rem",
                       "font-weight": "600",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                     }}
                   >
                     Description
@@ -360,7 +268,7 @@ export default function Reports() {
                         display: "block",
                         "margin-bottom": "0.5rem",
                         "font-weight": "600",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                       }}
                     >
                       Default Hourly Rate ($)
@@ -390,7 +298,7 @@ export default function Reports() {
                         display: "block",
                         "margin-bottom": "0.5rem",
                         "font-weight": "600",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                       }}
                     >
                       Pricing Type *
@@ -419,7 +327,7 @@ export default function Reports() {
                         display: "block",
                         "margin-bottom": "0.5rem",
                         "font-weight": "600",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                       }}
                     >
                       Options
@@ -502,7 +410,7 @@ export default function Reports() {
                     style={{
                       padding: "0.75rem 1.5rem",
                       "background-color": "#edf2f7",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                       border: "1px solid #cbd5e0",
                       "border-radius": "4px",
                       cursor: "pointer",
@@ -519,7 +427,7 @@ export default function Reports() {
           <Show
             when={allServices()}
             fallback={
-              <div style={{ "text-align": "center", padding: "3rem", color: "#718096" }}>
+              <div style={{ "text-align": "center", padding: "3rem", color: "var(--color-text-muted)" }}>
                 Loading services...
               </div>
             }
@@ -529,14 +437,14 @@ export default function Reports() {
               fallback={
                 <div
                   style={{
-                    "background-color": "#fff",
+                    "background-color": "var(--color-surface)",
                     padding: "3rem",
                     "border-radius": "8px",
-                    border: "1px solid #e2e8f0",
+                    border: "1px solid var(--color-border)",
                     "text-align": "center",
                   }}
                 >
-                  <p style={{ color: "#718096", "margin-bottom": "1rem" }}>No services yet.</p>
+                  <p style={{ color: "var(--color-text-muted)", "margin-bottom": "1rem" }}>No services yet.</p>
                   <button
                     onClick={() => setShowCreateForm(true)}
                     style={{
@@ -556,10 +464,10 @@ export default function Reports() {
             >
               <div
                 style={{
-                  "background-color": "#fff",
+                  "background-color": "var(--color-surface)",
                   padding: "1.5rem",
                   "border-radius": "8px",
-                  border: "1px solid #e2e8f0",
+                  border: "1px solid var(--color-border)",
                   "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
                 }}
               >
@@ -569,7 +477,7 @@ export default function Reports() {
                       <div
                         style={{
                           padding: "1.5rem",
-                          border: "1px solid #e2e8f0",
+                          border: "1px solid var(--color-border)",
                           "border-radius": "6px",
                           "background-color": "#f7fafc",
                         }}
@@ -584,7 +492,7 @@ export default function Reports() {
                         >
                           <div style={{ flex: "1" }}>
                             <div style={{ display: "flex", "align-items": "center", gap: "0.75rem", "margin-bottom": "0.5rem" }}>
-                              <h3 style={{ color: "#2d3748", margin: 0, "font-size": "1.125rem" }}>
+                              <h3 style={{ color: "var(--color-text)", margin: 0, "font-size": "1.125rem" }}>
                                 {service.name}
                               </h3>
                               <span
@@ -619,16 +527,16 @@ export default function Reports() {
                                 {service.description}
                               </p>
                             )}
-                            <div style={{ display: "flex", gap: "1.5rem", "font-size": "0.875rem", color: "#718096" }}>
+                            <div style={{ display: "flex", gap: "1.5rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                               {service.defaultHourlyRate && (
                                 <span>
-                                  <strong style={{ color: "#2d3748" }}>Rate:</strong> ${service.defaultHourlyRate.toFixed(2)}/hr
+                                  <strong style={{ color: "var(--color-text)" }}>Rate:</strong> ${service.defaultHourlyRate.toFixed(2)}/hr
                                   {service.pricingType === "PER_CHILD" && " per child"}
                                 </span>
                               )}
                               {service.requiresChildren && (
                                 <span>
-                                  <strong style={{ color: "#2d3748" }}>Requires:</strong> Children
+                                  <strong style={{ color: "var(--color-text)" }}>Requires:</strong> Children
                                 </span>
                               )}
                             </div>
@@ -641,7 +549,7 @@ export default function Reports() {
                             style={{
                               padding: "0.5rem 1rem",
                               "background-color": "#edf2f7",
-                              color: "#2d3748",
+                              color: "var(--color-text)",
                               border: "1px solid #cbd5e0",
                               "border-radius": "4px",
                               cursor: "pointer",

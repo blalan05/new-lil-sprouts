@@ -1,10 +1,12 @@
 import { action, query, reload } from "@solidjs/router";
 import { db } from "./db";
+import { requireOwner } from "./auth";
 import { parseFormDate } from "./datetime";
 import { serverRedirect } from "./server-redirect";
 
 export const getUnavailabilities = query(async (userId?: string) => {
   "use server";
+  await requireOwner();
   const unavailabilities = await db.unavailability.findMany({
     where: userId ? { userId } : {},
     orderBy: {
@@ -16,6 +18,7 @@ export const getUnavailabilities = query(async (userId?: string) => {
 
 export const getUnavailability = query(async (id: string) => {
   "use server";
+  await requireOwner();
   const unavailability = await db.unavailability.findUnique({
     where: { id },
     include: {
@@ -35,6 +38,7 @@ export const getUnavailability = query(async (id: string) => {
 
 export const createUnavailability = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const userId = String(formData.get("userId") || "");
     const startDate = String(formData.get("startDate"));
@@ -86,6 +90,7 @@ export const createUnavailability = action(async (formData: FormData) => {
 
 export const updateUnavailability = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const id = String(formData.get("id"));
     const userId = String(formData.get("userId") || "");
@@ -139,6 +144,7 @@ export const updateUnavailability = action(async (formData: FormData) => {
 
 export const deleteUnavailability = action(async (id: string) => {
   "use server";
+  await requireOwner();
   try {
     await db.unavailability.delete({
       where: { id },
@@ -154,6 +160,7 @@ export const deleteUnavailability = action(async (id: string) => {
 export const checkAvailability = query(
   async (date: Date, startTime?: string, endTime?: string) => {
     "use server";
+    await requireOwner();
     const conflicts = await db.unavailability.findMany({
       where: {
         AND: [
@@ -187,6 +194,7 @@ export const checkAvailability = query(
 // Get upcoming unavailabilities
 export const getUpcomingUnavailabilities = query(async (userId?: string) => {
   "use server";
+  await requireOwner();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 

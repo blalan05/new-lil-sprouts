@@ -1,8 +1,15 @@
+import { ensureOwner } from "~/lib/route-guards";
 import { useSubmission, A, useParams, createAsync } from "@solidjs/router";
 import { Show, For, createSignal, createEffect } from "solid-js";
 import { createCareSchedule } from "~/lib/care-schedules";
 import { getFamily } from "~/lib/families";
 import { getServices } from "~/lib/services";
+
+export const route = {
+  preload() {
+    ensureOwner();
+  },
+} satisfies import("@solidjs/router").RouteDefinition;
 
 export default function NewCareSchedule() {
   const params = useParams();
@@ -54,13 +61,7 @@ export default function NewCareSchedule() {
   const requiresChildren = () => selectedService()?.requiresChildren ?? false;
 
   return (
-    <main
-      style={{
-        "max-width": "800px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
+    <main class="page-form">
       <header style={{ "margin-bottom": "2rem" }}>
         <A
           href={`/families/${params.id}`}
@@ -73,8 +74,8 @@ export default function NewCareSchedule() {
         >
           ← Back to Family
         </A>
-        <h1 style={{ color: "#2d3748", "font-size": "2rem" }}>Schedule Care Session</h1>
-        <p style={{ color: "#718096", margin: "0.5rem 0 0 0" }}>
+        <h1 style={{ color: "var(--color-text)", "font-size": "2rem" }}>Schedule Care Session</h1>
+        <p style={{ color: "var(--color-text-muted)", margin: "0.5rem 0 0 0" }}>
           Create a {recurrence() === "ONCE" ? "one-time" : "recurring"} care schedule for{" "}
           {family()?.familyName}
         </p>
@@ -98,10 +99,10 @@ export default function NewCareSchedule() {
               }
             }}
             style={{
-              "background-color": "#fff",
+              "background-color": "var(--color-surface)",
               padding: "2rem",
               "border-radius": "8px",
-              border: "1px solid #e2e8f0",
+              border: "1px solid var(--color-border)",
             }}
           >
             <input type="hidden" name="familyId" value={params.id} />
@@ -110,13 +111,13 @@ export default function NewCareSchedule() {
 
             <fieldset
               style={{
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
                 "border-radius": "4px",
                 padding: "1.5rem",
                 "margin-bottom": "1.5rem",
               }}
             >
-              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
                 Schedule Type
               </legend>
 
@@ -135,7 +136,7 @@ export default function NewCareSchedule() {
                 <Show
                   when={services()}
                   fallback={
-                    <div style={{ padding: "0.75rem", color: "#718096" }}>Loading services...</div>
+                    <div style={{ padding: "0.75rem", color: "var(--color-text-muted)" }}>Loading services...</div>
                   }
                 >
                   <select
@@ -181,7 +182,7 @@ export default function NewCareSchedule() {
                     </Show>
                   </select>
                   <Show when={!familyData().services || familyData().services.length === 0}>
-                    <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "#718096" }}>
+                    <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                       No services assigned to this family. <A href={`/families/${params.id}/edit`} style={{ color: "#4299e1" }}>Assign services</A> to default this selection.
                     </p>
                   </Show>
@@ -274,7 +275,7 @@ export default function NewCareSchedule() {
                         "align-items": "center",
                         gap: "0.5rem",
                         padding: "0.5rem",
-                        border: "1px solid #e2e8f0",
+                        border: "1px solid var(--color-border)",
                         "border-radius": "4px",
                         cursor: "pointer",
                         "background-color": "#f7fafc",
@@ -287,7 +288,7 @@ export default function NewCareSchedule() {
                         checked
                         style={{ width: "1rem", height: "1rem", cursor: "pointer" }}
                       />
-                      <span style={{ color: "#2d3748" }}>Monday</span>
+                      <span style={{ color: "var(--color-text)" }}>Monday</span>
                     </label>
                     <label
                       style={{
@@ -295,7 +296,7 @@ export default function NewCareSchedule() {
                         "align-items": "center",
                         gap: "0.5rem",
                         padding: "0.5rem",
-                        border: "1px solid #e2e8f0",
+                        border: "1px solid var(--color-border)",
                         "border-radius": "4px",
                         cursor: "pointer",
                         "background-color": "#f7fafc",
@@ -307,7 +308,7 @@ export default function NewCareSchedule() {
                         value="true"
                         style={{ width: "1rem", height: "1rem", cursor: "pointer" }}
                       />
-                      <span style={{ color: "#2d3748" }}>Tuesday</span>
+                      <span style={{ color: "var(--color-text)" }}>Tuesday</span>
                     </label>
                     <label
                       style={{
@@ -315,7 +316,7 @@ export default function NewCareSchedule() {
                         "align-items": "center",
                         gap: "0.5rem",
                         padding: "0.5rem",
-                        border: "1px solid #e2e8f0",
+                        border: "1px solid var(--color-border)",
                         "border-radius": "4px",
                         cursor: "pointer",
                         "background-color": "#f7fafc",
@@ -328,7 +329,7 @@ export default function NewCareSchedule() {
                         checked
                         style={{ width: "1rem", height: "1rem", cursor: "pointer" }}
                       />
-                      <span style={{ color: "#2d3748" }}>Wednesday</span>
+                      <span style={{ color: "var(--color-text)" }}>Wednesday</span>
                     </label>
                     <label
                       style={{
@@ -336,7 +337,7 @@ export default function NewCareSchedule() {
                         "align-items": "center",
                         gap: "0.5rem",
                         padding: "0.5rem",
-                        border: "1px solid #e2e8f0",
+                        border: "1px solid var(--color-border)",
                         "border-radius": "4px",
                         cursor: "pointer",
                         "background-color": "#f7fafc",
@@ -348,7 +349,7 @@ export default function NewCareSchedule() {
                         value="true"
                         style={{ width: "1rem", height: "1rem", cursor: "pointer" }}
                       />
-                      <span style={{ color: "#2d3748" }}>Thursday</span>
+                      <span style={{ color: "var(--color-text)" }}>Thursday</span>
                     </label>
                     <label
                       style={{
@@ -356,7 +357,7 @@ export default function NewCareSchedule() {
                         "align-items": "center",
                         gap: "0.5rem",
                         padding: "0.5rem",
-                        border: "1px solid #e2e8f0",
+                        border: "1px solid var(--color-border)",
                         "border-radius": "4px",
                         cursor: "pointer",
                         "background-color": "#f7fafc",
@@ -369,7 +370,7 @@ export default function NewCareSchedule() {
                         checked
                         style={{ width: "1rem", height: "1rem", cursor: "pointer" }}
                       />
-                      <span style={{ color: "#2d3748" }}>Friday</span>
+                      <span style={{ color: "var(--color-text)" }}>Friday</span>
                     </label>
                     <label
                       style={{
@@ -377,7 +378,7 @@ export default function NewCareSchedule() {
                         "align-items": "center",
                         gap: "0.5rem",
                         padding: "0.5rem",
-                        border: "1px solid #e2e8f0",
+                        border: "1px solid var(--color-border)",
                         "border-radius": "4px",
                         cursor: "pointer",
                         "background-color": "#f7fafc",
@@ -389,7 +390,7 @@ export default function NewCareSchedule() {
                         value="true"
                         style={{ width: "1rem", height: "1rem", cursor: "pointer" }}
                       />
-                      <span style={{ color: "#2d3748" }}>Saturday</span>
+                      <span style={{ color: "var(--color-text)" }}>Saturday</span>
                     </label>
                     <label
                       style={{
@@ -397,7 +398,7 @@ export default function NewCareSchedule() {
                         "align-items": "center",
                         gap: "0.5rem",
                         padding: "0.5rem",
-                        border: "1px solid #e2e8f0",
+                        border: "1px solid var(--color-border)",
                         "border-radius": "4px",
                         cursor: "pointer",
                         "background-color": "#f7fafc",
@@ -409,10 +410,10 @@ export default function NewCareSchedule() {
                         value="true"
                         style={{ width: "1rem", height: "1rem", cursor: "pointer" }}
                       />
-                      <span style={{ color: "#2d3748" }}>Sunday</span>
+                      <span style={{ color: "var(--color-text)" }}>Sunday</span>
                     </label>
                   </div>
-                  <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "#718096" }}>
+                  <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                     Default is Mon/Wed/Fri - adjust as needed
                   </p>
                 </div>
@@ -421,13 +422,13 @@ export default function NewCareSchedule() {
 
             <fieldset
               style={{
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
                 "border-radius": "4px",
                 padding: "1.5rem",
                 "margin-bottom": "1.5rem",
               }}
             >
-              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
                 {recurrence() === "ONCE" ? "Session Date & Time" : "Session Times"}
               </legend>
 
@@ -505,7 +506,7 @@ export default function NewCareSchedule() {
                       display: "block",
                       "margin-bottom": "0.5rem",
                       "font-weight": "600",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                     }}
                   >
                     Date *
@@ -591,7 +592,7 @@ export default function NewCareSchedule() {
               </Show>
 
               <Show when={isRecurring()}>
-                <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "#718096" }}>
+                <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                   Default is 6:00 AM - 2:30 PM
                 </p>
               </Show>
@@ -600,13 +601,13 @@ export default function NewCareSchedule() {
             <Show when={isRecurring()}>
               <fieldset
                 style={{
-                  border: "1px solid #e2e8f0",
+                  border: "1px solid var(--color-border)",
                   "border-radius": "4px",
                   padding: "1.5rem",
                   "margin-bottom": "1.5rem",
                 }}
               >
-                <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+                <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
                   Schedule Duration
                 </legend>
 
@@ -670,7 +671,7 @@ export default function NewCareSchedule() {
                     />
                   </div>
                 </div>
-                <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "#718096" }}>
+                <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                   Leave end date empty for ongoing schedules
                 </p>
               </fieldset>
@@ -678,13 +679,13 @@ export default function NewCareSchedule() {
 
             <fieldset
               style={{
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
                 "border-radius": "4px",
                 padding: "1.5rem",
                 "margin-bottom": "1.5rem",
               }}
             >
-              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
                 Children
                 <Show when={requiresChildren()}>
                   <span style={{ color: "#e53e3e", "font-size": "0.875rem", "margin-left": "0.5rem" }}>
@@ -697,7 +698,7 @@ export default function NewCareSchedule() {
                 when={familyData().children?.length}
                 fallback={
                   <div style={{ "text-align": "center", padding: "2rem" }}>
-                    <p style={{ color: "#718096", "margin-bottom": "1rem" }}>
+                    <p style={{ color: "var(--color-text-muted)", "margin-bottom": "1rem" }}>
                       No children found. Please add children to the family first.
                     </p>
                     <A
@@ -737,7 +738,7 @@ export default function NewCareSchedule() {
                           "align-items": "center",
                           gap: "0.75rem",
                           padding: "0.75rem",
-                          border: "1px solid #e2e8f0",
+                          border: "1px solid var(--color-border)",
                           "border-radius": "4px",
                           cursor: "pointer",
                           "background-color": "#f7fafc",
@@ -763,10 +764,10 @@ export default function NewCareSchedule() {
                           }}
                         />
                         <div style={{ flex: "1" }}>
-                          <div style={{ "font-weight": "600", color: "#2d3748" }}>
+                          <div style={{ "font-weight": "600", color: "var(--color-text)" }}>
                             {child.firstName} {child.lastName}
                           </div>
-                          <div style={{ "font-size": "0.875rem", color: "#718096" }}>
+                          <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                             Age:{" "}
                             {new Date().getFullYear() - new Date(child.dateOfBirth).getFullYear()}
                             {child.allergies && (
@@ -780,7 +781,7 @@ export default function NewCareSchedule() {
                     )}
                   </For>
                 </div>
-                <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "#718096" }}>
+                <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                   Select which children will attend{" "}
                   {recurrence() === "ONCE" ? "this session" : "these sessions"}
                 </p>
@@ -794,7 +795,7 @@ export default function NewCareSchedule() {
                   display: "block",
                   "margin-bottom": "0.5rem",
                   "font-weight": "600",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 Hourly Rate
@@ -806,7 +807,7 @@ export default function NewCareSchedule() {
                     left: "0.75rem",
                     top: "50%",
                     transform: "translateY(-50%)",
-                    color: "#718096",
+                    color: "var(--color-text-muted)",
                     "font-size": "1rem",
                   }}
                 >
@@ -828,7 +829,7 @@ export default function NewCareSchedule() {
                   }}
                 />
               </div>
-              <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "#718096" }}>
+              <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                 Optional: Set an hourly rate for billing
               </p>
             </div>
@@ -840,7 +841,7 @@ export default function NewCareSchedule() {
                   display: "block",
                   "margin-bottom": "0.5rem",
                   "font-weight": "600",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 Notes
@@ -906,7 +907,7 @@ export default function NewCareSchedule() {
                 style={{
                   padding: "0.75rem 1.5rem",
                   "background-color": "#edf2f7",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                   border: "1px solid #cbd5e0",
                   "border-radius": "4px",
                   "text-decoration": "none",

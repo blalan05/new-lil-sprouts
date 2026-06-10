@@ -1,40 +1,97 @@
 import { createMiddleware } from "@solidjs/start/middleware";
+import { db } from "../lib/db";
+import { getSession } from "../lib/server";
+import {
+  shouldSkipRouteGuard,
+  isPublicRoute,
+  isAuthRoute,
+  isOwnerRoute,
+  ownerRedirectPath,
+} from "../lib/route-access";
 
-// Nitro/Vinxi sometimes provides a relative native URL (e.g. "/"),
-// but Nitro's getRequestURL expects an absolute URL string/object.
-// Ensure `event.nativeEvent.url` is set to a full URL early.
+function redirectResponse(request: Request, location: string): Response {
+  return Response.redirect(new URL(location, request.url), 302);
+}
+
+async function resolveIsOwner(userId: string): Promise<boolean | null> {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { isOwner: true },
+  });
+  return user?.isOwner ?? null;
+}
+
 export default createMiddleware({
-  onRequest: (event) => {
+  onRequest: async (event) => {
     const nativeEvent: any = (event as any).nativeEvent;
-    if (!nativeEvent) return;
-
-    const absolute = new URL(event.request.url);
-
-    // Ensure nativeEvent.url is a usable absolute URL (Nitro calls `new URL(event.url || event.req.url)`).
-    // Some adapters provide a relative path (e.g. "/login") which crashes Node's URL constructor.
-    const current = nativeEvent.url;
-    try {
-      if (!current) {
-        nativeEvent.url = absolute;
-        return;
-      }
-
-      if (typeof current === "string") {
-        // If it is already absolute, keep it. Otherwise, resolve against the real request URL.
-        nativeEvent.url = new URL(current, absolute);
-        return;
-      }
-
-      if (current instanceof URL) {
-        // If it looks wrong (no host), replace.
-        if (!current.host) nativeEvent.url = absolute;
-      } else {
-        // Unknown shape: just set the safe absolute URL.
+    if (nativeEvent) {
+      const absolute = new URL(event.request.url);
+      const current = nativeEvent.url;
+      try {
+        if (!current) {
+          nativeEvent.url = absolute;
+        } else if (typeof current === "string") {
+          nativeEvent.url = new URL(current, absolute);
+        } else if (current instanceof URL) {
+          if (!current.host) nativeEvent.url = absolute;
+        } else {
+          nativeEvent.url = absolute;
+        }
+      } catch {
         nativeEvent.url = absolute;
       }
-    } catch {
-      nativeEvent.url = absolute;
+    }
+
+    const url = new URL(event.request.url);
+    const pathname = url.pathname;
+
+    if (shouldSkipRouteGuard(pathname, event.request.method)) {
+      return;
+    }
+
+    const session = getSession(event.nativeEvent);
+    const userId = session.data.userId as string | undefined;
+
+    if (isPublicRoute(pathname)) {
+      if (!userId) {
+        return;
+      }
+      const isOwner = await resolveIsOwner(userId);
+      if (isOwner === null) {
+        return;
+      }
+      return redirectResponse(event.request, ownerRedirectPath(isOwner));
+    }
+
+    if (!userId) {
+      return redirectResponse(event.request, "/login");
+    }
+
+    const isOwner = await resolveIsOwner(userId);
+    if (isOwner === null) {
+      await session.update((data) => {
+        data.userId = undefined;
+      });
+      return redirectResponse(event.request, "/login");
+    }
+
+    if (isOwnerRoute(pathname) && !isOwner) {
+      return redirectResponse(event.request, "/portal");
+    }
+
+    if (pathname === "/portal" && isOwner) {
+      return redirectResponse(event.request, "/");
+    }
+
+    if (isAuthRoute(pathname)) {
+      return;
+    }
+
+    if (!isOwnerRoute(pathname) && !isAuthRoute(pathname) && pathname !== "/login") {
+      // Unknown app routes default to owner-only (e.g. future pages under /settings).
+      if (!isOwner) {
+        return redirectResponse(event.request, "/portal");
+      }
     }
   },
 });
-

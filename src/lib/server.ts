@@ -1,5 +1,6 @@
 import { useSession } from "vinxi/http";
 import { db } from "./db";
+import { hashPassword, needsRehash, verifyPassword } from "./password";
 
 export function validateUsername(username: unknown) {
   if (typeof username !== "string" || username.length < 3) {
@@ -21,7 +22,13 @@ export function validatePassword(password: unknown) {
 
 export async function login(username: string, password: string) {
   const user = await db.user.findUnique({ where: { username } });
-  if (!user || password !== user.password) throw new Error("Invalid login");
+  if (!user || !verifyPassword(password, user.password)) throw new Error("Invalid login");
+  if (needsRehash(user.password)) {
+    await db.user.update({
+      where: { id: user.id },
+      data: { password: hashPassword(password) },
+    });
+  }
   return user;
 }
 
@@ -39,17 +46,24 @@ export async function register(username: string, email: string, password: string
   const existingEmail = await db.user.findUnique({ where: { email } });
   if (existingEmail) throw new Error("Email already exists");
 
+  const isFirstUser = (await db.user.count()) === 0;
+
   return db.user.create({
     data: {
       username,
       email,
-      password,
+      password: hashPassword(password),
+      isOwner: isFirstUser,
     },
   });
 }
 
-export function getSession() {
-  return useSession({
+export function getSession(event?: unknown) {
+  const config = {
     password: process.env.SESSION_SECRET ?? "areallylongsecretthatyoushouldreplace",
-  });
+  };
+  if (event) {
+    return useSession(event as Parameters<typeof useSession>[0], config);
+  }
+  return useSession(config);
 }

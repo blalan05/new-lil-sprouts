@@ -1,16 +1,19 @@
-import { createAsync, type RouteDefinition, A } from "@solidjs/router";
+import { ensureOwner } from "~/lib/route-guards";
+import { createAsync, type RouteDefinition, A, useAction } from "@solidjs/router";
 import { For, Show, createSignal } from "solid-js";
 import { getAllChildren, deleteChild } from "~/lib/children";
 import { getFamilies } from "~/lib/families";
 
 export const route = {
   preload() {
+    ensureOwner();
     getAllChildren();
     getFamilies();
   },
 } satisfies RouteDefinition;
 
 export default function ChildrenPage() {
+  const deleteChildAction = useAction(deleteChild);
   const children = createAsync(() => getAllChildren());
   const families = createAsync(() => getFamilies());
   const [searchTerm, setSearchTerm] = createSignal("");
@@ -58,40 +61,24 @@ export default function ChildrenPage() {
 
   const handleDelete = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to delete ${name}? This will also delete all associated records.`)) {
-      await deleteChild(id);
-      window.location.reload();
+      await deleteChildAction(id);
     }
   };
 
   return (
-    <main
-      style={{
-        "max-width": "1400px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
+    <main class="page">
       <header
         style={{
           display: "flex",
           "justify-content": "space-between",
           "align-items": "center",
           "margin-bottom": "2rem",
+          "flex-wrap": "wrap",
+          gap: "1rem",
         }}
       >
         <div>
-          <A
-            href="/"
-            style={{
-              color: "#4299e1",
-              "text-decoration": "none",
-              "margin-bottom": "0.5rem",
-              display: "inline-block",
-            }}
-          >
-            ← Back to Dashboard
-          </A>
-          <h1 style={{ color: "#2d3748", "font-size": "2rem" }}>Manage Children</h1>
+          <h1 style={{ color: "var(--color-text)", "font-size": "2rem", margin: 0 }}>Manage Children</h1>
         </div>
         <A
           href="/families"
@@ -112,10 +99,10 @@ export default function ChildrenPage() {
 
       <div
         style={{
-          "background-color": "#fff",
+          "background-color": "var(--color-surface)",
           padding: "1.5rem",
           "border-radius": "8px",
-          border: "1px solid #e2e8f0",
+          border: "1px solid var(--color-border)",
           "margin-bottom": "2rem",
         }}
       >
@@ -175,7 +162,7 @@ export default function ChildrenPage() {
                 "border-radius": "8px",
               }}
             >
-              <p style={{ color: "#718096", "font-size": "1.1rem" }}>
+              <p style={{ color: "var(--color-text-muted)", "font-size": "1.1rem" }}>
                 No children found. Add children through the Families page.
               </p>
             </div>
@@ -191,10 +178,10 @@ export default function ChildrenPage() {
               {(child) => (
                 <div
                   style={{
-                    "background-color": "#fff",
+                    "background-color": "var(--color-surface)",
                     padding: "1.5rem",
                     "border-radius": "8px",
-                    border: "1px solid #e2e8f0",
+                    border: "1px solid var(--color-border)",
                     "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
                   }}
                 >
@@ -219,7 +206,7 @@ export default function ChildrenPage() {
                           style={{
                             "font-size": "1.25rem",
                             margin: "0",
-                            color: "#2d3748",
+                            color: "var(--color-text)",
                           }}
                         >
                           {child.firstName} {child.lastName}
@@ -383,7 +370,7 @@ export default function ChildrenPage() {
                         style={{
                           padding: "0.5rem 1rem",
                           "background-color": "#edf2f7",
-                          color: "#2d3748",
+                          color: "var(--color-text)",
                           border: "1px solid #cbd5e0",
                           "border-radius": "4px",
                           "text-decoration": "none",

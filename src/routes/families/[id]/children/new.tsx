@@ -1,19 +1,20 @@
+import { ensureOwner } from "~/lib/route-guards";
 import { useSubmission, A, useParams } from "@solidjs/router";
 import { Show } from "solid-js";
 import { createChild } from "~/lib/children";
+
+export const route = {
+  preload() {
+    ensureOwner();
+  },
+} satisfies import("@solidjs/router").RouteDefinition;
 
 export default function NewChild() {
   const params = useParams();
   const submission = useSubmission(createChild);
 
   return (
-    <main
-      style={{
-        "max-width": "800px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
+    <main class="page-form">
       <header style={{ "margin-bottom": "2rem" }}>
         <A
           href={`/families/${params.id}`}
@@ -26,30 +27,30 @@ export default function NewChild() {
         >
           ← Back to Family
         </A>
-        <h1 style={{ color: "#2d3748", "font-size": "2rem" }}>Add Child</h1>
+        <h1 style={{ color: "var(--color-text)", "font-size": "2rem" }}>Add Child</h1>
       </header>
 
       <form
         action={createChild}
         method="post"
         style={{
-          "background-color": "#fff",
+          "background-color": "var(--color-surface)",
           padding: "2rem",
           "border-radius": "8px",
-          border: "1px solid #e2e8f0",
+          border: "1px solid var(--color-border)",
         }}
       >
         <input type="hidden" name="familyId" value={params.id} />
 
         <fieldset
           style={{
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "border-radius": "4px",
             padding: "1.5rem",
             "margin-bottom": "1.5rem",
           }}
         >
-          <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+          <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
             Basic Information
           </legend>
 
@@ -68,7 +69,7 @@ export default function NewChild() {
                   display: "block",
                   "margin-bottom": "0.5rem",
                   "font-weight": "600",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 First Name *
@@ -95,7 +96,7 @@ export default function NewChild() {
                   display: "block",
                   "margin-bottom": "0.5rem",
                   "font-weight": "600",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 Last Name *
@@ -124,7 +125,7 @@ export default function NewChild() {
                 display: "block",
                 "margin-bottom": "0.5rem",
                 "font-weight": "600",
-                color: "#2d3748",
+                color: "var(--color-text)",
               }}
             >
               Date of Birth *
@@ -151,7 +152,7 @@ export default function NewChild() {
                 display: "block",
                 "margin-bottom": "0.5rem",
                 "font-weight": "600",
-                color: "#2d3748",
+                color: "var(--color-text)",
               }}
             >
               Gender
@@ -178,13 +179,13 @@ export default function NewChild() {
 
         <fieldset
           style={{
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "border-radius": "4px",
             padding: "1.5rem",
             "margin-bottom": "1.5rem",
           }}
         >
-          <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+          <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
             School Information
           </legend>
 
@@ -279,13 +280,13 @@ export default function NewChild() {
 
         <fieldset
           style={{
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "border-radius": "4px",
             padding: "1.5rem",
             "margin-bottom": "1.5rem",
           }}
         >
-          <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+          <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
             Medical Information
           </legend>
 
@@ -315,7 +316,7 @@ export default function NewChild() {
                 "font-family": "inherit",
               }}
             />
-            <p style={{ "margin-top": "0.5rem", "font-size": "0.75rem", color: "#718096" }}>
+            <p style={{ "margin-top": "0.5rem", "font-size": "0.75rem", color: "var(--color-text-muted)" }}>
               List any known allergies
             </p>
           </div>
@@ -384,7 +385,7 @@ export default function NewChild() {
               display: "block",
               "margin-bottom": "0.5rem",
               "font-weight": "600",
-              color: "#2d3748",
+              color: "var(--color-text)",
             }}
           >
             Additional Notes
@@ -432,7 +433,7 @@ export default function NewChild() {
             style={{
               padding: "0.75rem 1.5rem",
               "background-color": "#edf2f7",
-              color: "#2d3748",
+              color: "var(--color-text)",
               border: "1px solid #cbd5e0",
               "border-radius": "4px",
               "text-decoration": "none",

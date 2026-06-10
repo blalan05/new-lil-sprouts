@@ -1,9 +1,14 @@
 import { action, query, reload } from "@solidjs/router";
 import { db } from "./db";
+import { requireOwner, requireSessionFamilyAccess, assertFamilyExists } from "./auth";
+import { parseMoney, sumMoney, roundMoney, serializeMoneyDeep } from "./money";
+
 
 // Get all expenses for a session
 export const getSessionExpenses = query(async (sessionId: string) => {
   "use server";
+  await requireOwner();
+  await requireSessionFamilyAccess(sessionId);
   const expenses = await db.sessionExpense.findMany({
     where: {
       sessionId,
@@ -12,12 +17,13 @@ export const getSessionExpenses = query(async (sessionId: string) => {
       createdAt: "desc",
     },
   });
-  return expenses;
+  return serializeMoneyDeep(expenses);
 }, "session-expenses");
 
 // Create a new expense
 export const createExpense = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const sessionId = String(formData.get("sessionId"));
     const description = String(formData.get("description"));
@@ -29,11 +35,13 @@ export const createExpense = action(async (formData: FormData) => {
       return new Error("Session ID, description, and amount are required");
     }
 
+    await requireSessionFamilyAccess(sessionId);
+
     const expense = await db.sessionExpense.create({
       data: {
         sessionId,
         description,
-        amount: parseFloat(amount),
+        amount: parseMoney(amount),
         category: category || null,
         notes: notes || null,
       },
@@ -49,6 +57,7 @@ export const createExpense = action(async (formData: FormData) => {
 // Update an expense
 export const updateExpense = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const id = String(formData.get("id"));
     const description = String(formData.get("description"));
@@ -60,11 +69,20 @@ export const updateExpense = action(async (formData: FormData) => {
       return new Error("Description and amount are required");
     }
 
+    const existing = await db.sessionExpense.findUnique({
+      where: { id },
+      select: { sessionId: true },
+    });
+    if (!existing) {
+      return new Error("Expense not found");
+    }
+    await requireSessionFamilyAccess(existing.sessionId);
+
     await db.sessionExpense.update({
       where: { id },
       data: {
         description,
-        amount: parseFloat(amount),
+        amount: parseMoney(amount),
         category: category || null,
         notes: notes || null,
       },
@@ -80,8 +98,18 @@ export const updateExpense = action(async (formData: FormData) => {
 // Delete an expense
 export const deleteExpense = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const id = String(formData.get("id"));
+
+    const existing = await db.sessionExpense.findUnique({
+      where: { id },
+      select: { sessionId: true },
+    });
+    if (!existing) {
+      return new Error("Expense not found");
+    }
+    await requireSessionFamilyAccess(existing.sessionId);
 
     await db.sessionExpense.delete({
       where: { id },
@@ -97,6 +125,8 @@ export const deleteExpense = action(async (formData: FormData) => {
 // Get total expenses for a session
 export const getSessionExpenseTotal = query(async (sessionId: string) => {
   "use server";
+  await requireOwner();
+  await requireSessionFamilyAccess(sessionId);
   const expenses = await db.sessionExpense.findMany({
     where: {
       sessionId,
@@ -106,12 +136,16 @@ export const getSessionExpenseTotal = query(async (sessionId: string) => {
     },
   });
 
-  return expenses.reduce((total, expense) => total + expense.amount, 0);
+  return roundMoney(sumMoney(expenses.map((expense) => expense.amount)));
 }, "session-expense-total");
 
 // Get all standalone expenses (optionally filtered by family)
 export const getExpenses = query(async (familyId?: string) => {
   "use server";
+  await requireOwner();
+  if (familyId) {
+    await assertFamilyExists(familyId);
+  }
   const expenses = await db.expense.findMany({
     where: familyId ? { familyId } : {},
     include: {
@@ -126,12 +160,16 @@ export const getExpenses = query(async (familyId?: string) => {
       expenseDate: "desc",
     },
   });
-  return expenses;
+  return serializeMoneyDeep(expenses);
 }, "expenses");
 
 // Get expenses for a specific date range (for reports)
 export const getExpensesByDateRange = query(async (startDate: Date, endDate: Date, familyId?: string) => {
   "use server";
+  await requireOwner();
+  if (familyId) {
+    await assertFamilyExists(familyId);
+  }
   const expenses = await db.expense.findMany({
     where: {
       expenseDate: {
@@ -152,12 +190,13 @@ export const getExpensesByDateRange = query(async (startDate: Date, endDate: Dat
       expenseDate: "desc",
     },
   });
-  return expenses;
+  return serializeMoneyDeep(expenses);
 }, "expenses-by-date-range");
 
 // Create a standalone expense
 export const createStandaloneExpense = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const description = String(formData.get("description"));
     const amount = String(formData.get("amount"));
@@ -170,10 +209,14 @@ export const createStandaloneExpense = action(async (formData: FormData) => {
       return new Error("Description and amount are required");
     }
 
+    if (familyId) {
+      await assertFamilyExists(familyId);
+    }
+
     await db.expense.create({
       data: {
         description,
-        amount: parseFloat(amount),
+        amount: parseMoney(amount),
         category: category || null,
         expenseDate: expenseDate ? parseFormDate(expenseDate) : new Date(),
         familyId: familyId || null,
@@ -191,6 +234,7 @@ export const createStandaloneExpense = action(async (formData: FormData) => {
 // Update a standalone expense
 export const updateStandaloneExpense = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const id = String(formData.get("id"));
     const description = String(formData.get("description"));
@@ -208,7 +252,7 @@ export const updateStandaloneExpense = action(async (formData: FormData) => {
       where: { id },
       data: {
         description,
-        amount: parseFloat(amount),
+        amount: parseMoney(amount),
         category: category || null,
         expenseDate: expenseDate ? parseFormDate(expenseDate) : new Date(),
         familyId: familyId || null,
@@ -226,6 +270,7 @@ export const updateStandaloneExpense = action(async (formData: FormData) => {
 // Delete a standalone expense
 export const deleteStandaloneExpense = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const id = String(formData.get("id"));
     if (!id) {

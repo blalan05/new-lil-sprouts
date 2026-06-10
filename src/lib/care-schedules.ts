@@ -1,14 +1,17 @@
 import { action, query, reload } from "@solidjs/router";
 import { db } from "./db";
+import { requireOwner, assertFamilyExists, requireCareScheduleAccess, assertScheduleInFamily, requireSessionFamilyAccess } from "./auth";
 import { datetimeLocalToUTC, parseFormDate } from "./datetime";
-import { getSession } from "./server";
 import { getSettingValue } from "./settings";
 import { calculateServiceRate } from "./services";
+import { parseMoney } from "./money";
 import type { DayOfWeek, RecurrencePattern } from "../generated/prisma-client/client.js";
 import { serverRedirect } from "./server-redirect";
 
 export const getCareSchedules = query(async (familyId: string) => {
   "use server";
+  await requireOwner();
+  await assertFamilyExists(familyId);
   const schedules = await db.careSchedule.findMany({
     where: { familyId },
     include: {
@@ -41,6 +44,8 @@ export const getCareSchedules = query(async (familyId: string) => {
 
 export const getCareSchedule = query(async (id: string) => {
   "use server";
+  await requireOwner();
+  await requireCareScheduleAccess(id);
   const schedule = await db.careSchedule.findUnique({
     where: { id },
     include: {
@@ -60,10 +65,8 @@ export const getCareSchedule = query(async (id: string) => {
 
 export const createCareSchedule = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
-    const session = await getSession();
-    const userId = session.data.userId;
-
     const familyId = String(formData.get("familyId"));
     const name = String(formData.get("name"));
     const serviceId = String(formData.get("serviceId"));
@@ -108,6 +111,8 @@ export const createCareSchedule = action(async (formData: FormData) => {
       return new Error("Schedule name is required");
     }
 
+    await assertFamilyExists(familyId);
+
     if (!startTime || !endTime) {
       return new Error("Start and end times are required");
     }
@@ -139,9 +144,9 @@ export const createCareSchedule = action(async (formData: FormData) => {
     }
 
     // Get default hourly rate from service if not provided
-    let finalHourlyRate: number | null = null;
+    let finalHourlyRate: Awaited<ReturnType<typeof calculateServiceRate>> = null;
     if (hourlyRate) {
-      finalHourlyRate = parseFloat(hourlyRate);
+      finalHourlyRate = parseMoney(hourlyRate);
     } else {
       finalHourlyRate = await calculateServiceRate(serviceId, childIds.length);
     }
@@ -211,6 +216,7 @@ export const createCareSchedule = action(async (formData: FormData) => {
 
 export const updateCareSchedule = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const id = String(formData.get("id"));
     const familyId = String(formData.get("familyId"));
@@ -253,6 +259,8 @@ export const updateCareSchedule = action(async (formData: FormData) => {
       return new Error("Schedule name is required");
     }
 
+    await assertScheduleInFamily(id, familyId);
+
     if (!startTime || !endTime) {
       return new Error("Start and end times are required");
     }
@@ -288,7 +296,7 @@ export const updateCareSchedule = action(async (formData: FormData) => {
         daysOfWeek,
         startTime,
         endTime,
-        hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+        hourlyRate: hourlyRate ? parseMoney(hourlyRate) : null,
         startDate: parseFormDate(startDate),
         endDate: endDate ? parseFormDate(endDate) : null,
         notes: notes || null,
@@ -308,12 +316,15 @@ export const updateCareSchedule = action(async (formData: FormData) => {
 
 export const deleteCareSchedule = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const id = String(formData.get("id"));
 
     if (!id) {
       return new Error("Schedule ID is required");
     }
+
+    await requireCareScheduleAccess(id);
 
     await db.careSchedule.delete({
       where: { id },
@@ -328,10 +339,13 @@ export const deleteCareSchedule = action(async (formData: FormData) => {
 // Generate sessions from a schedule for a given date range
 export const generateSessionsFromSchedule = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const scheduleId = String(formData.get("scheduleId"));
     const startDate = parseFormDate(String(formData.get("startDate")));
     const endDate = parseFormDate(String(formData.get("endDate")));
+
+    await requireCareScheduleAccess(scheduleId);
 
     const schedule = await db.careSchedule.findUnique({
       where: { id: scheduleId },
@@ -441,6 +455,7 @@ export const generateSessionsFromSchedule = action(async (formData: FormData) =>
 // Record drop-off
 export const recordDropOff = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const sessionId = String(formData.get("sessionId"));
     const dropOffBy = String(formData.get("dropOffBy"));
@@ -454,6 +469,8 @@ export const recordDropOff = action(async (formData: FormData) => {
     if (!dropOffBy) {
       return new Error("Drop-off person is required");
     }
+
+    await requireSessionFamilyAccess(sessionId);
 
     await db.careSession.update({
       where: { id: sessionId },
@@ -476,6 +493,7 @@ export const recordDropOff = action(async (formData: FormData) => {
 // Record pick-up
 export const recordPickUp = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
     const sessionId = String(formData.get("sessionId"));
     const pickUpBy = String(formData.get("pickUpBy"));
@@ -489,6 +507,8 @@ export const recordPickUp = action(async (formData: FormData) => {
     if (!pickUpBy) {
       return new Error("Pick-up person is required");
     }
+
+    await requireSessionFamilyAccess(sessionId);
 
     await db.careSession.update({
       where: { id: sessionId },

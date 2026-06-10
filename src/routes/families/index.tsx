@@ -1,10 +1,12 @@
-import { createAsync, type RouteDefinition, A, useNavigate } from "@solidjs/router";
+import { createAsync, type RouteDefinition, A, useNavigate, useAction } from "@solidjs/router";
 import { For, Show, createSignal, createEffect, onCleanup } from "solid-js";
 import { getFamilies, deleteFamily, formatParentNames } from "~/lib/families";
 import { getAllChildren, deleteChild } from "~/lib/children";
+import { ensureOwner } from "~/lib/route-guards";
 
 export const route = {
   preload() {
+    ensureOwner();
     getFamilies();
     getAllChildren();
   },
@@ -13,6 +15,8 @@ export const route = {
 type ViewType = "families" | "children";
 
 export default function FamiliesPage() {
+  const deleteFamilyAction = useAction(deleteFamily);
+  const deleteChildAction = useAction(deleteChild);
   const navigate = useNavigate();
   const [view, setView] = createSignal<ViewType>("families");
   const families = createAsync(() => getFamilies());
@@ -80,15 +84,13 @@ export default function FamiliesPage() {
         `Are you sure you want to delete the ${name} family? This will also delete all associated children and records.`,
       )
     ) {
-      await deleteFamily(id);
-      window.location.reload();
+      await deleteFamilyAction(id);
     }
   };
 
   const handleDeleteChild = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to delete ${name}? This will also delete all associated records.`)) {
-      await deleteChild(id);
-      window.location.reload();
+      await deleteChildAction(id);
     }
   };
 
@@ -123,13 +125,7 @@ export default function FamiliesPage() {
   });
 
   return (
-    <main
-      style={{
-        "max-width": "1400px",
-        margin: "0 auto",
-        padding: "1.5rem",
-      }}
-    >
+    <main class="page">
       <header style={{ "margin-bottom": "1rem" }}>
         <div
           style={{
@@ -151,7 +147,7 @@ export default function FamiliesPage() {
             >
               ← Back to Dashboard
             </A>
-            <h1 style={{ color: "#2d3748", "font-size": "1.5rem", margin: 0, "font-weight": "700" }}>
+            <h1 style={{ color: "var(--color-text)", "font-size": "1.5rem", margin: 0, "font-weight": "700" }}>
               {view() === "families" ? "Manage Families" : "All Children"}
             </h1>
           </div>
@@ -201,10 +197,10 @@ export default function FamiliesPage() {
           display: "flex",
           gap: "0.5rem",
           "margin-bottom": "1rem",
-          "background-color": "#fff",
+          "background-color": "var(--color-surface)",
           padding: "0.375rem",
           "border-radius": "8px",
-          border: "1px solid #e2e8f0",
+          border: "1px solid var(--color-border)",
           width: "fit-content",
         }}
       >
@@ -240,10 +236,10 @@ export default function FamiliesPage() {
 
       <div
         style={{
-          "background-color": "#fff",
+          "background-color": "var(--color-surface)",
           padding: "1rem",
           "border-radius": "8px",
-          border: "1px solid #e2e8f0",
+          border: "1px solid var(--color-border)",
           "margin-bottom": "1rem",
         }}
       >
@@ -320,23 +316,23 @@ export default function FamiliesPage() {
                   "border-radius": "8px",
                 }}
               >
-                <p style={{ color: "#718096", "font-size": "0.875rem" }}>
+                <p style={{ color: "var(--color-text-muted)", "font-size": "0.875rem" }}>
                   No families found. Click "Add New Family" to get started.
                 </p>
               </div>
           }
         >
-          <div style={{ "background-color": "#fff", "border-radius": "8px", border: "1px solid #e2e8f0", overflow: "hidden" }}>
+          <div style={{ "background-color": "var(--color-surface)", "border-radius": "8px", border: "1px solid var(--color-border)", overflow: "hidden" }}>
             <div style={{ overflow: "auto" }}>
               <table style={{ width: "100%", "border-collapse": "collapse" }}>
                 <thead>
                   <tr style={{ "background-color": "#f7fafc", borderBottom: "2px solid #e2e8f0" }}>
-                    <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Last</th>
-                    <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Parents</th>
-                    <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Children Names</th>
-                    <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Amount Owed</th>
-                    <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Watched Since</th>
-                    <th style={{ padding: "0.75rem", "text-align": "center", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Actions</th>
+                    <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "var(--color-text)", "font-size": "0.875rem" }}>Last</th>
+                    <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "var(--color-text)", "font-size": "0.875rem" }}>Parents</th>
+                    <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "var(--color-text)", "font-size": "0.875rem" }}>Children Names</th>
+                    <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "var(--color-text)", "font-size": "0.875rem" }}>Amount Owed</th>
+                    <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "var(--color-text)", "font-size": "0.875rem" }}>Watched Since</th>
+                    <th style={{ padding: "0.75rem", "text-align": "center", "font-weight": "600", color: "var(--color-text)", "font-size": "0.875rem" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -350,15 +346,8 @@ export default function FamiliesPage() {
                           "background-color": index() % 2 === 0 ? "#fff" : "#f7fafc",
                         }}
                         onClick={() => navigate(`/families/${family.id}`)}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#edf2f7";
-                        }}
-                        onMouseLeave={(e) => {
-                          const bgColor = index() % 2 === 0 ? "#fff" : "#f7fafc";
-                          e.currentTarget.style.backgroundColor = bgColor;
-                        }}
-                      >
-                        <td style={{ padding: "0.75rem", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>
+>
+                        <td style={{ padding: "0.75rem", "font-weight": "600", color: "var(--color-text)", "font-size": "0.875rem" }}>
                           {family.familyName}
                         </td>
                         <td style={{ padding: "0.75rem", color: "#4a5568", "font-size": "0.875rem" }}>
@@ -399,19 +388,19 @@ export default function FamiliesPage() {
                             <span
                               style={{
                                 "font-weight": "700",
-                                color: (family as any).amountOwed > 0 ? "#c53030" : "#276749",
+                                color: parseFloat(String((family as any).amountOwed || "0")) > 0 ? "#c53030" : "#276749",
                               }}
                             >
-                              ${((family as any).amountOwed || 0).toFixed(2)}
+                              ${parseFloat(String((family as any).amountOwed || "0")).toFixed(2)}
                             </span>
                             {(family as any).unpaidSessionCount > 0 && (
-                              <div style={{ color: "#718096", "font-size": "0.75rem", "margin-top": "0.125rem" }}>
+                              <div style={{ color: "var(--color-text-muted)", "font-size": "0.75rem", "margin-top": "0.125rem" }}>
                                 ({(family as any).unpaidSessionCount} unpaid)
                               </div>
                             )}
                           </Show>
                         </td>
-                        <td style={{ padding: "0.75rem", color: "#718096", "font-size": "0.875rem" }}>
+                        <td style={{ padding: "0.75rem", color: "var(--color-text-muted)", "font-size": "0.875rem" }}>
                           {formatDate(family.createdAt)}
                         </td>
                         <td style={{ padding: "0.75rem", "text-align": "center" }} onClick={(e) => e.stopPropagation()}>
@@ -436,7 +425,7 @@ export default function FamiliesPage() {
                               style={{
                                 padding: "0.25rem 0.5rem",
                                 "background-color": "#edf2f7",
-                                color: "#2d3748",
+                                color: "var(--color-text)",
                                 border: "1px solid #cbd5e0",
                                 "border-radius": "4px",
                                 cursor: "pointer",
@@ -458,8 +447,8 @@ export default function FamiliesPage() {
                                     position: "fixed",
                                     top: `${pos().top}px`,
                                     right: `${pos().right}px`,
-                                    "background-color": "#fff",
-                                    border: "1px solid #e2e8f0",
+                                    "background-color": "var(--color-surface)",
+                                    border: "1px solid var(--color-border)",
                                     "border-radius": "4px",
                                     "box-shadow": "0 4px 6px rgba(0, 0, 0, 0.1)",
                                     "z-index": 1000,
@@ -477,18 +466,12 @@ export default function FamiliesPage() {
                                     "align-items": "center",
                                     gap: "0.5rem",
                                     padding: "0.5rem 0.75rem",
-                                    color: "#2d3748",
+                                    color: "var(--color-text)",
                                     "text-decoration": "none",
                                     "font-size": "0.875rem",
                                     transition: "background-color 0.2s",
                                   }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = "#f7fafc";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = "transparent";
-                                  }}
-                                >
+>
                                   <span>👁️</span>
                                   <span>View</span>
                                 </A>
@@ -503,18 +486,12 @@ export default function FamiliesPage() {
                                     "align-items": "center",
                                     gap: "0.5rem",
                                     padding: "0.5rem 0.75rem",
-                                    color: "#2d3748",
+                                    color: "var(--color-text)",
                                     "text-decoration": "none",
                                     "font-size": "0.875rem",
                                     transition: "background-color 0.2s",
                                   }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = "#f7fafc";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = "transparent";
-                                  }}
-                                >
+>
                                   <span>✏️</span>
                                   <span>Edit</span>
                                 </A>
@@ -538,13 +515,7 @@ export default function FamiliesPage() {
                                     "font-size": "0.875rem",
                                     transition: "background-color 0.2s",
                                   }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = "#fff5f5";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = "transparent";
-                                  }}
-                                >
+>
                                   <span>🗑️</span>
                                   <span>Delete</span>
                                 </button>
@@ -582,23 +553,23 @@ export default function FamiliesPage() {
                   "border-radius": "8px",
                 }}
               >
-                <p style={{ color: "#718096", "font-size": "0.875rem" }}>
+                <p style={{ color: "var(--color-text-muted)", "font-size": "0.875rem" }}>
                   No children found. Add children through the Families page.
                 </p>
               </div>
             }
           >
-            <div style={{ "background-color": "#fff", "border-radius": "8px", border: "1px solid #e2e8f0", overflow: "hidden" }}>
+            <div style={{ "background-color": "var(--color-surface)", "border-radius": "8px", border: "1px solid var(--color-border)", overflow: "hidden" }}>
               <div style={{ overflow: "auto" }}>
                 <table style={{ width: "100%", "border-collapse": "collapse" }}>
                   <thead>
                     <tr style={{ "background-color": "#f7fafc", borderBottom: "2px solid #e2e8f0" }}>
-                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Last</th>
-                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>First</th>
-                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Age/Birthday</th>
-                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Gender</th>
-                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Watched Since</th>
-                      <th style={{ padding: "0.75rem", "text-align": "center", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>Actions</th>
+                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "var(--color-text)", "font-size": "0.875rem" }}>Last</th>
+                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "var(--color-text)", "font-size": "0.875rem" }}>First</th>
+                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "var(--color-text)", "font-size": "0.875rem" }}>Age/Birthday</th>
+                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "var(--color-text)", "font-size": "0.875rem" }}>Gender</th>
+                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "var(--color-text)", "font-size": "0.875rem" }}>Watched Since</th>
+                      <th style={{ padding: "0.75rem", "text-align": "center", "font-weight": "600", color: "var(--color-text)", "font-size": "0.875rem" }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -612,15 +583,8 @@ export default function FamiliesPage() {
                             "background-color": index() % 2 === 0 ? "#fff" : "#f7fafc",
                           }}
                           onClick={() => navigate(`/families/${child.familyId}/children/${child.id}`)}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = "#edf2f7";
-                          }}
-                          onMouseLeave={(e) => {
-                            const bgColor = index() % 2 === 0 ? "#fff" : "#f7fafc";
-                            e.currentTarget.style.backgroundColor = bgColor;
-                          }}
-                        >
-                          <td style={{ padding: "0.75rem", "font-weight": "600", color: "#2d3748", "font-size": "0.875rem" }}>
+>
+                          <td style={{ padding: "0.75rem", "font-weight": "600", color: "var(--color-text)", "font-size": "0.875rem" }}>
                             {child.lastName}
                           </td>
                           <td style={{ padding: "0.75rem", color: "#4a5568", "font-size": "0.875rem" }}>
@@ -646,7 +610,7 @@ export default function FamiliesPage() {
                               .toLowerCase()
                               .replace(/\b\w/g, (l: string) => l.toUpperCase()) || "-"}
                           </td>
-                          <td style={{ padding: "0.75rem", color: "#718096", "font-size": "0.875rem" }}>
+                          <td style={{ padding: "0.75rem", color: "var(--color-text-muted)", "font-size": "0.875rem" }}>
                             {formatDate(child.createdAt)}
                           </td>
                           <td style={{ padding: "0.75rem", "text-align": "center" }} onClick={(e) => e.stopPropagation()}>
@@ -671,7 +635,7 @@ export default function FamiliesPage() {
                                 style={{
                                   padding: "0.25rem 0.5rem",
                                   "background-color": "#edf2f7",
-                                  color: "#2d3748",
+                                  color: "var(--color-text)",
                                   border: "1px solid #cbd5e0",
                                   "border-radius": "4px",
                                   cursor: "pointer",
@@ -693,8 +657,8 @@ export default function FamiliesPage() {
                                       position: "fixed",
                                       top: `${pos().top}px`,
                                       right: `${pos().right}px`,
-                                      "background-color": "#fff",
-                                      border: "1px solid #e2e8f0",
+                                      "background-color": "var(--color-surface)",
+                                      border: "1px solid var(--color-border)",
                                       "border-radius": "4px",
                                       "box-shadow": "0 4px 6px rgba(0, 0, 0, 0.1)",
                                       "z-index": 1000,
@@ -712,18 +676,12 @@ export default function FamiliesPage() {
                                       "align-items": "center",
                                       gap: "0.5rem",
                                       padding: "0.5rem 0.75rem",
-                                      color: "#2d3748",
+                                      color: "var(--color-text)",
                                       "text-decoration": "none",
                                       "font-size": "0.875rem",
                                       transition: "background-color 0.2s",
                                     }}
-                                    onMouseEnter={(e) => {
-                                      e.currentTarget.style.backgroundColor = "#f7fafc";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.style.backgroundColor = "transparent";
-                                    }}
-                                  >
+>
                                     <span>👁️</span>
                                     <span>View</span>
                                   </A>
@@ -738,18 +696,12 @@ export default function FamiliesPage() {
                                       "align-items": "center",
                                       gap: "0.5rem",
                                       padding: "0.5rem 0.75rem",
-                                      color: "#2d3748",
+                                      color: "var(--color-text)",
                                       "text-decoration": "none",
                                       "font-size": "0.875rem",
                                       transition: "background-color 0.2s",
                                     }}
-                                    onMouseEnter={(e) => {
-                                      e.currentTarget.style.backgroundColor = "#f7fafc";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.style.backgroundColor = "transparent";
-                                    }}
-                                  >
+>
                                     <span>✏️</span>
                                     <span>Edit</span>
                                   </A>
@@ -773,13 +725,7 @@ export default function FamiliesPage() {
                                       "font-size": "0.875rem",
                                       transition: "background-color 0.2s",
                                     }}
-                                    onMouseEnter={(e) => {
-                                      e.currentTarget.style.backgroundColor = "#fff5f5";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.style.backgroundColor = "transparent";
-                                    }}
-                                  >
+>
                                     <span>🗑️</span>
                                     <span>Delete</span>
                                   </button>

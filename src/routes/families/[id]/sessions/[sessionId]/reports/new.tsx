@@ -1,7 +1,14 @@
+import { ensureOwner } from "~/lib/route-guards";
 import { useSubmission, A, useParams, createAsync } from "@solidjs/router";
 import { Show, For, createSignal } from "solid-js";
 import { createSessionReport } from "~/lib/session-reports";
 import { getFamily } from "~/lib/families";
+
+export const route = {
+  preload() {
+    ensureOwner();
+  },
+} satisfies import("@solidjs/router").RouteDefinition;
 
 export default function NewSessionReport() {
   const params = useParams();
@@ -33,13 +40,7 @@ export default function NewSessionReport() {
   };
 
   return (
-    <main
-      style={{
-        "max-width": "800px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
+    <main class="page-form">
       <header style={{ "margin-bottom": "2rem" }}>
         <A
           href={`/families/${params.id}/sessions/${params.sessionId}`}
@@ -52,8 +53,8 @@ export default function NewSessionReport() {
         >
           ← Back to Session
         </A>
-        <h1 style={{ color: "#2d3748", "font-size": "2rem" }}>Add Session Report</h1>
-        <p style={{ color: "#718096", margin: "0.5rem 0 0 0" }}>
+        <h1 style={{ color: "var(--color-text)", "font-size": "2rem" }}>Add Session Report</h1>
+        <p style={{ color: "var(--color-text-muted)", margin: "0.5rem 0 0 0" }}>
           Document an incident, activity, meal, or update during this care session
         </p>
       </header>
@@ -64,23 +65,23 @@ export default function NewSessionReport() {
             action={createSessionReport}
             method="post"
             style={{
-              "background-color": "#fff",
+              "background-color": "var(--color-surface)",
               padding: "2rem",
               "border-radius": "8px",
-              border: "1px solid #e2e8f0",
+              border: "1px solid var(--color-border)",
             }}
           >
             <input type="hidden" name="careSessionId" value={params.sessionId} />
 
             <fieldset
               style={{
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
                 "border-radius": "4px",
                 padding: "1.5rem",
                 "margin-bottom": "1.5rem",
               }}
             >
-              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
                 Report Type
               </legend>
 
@@ -91,7 +92,7 @@ export default function NewSessionReport() {
                     display: "block",
                     "margin-bottom": "0.5rem",
                     "font-weight": "600",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                   }}
                 >
                   What happened? *
@@ -129,7 +130,7 @@ export default function NewSessionReport() {
                     display: "block",
                     "margin-bottom": "0.5rem",
                     "font-weight": "600",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                   }}
                 >
                   Severity *
@@ -157,20 +158,20 @@ export default function NewSessionReport() {
 
             <fieldset
               style={{
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
                 "border-radius": "4px",
                 padding: "1.5rem",
                 "margin-bottom": "1.5rem",
               }}
             >
-              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
                 Which Child?
               </legend>
 
               <Show
                 when={familyData().children?.length}
                 fallback={
-                  <p style={{ color: "#718096", "text-align": "center", padding: "1rem" }}>
+                  <p style={{ color: "var(--color-text-muted)", "text-align": "center", padding: "1rem" }}>
                     No children for this family
                   </p>
                 }
@@ -184,7 +185,7 @@ export default function NewSessionReport() {
                           "align-items": "center",
                           gap: "0.75rem",
                           padding: "0.75rem",
-                          border: "1px solid #e2e8f0",
+                          border: "1px solid var(--color-border)",
                           "border-radius": "4px",
                           cursor: "pointer",
                           "background-color": "#f7fafc",
@@ -202,7 +203,7 @@ export default function NewSessionReport() {
                           }}
                         />
                         <div style={{ flex: "1" }}>
-                          <div style={{ "font-weight": "600", color: "#2d3748" }}>
+                          <div style={{ "font-weight": "600", color: "var(--color-text)" }}>
                             {child.firstName} {child.lastName}
                           </div>
                           <Show when={child.allergies}>
@@ -225,7 +226,7 @@ export default function NewSessionReport() {
                   display: "block",
                   "margin-bottom": "0.5rem",
                   "font-weight": "600",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 When did this happen? *
@@ -272,7 +273,7 @@ export default function NewSessionReport() {
                   display: "block",
                   "margin-bottom": "0.5rem",
                   "font-weight": "600",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 Brief Summary *
@@ -308,7 +309,7 @@ export default function NewSessionReport() {
                   display: "block",
                   "margin-bottom": "0.5rem",
                   "font-weight": "600",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 Details *
@@ -346,7 +347,7 @@ export default function NewSessionReport() {
                     display: "block",
                     "margin-bottom": "0.5rem",
                     "font-weight": "600",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                   }}
                 >
                   Action Taken
@@ -376,7 +377,7 @@ export default function NewSessionReport() {
                   gap: "0.75rem",
                   cursor: "pointer",
                   padding: "0.75rem",
-                  border: "1px solid #e2e8f0",
+                  border: "1px solid var(--color-border)",
                   "border-radius": "4px",
                   "background-color": "#fffbeb",
                 }}
@@ -392,7 +393,7 @@ export default function NewSessionReport() {
                   }}
                 />
                 <div>
-                  <div style={{ "font-weight": "600", color: "#2d3748" }}>Follow-up Needed</div>
+                  <div style={{ "font-weight": "600", color: "var(--color-text)" }}>Follow-up Needed</div>
                   <div style={{ "font-size": "0.875rem", color: "#78350f" }}>
                     Check this if parents need to take action or be contacted
                   </div>
@@ -444,7 +445,7 @@ export default function NewSessionReport() {
                 style={{
                   padding: "0.75rem 1.5rem",
                   "background-color": "#edf2f7",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                   border: "1px solid #cbd5e0",
                   "border-radius": "4px",
                   "text-decoration": "none",
