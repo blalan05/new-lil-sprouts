@@ -8,6 +8,7 @@ import { readRoleCookie } from "~/lib/role-cookie";
 import { getMyNotifications, getUnreadCount, markNotificationRead } from "~/lib/notifications";
 
 const OWNER_NAV_LINKS = [
+  { href: "/", label: "Home" },
   { href: "/families", label: "Families" },
   { href: "/schedule", label: "Schedule" },
   { href: "/payments", label: "Payments" },
@@ -21,16 +22,23 @@ const PARENT_NAV_LINKS = [
 ] as const;
 
 export default function Topbar() {
-  const user = createAsync(() => getUser());
+  const user = createAsync(async () => {
+    if (!isServer) revalidate("user", true);
+    return getUser();
+  });
   const notifications = createAsync(() => getMyNotifications(10), { deferStream: true });
   const unreadCount = createAsync(() => getUnreadCount(), { deferStream: true });
   const logoutSubmission = useSubmission(logout);
   const [mobileMenuOpen, setMobileMenuOpen] = createSignal(false);
   const [menuClosing, setMenuClosing] = createSignal(false);
   const [notifOpen, setNotifOpen] = createSignal(false);
+  const [navReady, setNavReady] = createSignal(isServer);
 
-  /** Owner nav if DB role or fresh middleware cookie says owner (never downgrade on stale parent cookie). */
-  const isOwner = () => Boolean(user()?.isOwner) || readRoleCookie() === "owner";
+  const isOwner = () => {
+    const u = user();
+    if (u?.isOwner) return true;
+    return readRoleCookie() === "owner";
+  };
 
   const navLinks = () => (isOwner() ? OWNER_NAV_LINKS : PARENT_NAV_LINKS);
   const homeHref = () => (isOwner() ? "/" : "/portal");
@@ -42,6 +50,7 @@ export default function Topbar() {
   onMount(async () => {
     revalidate("user", true);
     await getUser();
+    setNavReady(true);
   });
 
   createEffect(() => {
@@ -141,14 +150,25 @@ export default function Topbar() {
               <img src="/icons/icon-96x96.png" alt="Lil Sprouts" />
               Lil Sprouts
             </A>
-            <div class="nav-links desktop-nav" style={{ display: "flex", gap: "0.5rem", "flex-wrap": "wrap" }}>
-              <For each={navLinks()}>
-                {(link) => (
-                  <A href={link.href} class="nav-link">
-                    {link.label}
-                  </A>
-                )}
-              </For>
+            <div
+              class="nav-links desktop-nav"
+              style={{
+                display: "flex",
+                gap: "0.5rem",
+                "flex-wrap": "nowrap",
+                overflow: "auto",
+                "max-width": "min(100vw - 18rem, 52rem)",
+              }}
+            >
+              <Show when={navReady()}>
+                <For each={navLinks()}>
+                  {(link) => (
+                    <A href={link.href} class="nav-link">
+                      {link.label}
+                    </A>
+                  )}
+                </For>
+              </Show>
             </div>
           </div>
           <div style={{ display: "flex", "align-items": "center", gap: "1rem" }}>
@@ -294,13 +314,15 @@ export default function Topbar() {
             </button>
           </div>
           <nav style={{ display: "flex", "flex-direction": "column", gap: "0.5rem" }}>
-            <For each={navLinks()}>
-              {(link) => (
-                <A href={link.href} class="nav-link nav-link-mobile" onClick={() => closeMobileMenu(false)}>
-                  {link.label}
-                </A>
-              )}
-            </For>
+            <Show when={navReady()}>
+              <For each={navLinks()}>
+                {(link) => (
+                  <A href={link.href} class="nav-link nav-link-mobile" onClick={() => closeMobileMenu(false)}>
+                    {link.label}
+                  </A>
+                )}
+              </For>
+            </Show>
             <button
               type="button"
               class="nav-link nav-link-mobile btn btn-toggle"
