@@ -2,7 +2,7 @@ import { ensureAuth } from "~/lib/route-guards";
 import { createAsync, type RouteDefinition, A, useSubmission } from "@solidjs/router";
 import { Show, createSignal, createEffect } from "solid-js";
 import { getUser, updateUser, updatePassword } from "~/lib";
-import { getDefaultHourlyRate, getDefaultPianoLessonRate, setSetting } from "~/lib/settings";
+import { getDefaultHourlyRate, getDefaultPianoLessonRate, saveBusinessSettings } from "~/lib/settings";
 
 export const route = {
   preload() {
@@ -15,15 +15,15 @@ export default function AccountPage() {
   const user = createAsync(() => getUser());
   const updateSubmission = useSubmission(updateUser);
   const passwordSubmission = useSubmission(updatePassword);
-  const settingSubmission = useSubmission(setSetting);
+  const settingSubmission = useSubmission(saveBusinessSettings);
   
   const defaultHourlyRate = createAsync(async () => {
     const u = await getUser();
-    return u.isOwner ? getDefaultHourlyRate() : null;
+    return u?.isOwner ? getDefaultHourlyRate() : null;
   });
   const defaultPianoLessonRate = createAsync(async () => {
     const u = await getUser();
-    return u.isOwner ? getDefaultPianoLessonRate() : null;
+    return u?.isOwner ? getDefaultPianoLessonRate() : null;
   });
   const [hourlyRateValue, setHourlyRateValue] = createSignal<string>("");
   const [pianoLessonRateValue, setPianoLessonRateValue] = createSignal<string>("");
@@ -221,10 +221,7 @@ export default function AccountPage() {
                       Business Settings
                     </h2>
 
-                    <form action={setSetting} method="post">
-                      <input type="hidden" name="key" value="defaultHourlyRate" />
-                      <input type="hidden" name="type" value="number" />
-                      
+                    <form action={saveBusinessSettings} method="post">
                       <div style={{ "margin-bottom": "1.5rem" }}>
                         <label
                           for="defaultHourlyRate"
@@ -252,10 +249,11 @@ export default function AccountPage() {
                           </span>
                           <input
                             id="defaultHourlyRate"
-                            name="value"
+                            name="defaultHourlyRate"
                             type="number"
                             step="0.01"
                             min="0"
+                            required
                             value={hourlyRateValue()}
                             onInput={(e) => setHourlyRateValue(e.currentTarget.value)}
                             placeholder="0.00"
@@ -269,48 +267,70 @@ export default function AccountPage() {
                           />
                         </div>
                         <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
-                          This default rate will be used when creating sessions if no specific rate is provided. The rate is per child per hour.
+                          Used when creating sessions if no specific rate is provided (per child, per hour).
+                        </p>
+                      </div>
+
+                      <div style={{ "margin-bottom": "1.5rem" }}>
+                        <label
+                          for="defaultPianoLessonRate"
+                          style={{
+                            display: "block",
+                            "margin-bottom": "0.5rem",
+                            "font-weight": "600",
+                            color: "var(--color-text)",
+                          }}
+                        >
+                          Default Piano Lesson Rate
+                        </label>
+                        <div style={{ position: "relative" }}>
+                          <span
+                            style={{
+                              position: "absolute",
+                              left: "0.75rem",
+                              top: "50%",
+                              transform: "translateY(-50%)",
+                              color: "var(--color-text-muted)",
+                              "font-size": "1rem",
+                            }}
+                          >
+                            $
+                          </span>
+                          <input
+                            id="defaultPianoLessonRate"
+                            name="defaultPianoLessonRate"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            required
+                            value={pianoLessonRateValue()}
+                            onInput={(e) => setPianoLessonRateValue(e.currentTarget.value)}
+                            placeholder="0.00"
+                            style={{
+                              width: "100%",
+                              padding: "0.75rem 0.75rem 0.75rem 1.75rem",
+                              border: "1px solid #cbd5e0",
+                              "border-radius": "4px",
+                              "font-size": "1rem",
+                            }}
+                          />
+                        </div>
+                        <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
+                          Default rate for piano lesson services.
                         </p>
                       </div>
 
                       <button
                         type="submit"
+                        class="btn btn-primary"
+                        disabled={settingSubmission.pending}
                         style={{
                           padding: "0.75rem 1.5rem",
-                          "background-color": "#4299e1",
-                          color: "white",
-                          border: "none",
-                          "border-radius": "4px",
                           "font-size": "1rem",
                           "font-weight": "600",
-                          cursor: "pointer",
-                          transition: "background-color 0.2s",
                         }}
->
-                        Save Settings
-                      </button>
-                    </form>
-                    
-                    {/* Separate form for piano lesson rate */}
-                    <form action={setSetting} method="post" style={{ "margin-top": "1rem" }}>
-                      <input type="hidden" name="key" value="defaultPianoLessonRate" />
-                      <input type="hidden" name="type" value="number" />
-                      <input type="hidden" name="value" value={pianoLessonRateValue()} />
-                      <button
-                        type="submit"
-                        style={{
-                          padding: "0.75rem 1.5rem",
-                          "background-color": "#4299e1",
-                          color: "white",
-                          border: "none",
-                          "border-radius": "4px",
-                          "font-size": "1rem",
-                          "font-weight": "600",
-                          cursor: "pointer",
-                          transition: "background-color 0.2s",
-                        }}
->
-                        Save Piano Lesson Rate
+                      >
+                        {settingSubmission.pending ? "Saving…" : "Save Business Settings"}
                       </button>
                     </form>
 

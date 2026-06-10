@@ -29,12 +29,8 @@ export default function Topbar() {
   const [menuClosing, setMenuClosing] = createSignal(false);
   const [notifOpen, setNotifOpen] = createSignal(false);
 
-  /** Prefer middleware role cookie over cached getUser (avoids stale parent nav for owners). */
-  const isOwner = () => {
-    const cookieRole = readRoleCookie();
-    if (cookieRole) return cookieRole === "owner";
-    return user()?.isOwner ?? false;
-  };
+  /** Owner nav if DB role or fresh middleware cookie says owner (never downgrade on stale parent cookie). */
+  const isOwner = () => Boolean(user()?.isOwner) || readRoleCookie() === "owner";
 
   const navLinks = () => (isOwner() ? OWNER_NAV_LINKS : PARENT_NAV_LINKS);
   const homeHref = () => (isOwner() ? "/" : "/portal");
