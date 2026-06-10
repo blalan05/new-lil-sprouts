@@ -4,6 +4,7 @@ import { isServer } from "solid-js/web";
 import { revalidate } from "@solidjs/router";
 import { getUser, logout } from "~/lib";
 import { getStoredTheme, initTheme, resolveTheme, setTheme, type Theme } from "~/lib/theme";
+import { readRoleCookie } from "~/lib/role-cookie";
 import { getMyNotifications, getUnreadCount, markNotificationRead } from "~/lib/notifications";
 
 const OWNER_NAV_LINKS = [
@@ -20,22 +21,31 @@ const PARENT_NAV_LINKS = [
 ] as const;
 
 export default function Topbar() {
-  const user = createAsync(() => getUser(), { deferStream: true });
+  const user = createAsync(() => getUser());
   const notifications = createAsync(() => getMyNotifications(10), { deferStream: true });
   const unreadCount = createAsync(() => getUnreadCount(), { deferStream: true });
   const logoutSubmission = useSubmission(logout);
   const [mobileMenuOpen, setMobileMenuOpen] = createSignal(false);
   const [menuClosing, setMenuClosing] = createSignal(false);
   const [notifOpen, setNotifOpen] = createSignal(false);
-  const navLinks = () => (user()?.isOwner ? OWNER_NAV_LINKS : PARENT_NAV_LINKS);
-  const homeHref = () => (user()?.isOwner ? "/" : "/portal");
+
+  /** Prefer middleware role cookie over cached getUser (avoids stale parent nav for owners). */
+  const isOwner = () => {
+    const cookieRole = readRoleCookie();
+    if (cookieRole) return cookieRole === "owner";
+    return user()?.isOwner ?? false;
+  };
+
+  const navLinks = () => (isOwner() ? OWNER_NAV_LINKS : PARENT_NAV_LINKS);
+  const homeHref = () => (isOwner() ? "/" : "/portal");
   const [theme, setThemeState] = createSignal<Theme>("system");
   let menuRef: HTMLDivElement | undefined;
   let toggleRef: HTMLButtonElement | undefined;
   let closeBtnRef: HTMLButtonElement | undefined;
 
-  onMount(() => {
-    revalidate("user");
+  onMount(async () => {
+    revalidate("user", true);
+    await getUser();
   });
 
   createEffect(() => {
@@ -208,7 +218,7 @@ export default function Topbar() {
                             onClick={async () => {
                               await markNotificationRead(notification.id);
                               setNotifOpen(false);
-                              if (notification.careSessionId && user()?.isOwner) {
+                              if (notification.careSessionId && isOwner()) {
                                 window.location.href = `/families/${notification.familyId}/sessions/${notification.careSessionId}`;
                               } else if (notification.careSessionId) {
                                 window.location.href = "/portal";

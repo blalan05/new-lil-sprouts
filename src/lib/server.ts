@@ -1,6 +1,8 @@
-import { useSession, clearSession } from "vinxi/http";
+import { useSession, clearSession, setCookie } from "vinxi/http";
+import { getRequestEvent } from "solid-js/web";
 import { db } from "./db";
 import { hashPassword, needsRehash, verifyPassword } from "./password";
+import { ROLE_COOKIE, roleCookieValue } from "./role-cookie";
 
 export const SESSION_CONFIG = {
   password: process.env.SESSION_SECRET ?? "areallylongsecretthatyoushouldreplace",
@@ -41,9 +43,12 @@ export async function login(usernameOrEmail: string, password: string) {
 }
 
 export async function logout(event?: unknown) {
-  const target = event ?? undefined;
+  const target =
+    (event as Parameters<typeof clearSession>[0] | undefined) ??
+    getRequestEvent()?.nativeEvent;
   if (target) {
-    await clearSession(target as Parameters<typeof clearSession>[0], SESSION_CONFIG);
+    await clearSession(target, SESSION_CONFIG);
+    setCookie(target, ROLE_COOKIE, "", { path: "/", maxAge: 0 });
     return;
   }
   const session = await getSession();

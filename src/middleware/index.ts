@@ -1,7 +1,8 @@
 import { createMiddleware } from "@solidjs/start/middleware";
-import { clearSession, getCookie, sendRedirect, useSession } from "vinxi/http";
+import { clearSession, getCookie, sendRedirect, setCookie, useSession } from "vinxi/http";
 import { db } from "../lib/db";
 import { SESSION_CONFIG } from "../lib/server";
+import { ROLE_COOKIE, roleCookieValue } from "../lib/role-cookie";
 import {
   shouldSkipRouteGuard,
   isPublicRoute,
@@ -73,6 +74,21 @@ async function clearUserSession(event: { nativeEvent?: unknown }) {
   } catch {
     // Ignore if there is no session to clear.
   }
+  setCookie(target, ROLE_COOKIE, "", { path: "/", maxAge: 0 });
+}
+
+function syncRoleCookie(event: { nativeEvent?: unknown }, profile: SessionProfile | null) {
+  const target = h3Event(event);
+  if (!target) return;
+  if (!profile) {
+    setCookie(target, ROLE_COOKIE, "", { path: "/", maxAge: 0 });
+    return;
+  }
+  setCookie(target, ROLE_COOKIE, roleCookieValue(profile.isOwner), {
+    path: "/",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365,
+  });
 }
 
 export default createMiddleware({
@@ -107,6 +123,7 @@ export default createMiddleware({
 
     if (isPublicRoute(pathname)) {
       if (!userId) {
+        syncRoleCookie(event, null);
         return;
       }
       const profile = await resolveSessionProfile(userId);
@@ -114,6 +131,7 @@ export default createMiddleware({
         await clearUserSession(event);
         return;
       }
+      syncRoleCookie(event, profile);
       return redirectTo(
         event,
         authenticatedHomePath(profile.isOwner, profile.familyId),
@@ -122,6 +140,7 @@ export default createMiddleware({
     }
 
     if (!userId) {
+      syncRoleCookie(event, null);
       return redirectTo(event, "/login", event.request);
     }
 
@@ -130,6 +149,8 @@ export default createMiddleware({
       await clearUserSession(event);
       return redirectTo(event, "/login", event.request);
     }
+
+    syncRoleCookie(event, profile);
 
     const parentHome = authenticatedHomePath(false, profile.familyId);
 

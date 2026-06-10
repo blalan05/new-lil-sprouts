@@ -1,9 +1,12 @@
 import { action, query, revalidate } from "@solidjs/router";
+import { getRequestEvent } from "solid-js/web";
+import { setCookie } from "vinxi/http";
 import { db } from "./db";
 import { requireUser } from "./auth";
 import { hashPassword, verifyPassword } from "./password";
 import { serverRedirect } from "./server-redirect";
 import { authenticatedHomePath } from "./route-access";
+import { ROLE_COOKIE, roleCookieValue } from "./role-cookie";
 import {
   getSession,
   login,
@@ -150,6 +153,14 @@ export const loginOrRegister = action(async (formData: FormData) => {
     await session.update((d) => {
       d.userId = user.id;
     });
+    const reqEvent = getRequestEvent()?.nativeEvent;
+    if (reqEvent) {
+      setCookie(reqEvent, ROLE_COOKIE, roleCookieValue(user.isOwner), {
+        path: "/",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 365,
+      });
+    }
     revalidate("user");
     if (!user.isOwner) {
       const member = await db.familyMember.findUnique({
