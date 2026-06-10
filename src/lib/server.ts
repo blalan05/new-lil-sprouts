@@ -1,6 +1,10 @@
-import { useSession } from "vinxi/http";
+import { useSession, clearSession } from "vinxi/http";
 import { db } from "./db";
 import { hashPassword, needsRehash, verifyPassword } from "./password";
+
+export const SESSION_CONFIG = {
+  password: process.env.SESSION_SECRET ?? "areallylongsecretthatyoushouldreplace",
+};
 
 export function validateUsername(username: unknown) {
   if (typeof username !== "string" || username.length < 3) {
@@ -32,7 +36,12 @@ export async function login(username: string, password: string) {
   return user;
 }
 
-export async function logout() {
+export async function logout(event?: unknown) {
+  const target = event ?? undefined;
+  if (target) {
+    await clearSession(target as Parameters<typeof clearSession>[0], SESSION_CONFIG);
+    return;
+  }
   const session = await getSession();
   await session.update((d) => {
     d.userId = undefined;
@@ -58,12 +67,9 @@ export async function register(username: string, email: string, password: string
   });
 }
 
-export function getSession(event?: unknown) {
-  const config = {
-    password: process.env.SESSION_SECRET ?? "areallylongsecretthatyoushouldreplace",
-  };
+export async function getSession(event?: unknown) {
   if (event) {
-    return useSession(event as Parameters<typeof useSession>[0], config);
+    return await useSession(event as Parameters<typeof useSession>[0], SESSION_CONFIG);
   }
-  return useSession(config);
+  return await useSession(SESSION_CONFIG);
 }

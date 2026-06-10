@@ -1,7 +1,7 @@
 import { createMiddleware } from "@solidjs/start/middleware";
-import { sendRedirect } from "vinxi/http";
+import { clearSession, getCookie, sendRedirect, useSession } from "vinxi/http";
 import { db } from "../lib/db";
-import { getSession } from "../lib/server";
+import { SESSION_CONFIG } from "../lib/server";
 import {
   shouldSkipRouteGuard,
   isPublicRoute,
@@ -9,6 +9,8 @@ import {
   isOwnerRoute,
   ownerRedirectPath,
 } from "../lib/route-access";
+
+const SESSION_COOKIE_NAME = "h3";
 
 async function resolveIsOwner(userId: string): Promise<boolean | null> {
   const user = await db.user.findUnique({
@@ -18,11 +20,47 @@ async function resolveIsOwner(userId: string): Promise<boolean | null> {
   return user?.isOwner ?? null;
 }
 
+function h3Event(event: { nativeEvent?: unknown }) {
+  return (event.nativeEvent ?? event) as Parameters<typeof useSession>[0];
+}
+
 function redirectTo(event: { nativeEvent?: unknown }, location: string, request: Request) {
-  if (event.nativeEvent) {
-    return sendRedirect(event.nativeEvent as Parameters<typeof sendRedirect>[0], location, 302);
+  const target = h3Event(event);
+  if (target) {
+    return sendRedirect(target, location, 302);
   }
   return Response.redirect(new URL(location, request.url), 302);
+}
+
+async function readUserId(event: { nativeEvent?: unknown }): Promise<string | undefined> {
+  const target = h3Event(event);
+  if (!target) return undefined;
+
+  if (!getCookie(target, SESSION_COOKIE_NAME)) {
+    return undefined;
+  }
+
+  try {
+    const session = await useSession(target, SESSION_CONFIG);
+    return session.data?.userId as string | undefined;
+  } catch {
+    try {
+      await clearSession(target, SESSION_CONFIG);
+    } catch {
+      // Ignore invalid cookie cleanup failures.
+    }
+    return undefined;
+  }
+}
+
+async function clearUserSession(event: { nativeEvent?: unknown }) {
+  const target = h3Event(event);
+  if (!target) return;
+  try {
+    await clearSession(target, SESSION_CONFIG);
+  } catch {
+    // Ignore if there is no session to clear.
+  }
 }
 
 export default createMiddleware({
@@ -53,8 +91,7 @@ export default createMiddleware({
       return;
     }
 
-    const session = getSession(event.nativeEvent);
-    const userId = session.data.userId as string | undefined;
+    const userId = await readUserId(event);
 
     if (isPublicRoute(pathname)) {
       if (!userId) {
@@ -62,9 +99,7 @@ export default createMiddleware({
       }
       const isOwner = await resolveIsOwner(userId);
       if (isOwner === null) {
-        await session.update((data) => {
-          data.userId = undefined;
-        });
+        await clearUserSession(event);
         return;
       }
       return redirectTo(event, ownerRedirectPath(isOwner), event.request);
@@ -76,9 +111,7 @@ export default createMiddleware({
 
     const isOwner = await resolveIsOwner(userId);
     if (isOwner === null) {
-      await session.update((data) => {
-        data.userId = undefined;
-      });
+      await clearUserSession(event);
       return redirectTo(event, "/login", event.request);
     }
 
@@ -95,7 +128,6 @@ export default createMiddleware({
     }
 
     if (!isOwnerRoute(pathname) && !isAuthRoute(pathname) && pathname !== "/login") {
-      // Unknown app routes default to owner-only (e.g. future pages under /settings).
       if (!isOwner) {
         return redirectTo(event, "/portal", event.request);
       }

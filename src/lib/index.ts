@@ -16,7 +16,7 @@ import {
 export const getUser = query(async () => {
   "use server";
   const session = await getSession();
-  const userId = session.data.userId;
+  const userId = session.data?.userId;
   if (userId === undefined) return null;
 
   const user = await db.user.findUnique({
@@ -149,7 +149,6 @@ export const loginOrRegister = action(async (formData: FormData) => {
     await session.update((d) => {
       d.userId = user.id;
     });
-
     if (!user.isOwner) {
       return serverRedirect("/portal");
     }

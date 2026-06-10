@@ -45,7 +45,7 @@ async function loadSessionUser(userId: string): Promise<SessionUser | null> {
 
 export async function requireUser(): Promise<SessionUser> {
   const session = await getSession();
-  const userId = session.data.userId;
+  const userId = session.data?.userId;
   if (userId === undefined) {
     throw serverRedirect("/login");
   }
