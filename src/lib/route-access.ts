@@ -53,6 +53,12 @@ export function isOwnerRoute(pathname: string): boolean {
   );
 }
 
+export function authenticatedHomePath(isOwner: boolean, familyId?: string | null): string {
+  if (isOwner) return "/";
+  return familyId ? "/portal" : "/account";
+}
+
+/** @deprecated Use authenticatedHomePath */
 export function ownerRedirectPath(isOwner: boolean): string {
-  return isOwner ? "/" : "/portal";
+  return authenticatedHomePath(isOwner);
 }

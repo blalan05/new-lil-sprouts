@@ -6,6 +6,7 @@ import {
   isPublicRoute,
   shouldSkipRouteGuard,
   ownerRedirectPath,
+  authenticatedHomePath,
 } from "../src/lib/route-access.ts";
 
 describe("route-access", () => {
@@ -40,7 +41,10 @@ describe("route-access", () => {
 
   it("redirects by role", () => {
     assert.equal(ownerRedirectPath(true), "/");
-    assert.equal(ownerRedirectPath(false), "/portal");
+    assert.equal(ownerRedirectPath(false), "/account");
+    assert.equal(authenticatedHomePath(true), "/");
+    assert.equal(authenticatedHomePath(false, "family-1"), "/portal");
+    assert.equal(authenticatedHomePath(false, null), "/account");
   });
 });
 
@@ -50,6 +54,7 @@ describe("manual auth checklist", () => {
       "Unauthenticated GET / redirects to /login",
       "Unauthenticated GET /families redirects to /login",
       "Parent user GET / redirects to /portal",
+      "Parent user without a family GET / redirects to /account (not /portal)",
       "Parent user GET /families redirects to /portal",
       "Owner user GET /portal redirects to /",
       "Parent user can access /portal/today",

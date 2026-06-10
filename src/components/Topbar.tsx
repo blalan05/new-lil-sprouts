@@ -1,5 +1,6 @@
 import { A, useSubmission, createAsync } from "@solidjs/router";
 import { Show, createSignal, createEffect, onCleanup, For } from "solid-js";
+import { isServer } from "solid-js/web";
 import { getUser, logout } from "~/lib";
 import { getStoredTheme, initTheme, resolveTheme, setTheme, type Theme } from "~/lib/theme";
 import { getMyNotifications, getUnreadCount, markNotificationRead } from "~/lib/notifications";
@@ -33,11 +34,13 @@ export default function Topbar() {
   let closeBtnRef: HTMLButtonElement | undefined;
 
   createEffect(() => {
+    if (isServer) return;
     initTheme();
     setThemeState(getStoredTheme());
   });
 
   createEffect(() => {
+    if (isServer) return;
     if (mobileMenuOpen() && !menuClosing()) {
       document.body.classList.add("mobile-menu-open");
       queueMicrotask(() => closeBtnRef?.focus());
@@ -47,6 +50,7 @@ export default function Topbar() {
   });
 
   onCleanup(() => {
+    if (isServer) return;
     document.body.classList.remove("mobile-menu-open");
   });
 
@@ -91,7 +95,7 @@ export default function Topbar() {
   };
 
   createEffect(() => {
-    if (!mobileMenuOpen()) return;
+    if (isServer || !mobileMenuOpen()) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();

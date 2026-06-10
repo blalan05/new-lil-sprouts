@@ -3,6 +3,7 @@ import { db } from "./db";
 import { requireUser } from "./auth";
 import { hashPassword, verifyPassword } from "./password";
 import { serverRedirect } from "./server-redirect";
+import { authenticatedHomePath } from "./route-access";
 import {
   getSession,
   login,
@@ -150,7 +151,11 @@ export const loginOrRegister = action(async (formData: FormData) => {
       d.userId = user.id;
     });
     if (!user.isOwner) {
-      return serverRedirect("/portal");
+      const member = await db.familyMember.findUnique({
+        where: { userId: user.id },
+        select: { familyId: true },
+      });
+      return serverRedirect(authenticatedHomePath(false, member?.familyId ?? null));
     }
   } catch (err) {
     return err as Error;

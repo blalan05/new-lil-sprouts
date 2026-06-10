@@ -7,17 +7,29 @@ import {
   isPublicRoute,
   isAuthRoute,
   isOwnerRoute,
-  ownerRedirectPath,
+  authenticatedHomePath,
 } from "../lib/route-access";
 
 const SESSION_COOKIE_NAME = "h3";
 
-async function resolveIsOwner(userId: string): Promise<boolean | null> {
+type SessionProfile = {
+  isOwner: boolean;
+  familyId: string | null;
+};
+
+async function resolveSessionProfile(userId: string): Promise<SessionProfile | null> {
   const user = await db.user.findUnique({
     where: { id: userId },
-    select: { isOwner: true },
+    select: {
+      isOwner: true,
+      familyMember: { select: { familyId: true } },
+    },
   });
-  return user?.isOwner ?? null;
+  if (!user) return null;
+  return {
+    isOwner: user.isOwner,
+    familyId: user.familyMember?.familyId ?? null,
+  };
 }
 
 function h3Event(event: { nativeEvent?: unknown }) {
@@ -97,29 +109,35 @@ export default createMiddleware({
       if (!userId) {
         return;
       }
-      const isOwner = await resolveIsOwner(userId);
-      if (isOwner === null) {
+      const profile = await resolveSessionProfile(userId);
+      if (profile === null) {
         await clearUserSession(event);
         return;
       }
-      return redirectTo(event, ownerRedirectPath(isOwner), event.request);
+      return redirectTo(
+        event,
+        authenticatedHomePath(profile.isOwner, profile.familyId),
+        event.request,
+      );
     }
 
     if (!userId) {
       return redirectTo(event, "/login", event.request);
     }
 
-    const isOwner = await resolveIsOwner(userId);
-    if (isOwner === null) {
+    const profile = await resolveSessionProfile(userId);
+    if (profile === null) {
       await clearUserSession(event);
       return redirectTo(event, "/login", event.request);
     }
 
-    if (isOwnerRoute(pathname) && !isOwner) {
-      return redirectTo(event, "/portal", event.request);
+    const parentHome = authenticatedHomePath(false, profile.familyId);
+
+    if (isOwnerRoute(pathname) && !profile.isOwner) {
+      return redirectTo(event, parentHome, event.request);
     }
 
-    if (pathname === "/portal" && isOwner) {
+    if (pathname === "/portal" && profile.isOwner) {
       return redirectTo(event, "/", event.request);
     }
 
@@ -128,8 +146,8 @@ export default createMiddleware({
     }
 
     if (!isOwnerRoute(pathname) && !isAuthRoute(pathname) && pathname !== "/login") {
-      if (!isOwner) {
-        return redirectTo(event, "/portal", event.request);
+      if (!profile.isOwner) {
+        return redirectTo(event, parentHome, event.request);
       }
     }
   },

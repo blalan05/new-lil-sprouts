@@ -87,8 +87,11 @@ export async function requireFamilyAccess(familyId: string): Promise<SessionUser
 
 export async function requireParent(): Promise<SessionUser & { familyId: string }> {
   const user = await requireUser();
-  if (user.isOwner || !user.familyId) {
+  if (user.isOwner) {
     throw serverRedirect("/");
+  }
+  if (!user.familyId) {
+    throw serverRedirect("/account");
   }
   return { ...user, familyId: user.familyId };
 }
