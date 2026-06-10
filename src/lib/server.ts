@@ -24,8 +24,12 @@ export function validatePassword(password: unknown) {
   }
 }
 
-export async function login(username: string, password: string) {
-  const user = await db.user.findUnique({ where: { username } });
+export async function login(usernameOrEmail: string, password: string) {
+  const loginId = usernameOrEmail.trim();
+  let user = await db.user.findUnique({ where: { username: loginId } });
+  if (!user && loginId.includes("@")) {
+    user = await db.user.findUnique({ where: { email: loginId } });
+  }
   if (!user || !verifyPassword(password, user.password)) throw new Error("Invalid login");
   if (needsRehash(user.password)) {
     await db.user.update({

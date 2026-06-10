@@ -60,13 +60,13 @@ export default function Login(props: RouteSectionProps) {
             for="username-input"
             style={{ display: "block", "margin-bottom": "0.5rem", "font-weight": "500", color: "var(--color-text)" }}
           >
-            Username
+            Username or email
           </label>
           <input
             id="username-input"
             name="username"
             class="input-field"
-            placeholder="kody"
+            placeholder="kody or kody@example.com"
             required
           />
         </div>

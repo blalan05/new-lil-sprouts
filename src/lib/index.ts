@@ -124,8 +124,8 @@ export const updatePassword = action(async (formData: FormData) => {
 
 export const loginOrRegister = action(async (formData: FormData) => {
   "use server";
-  const username = String(formData.get("username"));
-  const email = String(formData.get("email") || "");
+  const username = String(formData.get("username")).trim();
+  const email = String(formData.get("email") || "").trim();
   const password = String(formData.get("password"));
   const loginType = String(formData.get("loginType"));
 

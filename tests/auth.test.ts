@@ -1,5 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { hashPassword, verifyPassword, needsRehash } from "../src/lib/password.ts";
 import {
   isOwnerRoute,
   isAuthRoute,
@@ -8,6 +9,21 @@ import {
   ownerRedirectPath,
   authenticatedHomePath,
 } from "../src/lib/route-access.ts";
+
+describe("password", () => {
+  it("hashes and verifies passwords", () => {
+    const hash = hashPassword("secret123");
+    assert.ok(hash.startsWith("scrypt$"));
+    assert.equal(verifyPassword("secret123", hash), true);
+    assert.equal(verifyPassword("wrong", hash), false);
+    assert.equal(needsRehash(hash), false);
+  });
+
+  it("supports legacy plaintext until rehash", () => {
+    assert.equal(verifyPassword("legacy", "legacy"), true);
+    assert.equal(needsRehash("legacy"), true);
+  });
+});
 
 describe("route-access", () => {
   it("classifies owner routes", () => {
