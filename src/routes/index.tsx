@@ -10,6 +10,7 @@ import { createCareSchedule } from "~/lib/care-schedules";
 import { getServices } from "~/lib/services";
 import { getWeeklyStats, getDashboardStats, getStatsForPeriod } from "~/lib/stats";
 import { formatTimeLocal, ensureDate, isSameDay } from "~/lib/datetime";
+import { moneyDisplay } from "~/lib/money";
 import EmptyState from "~/components/EmptyState";
 
 function getVisibleCalendarRange(month: Date) {
@@ -870,7 +871,7 @@ export default function Home() {
           </div>
           <Show when={moneyStats()}>
             <div style={{ "font-size": "2.5rem", "font-weight": "700", color: "#48bb78" }}>
-              ${moneyStats()?.money.toFixed(2) || "0.00"}
+              ${moneyDisplay(moneyStats()?.money)}
             </div>
           </Show>
         </div>
@@ -905,7 +906,7 @@ export default function Home() {
                 {dashboardStats()?.thisMonthHours.toFixed(1) || "0.0"}
               </div>
               <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}>
-                ${dashboardStats()?.thisMonthMoney.toFixed(2) || "0.00"} earned
+                ${moneyDisplay(dashboardStats()?.thisMonthMoney)} earned
               </div>
             </div>
 
