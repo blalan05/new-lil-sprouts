@@ -1,4 +1,4 @@
-import { action, query } from "@solidjs/router";
+import { action, query, revalidate } from "@solidjs/router";
 import { db } from "./db";
 import { requireUser } from "./auth";
 import { hashPassword, verifyPassword } from "./password";
@@ -150,6 +150,7 @@ export const loginOrRegister = action(async (formData: FormData) => {
     await session.update((d) => {
       d.userId = user.id;
     });
+    revalidate("user");
     if (!user.isOwner) {
       const member = await db.familyMember.findUnique({
         where: { userId: user.id },
@@ -166,5 +167,6 @@ export const loginOrRegister = action(async (formData: FormData) => {
 export const logout = action(async () => {
   "use server";
   await logoutSession();
+  revalidate("user");
   return serverRedirect("/login");
 });

@@ -1,6 +1,7 @@
 import { A, useSubmission, createAsync } from "@solidjs/router";
-import { Show, createSignal, createEffect, onCleanup, For } from "solid-js";
+import { Show, createSignal, createEffect, onCleanup, For, onMount } from "solid-js";
 import { isServer } from "solid-js/web";
+import { revalidate } from "@solidjs/router";
 import { getUser, logout } from "~/lib";
 import { getStoredTheme, initTheme, resolveTheme, setTheme, type Theme } from "~/lib/theme";
 import { getMyNotifications, getUnreadCount, markNotificationRead } from "~/lib/notifications";
@@ -32,6 +33,10 @@ export default function Topbar() {
   let menuRef: HTMLDivElement | undefined;
   let toggleRef: HTMLButtonElement | undefined;
   let closeBtnRef: HTMLButtonElement | undefined;
+
+  onMount(() => {
+    revalidate("user");
+  });
 
   createEffect(() => {
     if (isServer) return;
