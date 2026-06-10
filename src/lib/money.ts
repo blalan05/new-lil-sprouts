@@ -76,11 +76,6 @@ export function calculateHours(startTime: Date | number, endTime: Date | number)
   return Math.round(hours * 100) / 100;
 }
 
-/** Format money for UI — accepts serialized strings from server queries. */
-export function moneyDisplay(value: MoneyInput, decimalPlaces = 2): string {
-  return toDecimal(value).toFixed(decimalPlaces);
-}
-
 export function formatMoney(
   amount: MoneyInput,
   options: {

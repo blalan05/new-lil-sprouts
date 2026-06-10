@@ -10,7 +10,7 @@ import { createCareSchedule } from "~/lib/care-schedules";
 import { getServices } from "~/lib/services";
 import { getWeeklyStats, getDashboardStats, getStatsForPeriod } from "~/lib/stats";
 import { formatTimeLocal, ensureDate, isSameDay } from "~/lib/datetime";
-import { moneyDisplay } from "~/lib/money";
+import { moneyDisplay } from "~/lib/money-display";
 import EmptyState from "~/components/EmptyState";
 
 function getVisibleCalendarRange(month: Date) {
