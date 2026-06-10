@@ -15,34 +15,31 @@ import {
 
 export const getUser = query(async () => {
   "use server";
-  try {
-    const session = await getSession();
-    const userId = session.data.userId;
-    if (userId === undefined) throw new Error("User not found");
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      include: {
-        familyMember: {
-          select: { familyId: true },
-        },
+  const session = await getSession();
+  const userId = session.data.userId;
+  if (userId === undefined) return null;
+
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    include: {
+      familyMember: {
+        select: { familyId: true },
       },
-    });
-    if (!user) throw new Error("User not found");
-    return {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      phone: user.phone,
-      isOwner: user.isOwner,
-      role: user.isOwner ? ("owner" as const) : ("parent" as const),
-      familyId: user.familyMember?.familyId ?? null,
-    };
-  } catch {
-    await logoutSession();
-    throw serverRedirect("/login");
-  }
+    },
+  });
+  if (!user) return null;
+
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    phone: user.phone,
+    isOwner: user.isOwner,
+    role: user.isOwner ? ("owner" as const) : ("parent" as const),
+    familyId: user.familyMember?.familyId ?? null,
+  };
 }, "user");
 
 export const updateUser = action(async (formData: FormData) => {
