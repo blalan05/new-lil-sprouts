@@ -11,7 +11,8 @@
     "prisma:migrate:deploy": "node scripts/migrate.js deploy",
     "prisma:migrate:status": "node scripts/migrate.js status",
     "postinstall": "prisma generate",
-    "test:auth": "node --experimental-strip-types --test tests/auth.test.ts"
+    "test:auth": "node --experimental-strip-types --test tests/auth.test.ts",
+    "reset-password": "node --experimental-strip-types scripts/reset-password.js"
   },
   "devDependencies": {
     "@types/node": "^25.9.2",
