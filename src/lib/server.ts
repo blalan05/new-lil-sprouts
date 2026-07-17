@@ -4,13 +4,19 @@ import { db } from "./db";
 import { hashPassword, needsRehash, verifyPassword } from "./password";
 import { ROLE_COOKIE, roleCookieValue } from "./role-cookie";
 
-const sessionSecret = process.env.SESSION_SECRET;
-if (!sessionSecret) {
-  throw new Error("SESSION_SECRET environment variable is required");
+function getSessionSecret() {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    throw new Error("SESSION_SECRET environment variable is required");
+  }
+  return secret;
 }
 
+/** Lazy so importing this module during tooling/build does not require env yet. */
 export const SESSION_CONFIG = {
-  password: sessionSecret,
+  get password() {
+    return getSessionSecret();
+  },
 };
 
 export function validateUsername(username: unknown) {

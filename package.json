@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "vinxi dev",
-    "build": "prisma generate && vinxi build",
+    "build": "node scripts/check-deps.js && prisma generate && vinxi build",
+    "check-deps": "node scripts/check-deps.js",
     "start": "vinxi start",
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",

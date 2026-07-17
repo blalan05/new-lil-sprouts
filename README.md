@@ -49,11 +49,17 @@ works well on a phone in the field.
 
 ## Getting started
 
-1. **Install dependencies**
+1. **Configure npm auth for Web Awesome Pro** (required before install/build)
+
+   Web Awesome Pro is a private Cloudsmith package. Export your token, then install:
 
    ```bash
+   export WEBAWESOME_NPM_TOKEN="your_cloudsmith_token"
    pnpm install
    ```
+
+   On Windows (PowerShell): `$env:WEBAWESOME_NPM_TOKEN="your_cloudsmith_token"`.
+   See `.npmrc.example`. Without this token, `pnpm build` fails during SSR with unresolved CSS imports from `@web.awesome.me/webawesome-pro`.
 
 2. **Configure environment variables**
 
@@ -95,7 +101,8 @@ works well on a phone in the field.
 | Script | Description |
 | --- | --- |
 | `pnpm dev` | Start the Vinxi dev server |
-| `pnpm build` | Generate the Prisma client and build for production |
+| `pnpm build` | Check deps, generate Prisma client, build for production |
+| `pnpm check-deps` | Verify private Web Awesome package is installed |
 | `pnpm start` | Run the built production server |
 | `pnpm prisma:generate` | Generate the Prisma client into `src/generated/prisma-client` |
 | `pnpm prisma:migrate` | Create/apply a dev migration (`prisma migrate dev`) |
@@ -107,7 +114,8 @@ works well on a phone in the field.
 | Variable | Required | Description |
 | --- | --- | --- |
 | `DATABASE_URL` | Yes | PostgreSQL connection string. Supports optional SSL cert params (`sslcert=`, `sslrootcert=`, `sslkey=`), which are resolved to absolute paths at startup. |
-| `SESSION_SECRET` | Yes (prod) | Secret for signing session cookies. A weak default is used if unset — always set this in production. |
+| `SESSION_SECRET` | Yes | Secret for signing session cookies. Required at runtime (no insecure fallback). |
+| `WEBAWESOME_NPM_TOKEN` | Yes (install/build) | Cloudsmith token for `@web.awesome.me/webawesome-pro`. Used by `.npmrc` during `pnpm install`. |
 | `PUBLIC_ORIGIN` | Recommended | Absolute public origin used to build redirect URLs. `APP_ORIGIN`, `SITE_URL`, and `URL` are also accepted, as are host-only platform vars (`VERCEL_URL`, `RENDER_EXTERNAL_HOSTNAME`, `RAILWAY_PUBLIC_DOMAIN`). |
 | `NODE_ENV` | No | Set to `production` in production builds. |
 
