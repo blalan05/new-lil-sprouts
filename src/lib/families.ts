@@ -2,6 +2,7 @@ import { query, action, reload } from "@solidjs/router";
 import { db } from "./db";
 import { calculateHours, calculateSessionCost, sumMoney, roundMoney } from "./money";
 import { serverRedirect } from "./server-redirect";
+import { assertOwnerAction, familyWhere, requireFamilyAccess, requireUser } from "./auth";
 
 // Helper function to format parent names
 export function formatParentNames(
@@ -26,7 +27,9 @@ export function formatParentNames(
 
 export const getFamilies = query(async () => {
   "use server";
+  const user = await requireUser();
   const families = await db.family.findMany({
+    where: familyWhere(user),
     include: {
       children: {
         orderBy: {
@@ -105,6 +108,7 @@ export const getFamilies = query(async () => {
 
 export const getFamily = query(async (id: string) => {
   "use server";
+  await requireFamilyAccess(id);
   const family = await db.family.findUnique({
     where: { id },
     include: {
@@ -187,6 +191,9 @@ export const getFamily = query(async (id: string) => {
 export const createFamily = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const familyName = String(formData.get("familyName"));
     const parentFirstName = String(formData.get("parentFirstName"));
     const parentLastName = String(formData.get("parentLastName"));
@@ -307,6 +314,9 @@ export const createFamily = action(async (formData: FormData) => {
 export const updateFamily = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const id = String(formData.get("id"));
     const familyName = String(formData.get("familyName"));
     const parentFirstName = String(formData.get("parentFirstName"));
@@ -370,6 +380,9 @@ export const updateFamily = action(async (formData: FormData) => {
 export const deleteFamily = action(async (id: string) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     await db.family.delete({
       where: { id },
     });

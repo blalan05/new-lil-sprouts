@@ -1,5 +1,9 @@
 import { createAsync, type RouteDefinition, A, useSubmission } from "@solidjs/router";
 import { createSignal, Show, For, createMemo, createResource, createEffect } from "solid-js";
+import Modal from "~/components/Modal";
+import PageContent, { PageHeader } from "~/components/wa/PageContent";
+import { useConfirm } from "~/components/wa/ConfirmProvider";
+import { SessionStatusBadge } from "~/components/wa/StatusBadge";
 import { getCareSessionsForRange, getUnavailabilitiesForRange } from "~/lib/schedule";
 import { getUpcomingUnavailabilities, deleteUnavailability } from "~/lib/unavailability";
 import { getServices } from "~/lib/services";
@@ -18,6 +22,7 @@ export const route = {
 type ViewType = "month" | "week" | "day" | "list";
 
 export default function SchedulePage() {
+  const { confirm } = useConfirm();
   const [view, setView] = createSignal<ViewType>("month");
   const [currentDate, setCurrentDate] = createSignal(new Date());
   const [searchTerm, setSearchTerm] = createSignal<string>("");
@@ -219,274 +224,106 @@ export default function SchedulePage() {
   };
 
   const handleDeleteUnavailability = async (id: string) => {
-    if (confirm("Are you sure you want to delete this unavailability period?")) {
+    const ok = await confirm({
+      title: "Delete Unavailability",
+      message: "Are you sure you want to delete this unavailability period?",
+      confirmLabel: "Delete",
+      variant: "danger",
+    });
+    if (ok) {
       await deleteUnavailability(id);
       window.location.reload();
     }
   };
 
   return (
-    <main
-      style={{
-        "max-width": "1600px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
-      <header style={{ "margin-bottom": "2rem" }}>
-        <div
-          style={{
-            display: "flex",
-            "justify-content": "space-between",
-            "align-items": "center",
-            "margin-bottom": "1rem",
-            "flex-wrap": "wrap",
-            gap: "1rem",
-          }}
-          class="flex-row-mobile"
-        >
-          <div
-            style={{ display: "flex", "align-items": "center", gap: "1rem", "flex-wrap": "wrap" }}
-          >
-            <A
-              href="/"
-              style={{
-                color: "#4299e1",
-                "text-decoration": "none",
-                display: "inline-block",
-              }}
-            >
-              ← Back to Dashboard
-            </A>
-            <h1 style={{ color: "#2d3748", "font-size": "2rem", margin: 0 }}>Schedule</h1>
-          </div>
-          <div
-            style={{ display: "flex", gap: "0.5rem", "flex-wrap": "wrap" }}
-            class="calendar-view-buttons"
-          >
-            <button
+    <PageContent>
+      <PageHeader
+        title="Schedule"
+        actions={
+          <div class="wa-cluster wa-gap-s calendar-view-buttons">
+            <wa-button
+              appearance={showUnavailabilityPanel() ? "filled" : "outlined"}
+              variant={showUnavailabilityPanel() ? "brand" : "neutral"}
               onClick={() => setShowUnavailabilityPanel(!showUnavailabilityPanel())}
-              style={{
-                padding: "0.5rem 1rem",
-                "background-color": showUnavailabilityPanel() ? "#4299e1" : "#edf2f7",
-                color: showUnavailabilityPanel() ? "white" : "#2d3748",
-                border: "1px solid #cbd5e0",
-                "border-radius": "4px",
-                cursor: "pointer",
-                "font-size": "0.875rem",
-              }}
             >
               {showUnavailabilityPanel() ? "Hide" : "Show"} Unavailability
-            </button>
-            <button
+            </wa-button>
+            <wa-button
+              variant="success"
+              appearance="filled"
               onClick={() => {
                 setSelectedDate("");
                 setShowAddSessionModal(true);
               }}
-              style={{
-                padding: "0.5rem 1rem",
-                "background-color": "#48bb78",
-                color: "white",
-                border: "none",
-                "border-radius": "4px",
-                cursor: "pointer",
-                "font-size": "0.875rem",
-                "font-weight": "600",
-                display: "inline-flex",
-                "align-items": "center",
-                gap: "0.375rem",
-              }}
             >
-              <span>+</span>
-              <span>Add Care Session</span>
-            </button>
-            <A
-              href="/unavailability/new"
-              style={{
-                padding: "0.5rem 1rem",
-                "background-color": "#e53e3e",
-                color: "white",
-                border: "none",
-                "border-radius": "4px",
-                "text-decoration": "none",
-                "font-size": "0.875rem",
-              }}
-            >
+              + Add Care Session
+            </wa-button>
+            <wa-button href="/unavailability/new" variant="danger" appearance="filled">
               + Block Time
-            </A>
+            </wa-button>
           </div>
-        </div>
+        }
+      />
 
         {/* View Switcher and Navigation */}
         <div
-          style={{
-            display: "flex",
-            "justify-content": "space-between",
-            "align-items": "center",
-            "margin-top": "1rem",
-            "flex-wrap": "wrap",
-            gap: "1rem",
-          }}
-          class="calendar-controls flex-row-mobile"
+          class="wa-flank wa-gap-m calendar-controls flex-row-mobile"
+          style={{ "margin-top": "var(--wa-space-m)", "flex-wrap": "wrap" }}
         >
-          <div
-            style={{ display: "flex", gap: "0.5rem", "flex-wrap": "wrap" }}
-            class="calendar-view-buttons"
-          >
-            <button
+          <div class="wa-cluster wa-gap-s calendar-view-buttons">
+            <wa-button
+              appearance={view() === "month" ? "filled" : "outlined"}
+              variant={view() === "month" ? "brand" : "neutral"}
               onClick={() => handleViewChange("month")}
-              style={{
-                padding: "0.5rem 1rem",
-                "background-color": view() === "month" ? "#4299e1" : "#edf2f7",
-                color: view() === "month" ? "white" : "#2d3748",
-                border: "1px solid #cbd5e0",
-                "border-radius": "4px",
-                cursor: "pointer",
-                "font-weight": view() === "month" ? "600" : "400",
-              }}
             >
               Month
-            </button>
-            <button
+            </wa-button>
+            <wa-button
+              appearance={view() === "week" ? "filled" : "outlined"}
+              variant={view() === "week" ? "brand" : "neutral"}
               onClick={() => handleViewChange("week")}
-              style={{
-                padding: "0.5rem 1rem",
-                "background-color": view() === "week" ? "#4299e1" : "#edf2f7",
-                color: view() === "week" ? "white" : "#2d3748",
-                border: "1px solid #cbd5e0",
-                "border-radius": "4px",
-                cursor: "pointer",
-                "font-weight": view() === "week" ? "600" : "400",
-              }}
             >
               Week
-            </button>
-            <button
+            </wa-button>
+            <wa-button
+              appearance={view() === "day" ? "filled" : "outlined"}
+              variant={view() === "day" ? "brand" : "neutral"}
               onClick={() => handleViewChange("day")}
-              style={{
-                padding: "0.5rem 1rem",
-                "background-color": view() === "day" ? "#4299e1" : "#edf2f7",
-                color: view() === "day" ? "white" : "#2d3748",
-                border: "1px solid #cbd5e0",
-                "border-radius": "4px",
-                cursor: "pointer",
-                "font-weight": view() === "day" ? "600" : "400",
-              }}
             >
               Day
-            </button>
-            <button
+            </wa-button>
+            <wa-button
+              appearance={view() === "list" ? "filled" : "outlined"}
+              variant={view() === "list" ? "brand" : "neutral"}
               onClick={() => handleViewChange("list")}
-              style={{
-                padding: "0.5rem 1rem",
-                "background-color": view() === "list" ? "#4299e1" : "#edf2f7",
-                color: view() === "list" ? "white" : "#2d3748",
-                border: "1px solid #cbd5e0",
-                "border-radius": "4px",
-                cursor: "pointer",
-                "font-weight": view() === "list" ? "600" : "400",
-              }}
             >
               List
-            </button>
+            </wa-button>
           </div>
           <Show when={view() !== "list"}>
-            <div
-              style={{
-                display: "flex",
-                "align-items": "center",
-                gap: "0.5rem",
-                "flex-wrap": "wrap",
-              }}
-            >
-              <button
-                onClick={() => navigateDate("prev")}
-                style={{
-                  padding: "0.5rem",
-                  "background-color": "#edf2f7",
-                  color: "#2d3748",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  cursor: "pointer",
-                  "font-size": "1rem",
-                  "min-width": "40px",
-                }}
-              >
+            <div class="wa-cluster wa-gap-s">
+              <wa-button appearance="outlined" onClick={() => navigateDate("prev")}>
                 ←
-              </button>
-              <button
-                onClick={goToToday}
-                style={{
-                  padding: "0.5rem 1rem",
-                  "background-color": "#4299e1",
-                  color: "white",
-                  border: "none",
-                  "border-radius": "4px",
-                  cursor: "pointer",
-                  "font-weight": "600",
-                }}
-              >
+              </wa-button>
+              <wa-button variant="brand" appearance="filled" onClick={goToToday}>
                 Today
-              </button>
-              <button
-                onClick={() => navigateDate("next")}
-                style={{
-                  padding: "0.5rem",
-                  "background-color": "#edf2f7",
-                  color: "#2d3748",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  cursor: "pointer",
-                  "font-size": "1rem",
-                  "min-width": "40px",
-                }}
-              >
+              </wa-button>
+              <wa-button appearance="outlined" onClick={() => navigateDate("next")}>
                 →
-              </button>
-              <span style={{ color: "#2d3748", "font-weight": "500", "margin-left": "0.5rem" }}>
-                {formatDateHeader()}
-              </span>
+              </wa-button>
+              <span class="wa-body-m">{formatDateHeader()}</span>
             </div>
           </Show>
         </div>
-      </header>
 
-      {/* Unavailability Panel */}
       <Show when={showUnavailabilityPanel()}>
-        <div
-          style={{
-            "background-color": "#fff",
-            padding: "1.5rem",
-            "border-radius": "8px",
-            border: "1px solid #e2e8f0",
-            "margin-bottom": "2rem",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              "justify-content": "space-between",
-              "align-items": "center",
-              "margin-bottom": "1rem",
-            }}
-          >
-            <h2 style={{ color: "#2d3748", "font-size": "1.25rem", margin: 0 }}>
-              Upcoming Unavailable Times
-            </h2>
-            <A
-              href="/unavailability/new"
-              style={{
-                padding: "0.5rem 1rem",
-                "background-color": "#e53e3e",
-                color: "white",
-                border: "none",
-                "border-radius": "4px",
-                "text-decoration": "none",
-                "font-size": "0.875rem",
-              }}
-            >
+        <wa-card>
+          <div class="wa-flank wa-gap-m" style={{ "margin-bottom": "var(--wa-space-m)" }}>
+            <h2 class="wa-heading-l">Upcoming Unavailable Times</h2>
+            <wa-button href="/unavailability/new" variant="danger" appearance="filled" size="small">
               + Add New
-            </A>
+            </wa-button>
           </div>
           <Show
             when={upcomingUnavailabilities()?.length}
@@ -567,42 +404,29 @@ export default function SchedulePage() {
                         </p>
                       </Show>
                     </div>
-                    <div style={{ display: "flex", gap: "0.5rem" }}>
-                      <A
+                    <div class="wa-cluster wa-gap-s">
+                      <wa-button
                         href={`/unavailability/${unavailability.id}/edit`}
-                        style={{
-                          padding: "0.5rem 1rem",
-                          "background-color": "#edf2f7",
-                          color: "#2d3748",
-                          border: "1px solid #cbd5e0",
-                          "border-radius": "4px",
-                          "text-decoration": "none",
-                          "font-size": "0.875rem",
-                        }}
+                        appearance="outlined"
+                        size="small"
                       >
                         Edit
-                      </A>
-                      <button
+                      </wa-button>
+                      <wa-button
+                        variant="danger"
+                        appearance="outlined"
+                        size="small"
                         onClick={() => handleDeleteUnavailability(unavailability.id)}
-                        style={{
-                          padding: "0.5rem 1rem",
-                          "background-color": "#fff5f5",
-                          color: "#c53030",
-                          border: "1px solid #feb2b2",
-                          "border-radius": "4px",
-                          cursor: "pointer",
-                          "font-size": "0.875rem",
-                        }}
                       >
                         Delete
-                      </button>
+                      </wa-button>
                     </div>
                   </div>
                 )}
               </For>
             </div>
           </Show>
-        </div>
+        </wa-card>
       </Show>
 
       <Show
@@ -649,186 +473,82 @@ export default function SchedulePage() {
         )}
       </Show>
 
-      {/* Add Care Session Modal */}
-      <Show when={showAddSessionModal()}>
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            "background-color": "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            "align-items": "center",
-            "justify-content": "center",
-            "z-index": 1000,
-            padding: "2rem",
-          }}
-          class="modal-overlay"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              handleCloseModal();
-            }
-          }}
-        >
-          <div
-            style={{
-              "background-color": "#fff",
-              "border-radius": "8px",
-              padding: "2rem",
-              "max-width": "500px",
-              width: "100%",
-              "max-height": "90vh",
-              overflow: "auto",
-              "box-shadow": "0 10px 25px rgba(0, 0, 0, 0.2)",
-            }}
-            class="modal-content"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              style={{
-                display: "flex",
-                "justify-content": "space-between",
-                "align-items": "center",
-                "margin-bottom": "1.5rem",
-              }}
-            >
-              <h2 style={{ color: "#2d3748", "font-size": "1.5rem", margin: 0 }}>
-                Add Care Session
-              </h2>
-              <button
-                onClick={handleCloseModal}
-                style={{
-                  background: "none",
-                  border: "none",
-                  "font-size": "1.5rem",
-                  color: "#718096",
-                  cursor: "pointer",
-                  padding: "0.25rem 0.5rem",
-                  "line-height": 1,
-                }}
-              >
-                ×
-              </button>
-            </div>
-
-            <form action={createCareSchedule} method="post">
+      <Modal open={showAddSessionModal()} title="Add Care Session" onClose={handleCloseModal}>
+            <form action={createCareSchedule} method="post" class="wa-stack wa-gap-m">
               <input type="hidden" name="recurrence" value="ONCE" />
               <input type="hidden" name="timezoneOffset" value={new Date().getTimezoneOffset() * -1} />
 
-              <div style={{ "margin-bottom": "1.5rem" }}>
-                <label
-                  for="serviceId"
-                  style={{
-                    display: "block",
-                    "margin-bottom": "0.5rem",
-                    "font-weight": "600",
-                    color: "#2d3748",
-                  }}
-                >
-                  Service *
-                </label>
-                <Show
-                  when={services()}
-                  fallback={
-                    <div style={{ padding: "0.75rem", color: "#718096" }}>Loading services...</div>
+              <Show
+                when={services()}
+                fallback={
+                  <div style={{ padding: "0.75rem" }} class="wa-color-text-quiet">Loading services...</div>
+                }
+              >
+                <wa-select
+                  label="Service *"
+                  name="serviceId"
+                  required
+                  value={serviceId()}
+                  onChange={(e) =>
+                    setServiceId((e.currentTarget as HTMLSelectElement & { value: string }).value)
                   }
                 >
-                  <select
-                    id="serviceId"
-                    name="serviceId"
-                    required
-                    value={serviceId()}
-                    onChange={(e) => setServiceId(e.currentTarget.value)}
-                    style={{
-                      width: "100%",
-                      padding: "0.75rem",
-                      border: "1px solid #cbd5e0",
-                      "border-radius": "4px",
-                      "font-size": "1rem",
-                      "margin-bottom": "1.5rem",
-                    }}
-                  >
-                    <Show
-                      when={selectedFamily()?.services && selectedFamily()!.services.length > 0}
-                      fallback={
-                        <>
-                          <option value="">Select a service...</option>
-                          <For each={services()}>
-                            {(service) => (
-                              <option value={service.id}>
-                                {service.name}
-                                {service.defaultHourlyRate &&
-                                  ` ($${service.defaultHourlyRate}/hr${service.pricingType === "PER_CHILD" ? " per child" : ""})`}
-                              </option>
-                            )}
-                          </For>
-                        </>
-                      }
-                    >
-                      <For each={selectedFamily()?.services || []}>
-                        {(fs) => (
-                          <option value={fs.service.id}>
-                            {fs.service.name}
-                            {fs.service.defaultHourlyRate &&
-                              ` ($${fs.service.defaultHourlyRate}/hr${fs.service.pricingType === "PER_CHILD" ? " per child" : ""})`}
-                          </option>
-                        )}
-                      </For>
-                    </Show>
-                  </select>
                   <Show
-                    when={
-                      selectedFamilyId() &&
-                      (!selectedFamily()?.services || selectedFamily()!.services.length === 0)
+                    when={selectedFamily()?.services && selectedFamily()!.services.length > 0}
+                    fallback={
+                      <>
+                        <wa-option value="">Select a service...</wa-option>
+                        <For each={services()}>
+                          {(service) => (
+                            <wa-option value={service.id}>
+                              {service.name}
+                              {service.defaultHourlyRate &&
+                                ` ($${service.defaultHourlyRate}/hr${service.pricingType === "PER_CHILD" ? " per child" : ""})`}
+                            </wa-option>
+                          )}
+                        </For>
+                      </>
                     }
                   >
-                    <p
-                      style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "#718096" }}
-                    >
-                      No services assigned to this family.{" "}
-                      <A href={`/families/${selectedFamilyId()}/edit`} style={{ color: "#4299e1" }}>
-                        Assign services
-                      </A>{" "}
-                      to default this selection.
-                    </p>
+                    <For each={selectedFamily()?.services || []}>
+                      {(fs) => (
+                        <wa-option value={fs.service.id}>
+                          {fs.service.name}
+                          {fs.service.defaultHourlyRate &&
+                            ` ($${fs.service.defaultHourlyRate}/hr${fs.service.pricingType === "PER_CHILD" ? " per child" : ""})`}
+                        </wa-option>
+                      )}
+                    </For>
                   </Show>
+                </wa-select>
+                <Show
+                  when={
+                    selectedFamilyId() &&
+                    (!selectedFamily()?.services || selectedFamily()!.services.length === 0)
+                  }
+                >
+                  <p class="wa-body-s wa-color-text-quiet">
+                    No services assigned to this family.{" "}
+                    <A href={`/families/${selectedFamilyId()}/edit`}>Assign services</A> to default
+                    this selection.
+                  </p>
                 </Show>
-              </div>
+              </Show>
 
-              <div style={{ "margin-bottom": "1.5rem" }}>
-                <label
-                  for="familyId"
-                  style={{
-                    display: "block",
-                    "margin-bottom": "0.5rem",
-                    "font-weight": "600",
-                    color: "#2d3748",
-                  }}
-                >
-                  Family *
-                </label>
-                <select
-                  id="familyId"
-                  name="familyId"
-                  required
-                  value={selectedFamilyId()}
-                  onChange={(e) => setSelectedFamilyId(e.currentTarget.value)}
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "1px solid #cbd5e0",
-                    "border-radius": "4px",
-                    "font-size": "1rem",
-                  }}
-                >
-                  <option value="">Select a family...</option>
-                  <For each={families()}>
-                    {(family) => <option value={family.id}>{family.familyName}</option>}
-                  </For>
-                </select>
-              </div>
+              <wa-select
+                label="Family *"
+                name="familyId"
+                required
+                value={selectedFamilyId()}
+                onChange={(e) =>
+                  setSelectedFamilyId((e.currentTarget as HTMLSelectElement & { value: string }).value)
+                }
+              >
+                <wa-option value="">Select a family...</wa-option>
+                <For each={families()}>
+                  {(family) => <wa-option value={family.id}>{family.familyName}</wa-option>}
+                </For>
+              </wa-select>
 
               <Show when={selectedFamilyId() && selectedFamily()}>
                 {(family) => (
@@ -897,160 +617,48 @@ export default function SchedulePage() {
                 )}
               </Show>
 
-              <div style={{ "margin-bottom": "1.5rem" }}>
-                <label
-                  for="startDate"
-                  style={{
-                    display: "block",
-                    "margin-bottom": "0.5rem",
-                    "font-weight": "600",
-                    color: "#2d3748",
-                  }}
-                >
-                  Date *
-                </label>
-                <input
-                  id="startDate"
-                  name="startDate"
-                  type="date"
-                  required
-                  value={getCurrentDate()}
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "1px solid #cbd5e0",
-                    "border-radius": "4px",
-                    "font-size": "1rem",
-                  }}
-                />
-              </div>
+              <wa-input
+                label="Date *"
+                name="startDate"
+                type="date"
+                required
+                value={getCurrentDate()}
+              />
 
-              <div
-                style={{
-                  display: "grid",
-                  "grid-template-columns": "1fr 1fr",
-                  gap: "1rem",
-                  "margin-bottom": "1.5rem",
-                }}
-              >
-                <div>
-                  <label
-                    for="startTime"
-                    style={{
-                      display: "block",
-                      "margin-bottom": "0.5rem",
-                      "font-weight": "600",
-                      color: "#2d3748",
-                    }}
-                  >
-                    Start Time *
-                  </label>
-                  <input
-                    id="startTime"
-                    name="startTime"
-                    type="time"
-                    required
-                    value={getCurrentTime()}
-                    style={{
-                      width: "100%",
-                      padding: "0.75rem",
-                      border: "1px solid #cbd5e0",
-                      "border-radius": "4px",
-                      "font-size": "1rem",
-                    }}
-                  />
-                </div>
-                <div>
-                  <label
-                    for="endTime"
-                    style={{
-                      display: "block",
-                      "margin-bottom": "0.5rem",
-                      "font-weight": "600",
-                      color: "#2d3748",
-                    }}
-                  >
-                    End Time *
-                  </label>
-                  <input
-                    id="endTime"
-                    name="endTime"
-                    type="time"
-                    required
-                    style={{
-                      width: "100%",
-                      padding: "0.75rem",
-                      border: "1px solid #cbd5e0",
-                      "border-radius": "4px",
-                      "font-size": "1rem",
-                    }}
-                  />
-                </div>
+              <div class="wa-grid wa-gap-m" style={{ "--min-column-size": "140px" }}>
+                <wa-input
+                  label="Start Time *"
+                  name="startTime"
+                  type="time"
+                  required
+                  value={getCurrentTime()}
+                />
+                <wa-input label="End Time *" name="endTime" type="time" required />
               </div>
 
               <Show when={submission.result instanceof Error}>
-                <div
-                  style={{
-                    padding: "1rem",
-                    "background-color": "#fff5f5",
-                    border: "1px solid #feb2b2",
-                    "border-radius": "4px",
-                    color: "#c53030",
-                    "margin-bottom": "1rem",
-                  }}
-                >
-                  {submission.result.message}
-                </div>
+                <wa-callout variant="danger">{submission.result.message}</wa-callout>
               </Show>
 
-              <div
-                style={{
-                  display: "flex",
-                  gap: "1rem",
-                  "justify-content": "flex-end",
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  style={{
-                    padding: "0.75rem 1.5rem",
-                    "background-color": "#edf2f7",
-                    color: "#2d3748",
-                    border: "1px solid #cbd5e0",
-                    "border-radius": "4px",
-                    cursor: "pointer",
-                    "font-weight": "600",
-                  }}
-                >
+              <div class="wa-cluster wa-gap-s" style={{ "justify-content": "flex-end" }}>
+                <wa-button type="button" appearance="outlined" onClick={handleCloseModal}>
                   Cancel
-                </button>
-                <button
+                </wa-button>
+                <wa-button
                   type="submit"
-                  disabled={submission.pending}
-                  style={{
-                    padding: "0.75rem 1.5rem",
-                    "background-color": "#48bb78",
-                    color: "white",
-                    border: "none",
-                    "border-radius": "4px",
-                    cursor: submission.pending ? "not-allowed" : "pointer",
-                    opacity: submission.pending ? "0.6" : "1",
-                    "font-weight": "600",
-                  }}
+                  variant="success"
+                  appearance="filled"
+                  disabled={submission.pending || undefined}
                 >
                   {submission.pending ? "Creating..." : "Create Session"}
-                </button>
+                </wa-button>
               </div>
             </form>
-          </div>
-        </div>
-      </Show>
-    </main>
+      </Modal>
+    </PageContent>
   );
 }
 
-// List View Component
 function ListView(props: {
   sessions: any[];
   searchTerm: string;
@@ -1080,22 +688,6 @@ function ListView(props: {
     return `${hours.toFixed(1)}h`;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "SCHEDULED":
-        return { bg: "#bee3f8", color: "#2c5282" };
-      case "IN_PROGRESS":
-        return { bg: "#feebc8", color: "#7c2d12" };
-      case "COMPLETED":
-        return { bg: "#c6f6d5", color: "#276749" };
-      case "CANCELLED":
-        return { bg: "#fed7d7", color: "#c53030" };
-      default:
-        return { bg: "#e2e8f0", color: "#2d3748" };
-    }
-  };
-
-  // Filter sessions by search term and service type
   const filteredSessions = () => {
     let filtered = props.sessions;
 
@@ -1166,14 +758,7 @@ function ListView(props: {
   };
 
   return (
-    <div
-      style={{
-        "background-color": "#fff",
-        "border-radius": "8px",
-        border: "1px solid #e2e8f0",
-        overflow: "hidden",
-      }}
-    >
+    <wa-card style={{ overflow: "hidden", padding: 0 }}>
       {/* Search and Sort Controls */}
       <div
         style={{
@@ -1192,63 +777,40 @@ function ListView(props: {
           }}
         >
           <div style={{ flex: "1", "min-width": "200px" }}>
-            <input
-              type="text"
+            <wa-input
+              type="search"
               placeholder="Search by family, child, status, or date..."
               value={props.searchTerm}
-              onInput={(e) => props.onSearchChange(e.currentTarget.value)}
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid #cbd5e0",
-                "border-radius": "4px",
-                "font-size": "1rem",
-              }}
+              onInput={(e) =>
+                props.onSearchChange((e.currentTarget as HTMLInputElement & { value: string }).value)
+              }
             />
           </div>
-          <div style={{ display: "flex", gap: "0.5rem", "flex-wrap": "wrap" }}>
-            <button
+          <div class="wa-cluster wa-gap-s">
+            <wa-button
+              appearance={props.sortField === "date" ? "filled" : "outlined"}
+              variant={props.sortField === "date" ? "brand" : "neutral"}
+              size="small"
               onClick={() => handleSort("date")}
-              style={{
-                padding: "0.5rem 1rem",
-                "background-color": props.sortField === "date" ? "#4299e1" : "#edf2f7",
-                color: props.sortField === "date" ? "white" : "#2d3748",
-                border: "1px solid #cbd5e0",
-                "border-radius": "4px",
-                cursor: "pointer",
-                "font-size": "0.875rem",
-              }}
             >
               Date {getSortIcon("date")}
-            </button>
-            <button
+            </wa-button>
+            <wa-button
+              appearance={props.sortField === "family" ? "filled" : "outlined"}
+              variant={props.sortField === "family" ? "brand" : "neutral"}
+              size="small"
               onClick={() => handleSort("family")}
-              style={{
-                padding: "0.5rem 1rem",
-                "background-color": props.sortField === "family" ? "#4299e1" : "#edf2f7",
-                color: props.sortField === "family" ? "white" : "#2d3748",
-                border: "1px solid #cbd5e0",
-                "border-radius": "4px",
-                cursor: "pointer",
-                "font-size": "0.875rem",
-              }}
             >
               Family {getSortIcon("family")}
-            </button>
-            <button
+            </wa-button>
+            <wa-button
+              appearance={props.sortField === "status" ? "filled" : "outlined"}
+              variant={props.sortField === "status" ? "brand" : "neutral"}
+              size="small"
               onClick={() => handleSort("status")}
-              style={{
-                padding: "0.5rem 1rem",
-                "background-color": props.sortField === "status" ? "#4299e1" : "#edf2f7",
-                color: props.sortField === "status" ? "white" : "#2d3748",
-                border: "1px solid #cbd5e0",
-                "border-radius": "4px",
-                cursor: "pointer",
-                "font-size": "0.875rem",
-              }}
             >
               Status {getSortIcon("status")}
-            </button>
+            </wa-button>
           </div>
         </div>
         <div style={{ color: "#718096", "font-size": "0.875rem" }}>
@@ -1270,7 +832,6 @@ function ListView(props: {
           <div style={{ display: "flex", "flex-direction": "column" }}>
             <For each={sortedSessions()}>
               {(session) => {
-                const statusColors = getStatusColor(session.status);
                 const startTime = new Date(session.scheduledStart);
                 const endTime = new Date(session.scheduledEnd);
                 const isPast = endTime < new Date();
@@ -1303,39 +864,12 @@ function ListView(props: {
                       }}
                     >
                       <div style={{ flex: "1", "min-width": "200px" }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "0.5rem",
-                            "align-items": "center",
-                            "margin-bottom": "0.25rem",
-                          }}
-                        >
-                          <span
-                            style={{
-                              padding: "0.25rem 0.75rem",
-                              "border-radius": "12px",
-                              "background-color": statusColors.bg,
-                              color: statusColors.color,
-                              "font-size": "0.75rem",
-                              "font-weight": "600",
-                            }}
-                          >
-                            {session.status}
-                          </span>
+                        <div class="wa-cluster wa-gap-s" style={{ "margin-bottom": "0.25rem" }}>
+                          <SessionStatusBadge status={session.status} />
                           {session.isConfirmed && (
-                            <span
-                              style={{
-                                padding: "0.25rem 0.75rem",
-                                "border-radius": "12px",
-                                "background-color": "#c6f6d5",
-                                color: "#276749",
-                                "font-size": "0.75rem",
-                                "font-weight": "600",
-                              }}
-                            >
+                            <wa-badge variant="success" appearance="filled-outlined" pill>
                               ✓ Confirmed
-                            </span>
+                            </wa-badge>
                           )}
                         </div>
                         <div
@@ -1392,7 +926,7 @@ function ListView(props: {
           </div>
         </Show>
       </div>
-    </div>
+    </wa-card>
   );
 }
 
@@ -1453,6 +987,7 @@ function MonthView(props: {
 
   return (
     <div
+      class="calendar-grid"
       style={{
         "background-color": "#fff",
         "border-radius": "8px",
@@ -1460,6 +995,7 @@ function MonthView(props: {
         overflow: "hidden",
       }}
     >
+      <div class="calendar-grid-inner">
       <div
         style={{
           display: "grid",
@@ -1595,6 +1131,7 @@ function MonthView(props: {
           }}
         </For>
       </div>
+      </div>
     </div>
   );
 }
@@ -1644,6 +1181,7 @@ function WeekView(props: { currentDate: Date; sessions: any[]; unavailabilities:
 
   return (
     <div
+      class="calendar-grid"
       style={{
         "background-color": "#fff",
         "border-radius": "8px",
@@ -1651,7 +1189,7 @@ function WeekView(props: { currentDate: Date; sessions: any[]; unavailabilities:
         overflow: "auto",
       }}
     >
-      <div style={{ display: "grid", "grid-template-columns": "80px repeat(7, 1fr)" }}>
+      <div class="calendar-grid-inner calendar-week-grid" style={{ display: "grid", "grid-template-columns": "80px repeat(7, 1fr)" }}>
         {/* Header row */}
         <div style={{ padding: "1rem", "font-weight": "600", color: "#4a5568" }}>Time</div>
         <For each={days}>

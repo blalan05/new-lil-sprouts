@@ -1,5 +1,6 @@
-import { useSubmission, A, useParams, createAsync } from "@solidjs/router";
+import { useSubmission, useParams, createAsync } from "@solidjs/router";
 import { Show, For, createSignal } from "solid-js";
+import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { createSessionReport } from "~/lib/session-reports";
 import { getFamily } from "~/lib/families";
 
@@ -33,254 +34,102 @@ export default function NewSessionReport() {
   };
 
   return (
-    <main
-      style={{
-        "max-width": "800px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
-      <header style={{ "margin-bottom": "2rem" }}>
-        <A
-          href={`/families/${params.id}/sessions/${params.sessionId}`}
-          style={{
-            color: "#4299e1",
-            "text-decoration": "none",
-            "margin-bottom": "0.5rem",
-            display: "inline-block",
-          }}
-        >
-          ← Back to Session
-        </A>
-        <h1 style={{ color: "#2d3748", "font-size": "2rem" }}>Add Session Report</h1>
-        <p style={{ color: "#718096", margin: "0.5rem 0 0 0" }}>
-          Document an incident, activity, meal, or update during this care session
-        </p>
-      </header>
+    <PageContent>
+      <wa-button href={`/families/${params.id}/sessions/${params.sessionId}`} appearance="plain" size="small">
+        ← Back to Session
+      </wa-button>
+      <PageHeader
+        title="Add Session Report"
+        description="Document an incident, activity, meal, or update during this care session"
+      />
 
       <Show when={family()}>
         {(familyData) => (
-          <form
-            action={createSessionReport}
-            method="post"
-            style={{
-              "background-color": "#fff",
-              padding: "2rem",
-              "border-radius": "8px",
-              border: "1px solid #e2e8f0",
-            }}
-          >
-            <input type="hidden" name="careSessionId" value={params.sessionId} />
+          <wa-card>
+            <form action={createSessionReport} method="post" class="wa-stack wa-gap-l">
+              <input type="hidden" name="careSessionId" value={params.sessionId} />
 
-            <fieldset
-              style={{
-                border: "1px solid #e2e8f0",
-                "border-radius": "4px",
-                padding: "1.5rem",
-                "margin-bottom": "1.5rem",
-              }}
-            >
-              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
-                Report Type
-              </legend>
-
-              <div style={{ "margin-bottom": "1rem" }}>
-                <label
-                  for="type"
-                  style={{
-                    display: "block",
-                    "margin-bottom": "0.5rem",
-                    "font-weight": "600",
-                    color: "#2d3748",
-                  }}
-                >
-                  What happened? *
-                </label>
-                <select
-                  id="type"
+              <fieldset class="wa-stack wa-gap-m" style={{ border: "1px solid var(--wa-color-neutral-90)", "border-radius": "var(--wa-border-radius-m)", padding: "var(--wa-space-m)", margin: 0 }}>
+                <legend class="wa-heading-s">Report Type</legend>
+                <wa-select
+                  label="What happened? *"
                   name="type"
                   required
                   value={reportType()}
-                  onChange={(e) => setReportType(e.currentTarget.value)}
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "1px solid #cbd5e0",
-                    "border-radius": "4px",
-                    "font-size": "1rem",
-                  }}
+                  onChange={(e) => setReportType((e.currentTarget as HTMLSelectElement).value)}
                 >
-                  <option value="GENERAL">General Update</option>
-                  <option value="ACTIVITY">Activity/Play</option>
-                  <option value="MEAL">Meal/Snack</option>
-                  <option value="NAP">Nap/Rest</option>
-                  <option value="BEHAVIOR">Behavior Note</option>
-                  <option value="MILESTONE">Milestone Achieved</option>
-                  <option value="INCIDENT">Minor Incident</option>
-                  <option value="ACCIDENT">Accident/Injury</option>
-                  <option value="MEDICATION">Medication Given</option>
-                </select>
-              </div>
+                  <wa-option value="GENERAL">General Update</wa-option>
+                  <wa-option value="ACTIVITY">Activity/Play</wa-option>
+                  <wa-option value="MEAL">Meal/Snack</wa-option>
+                  <wa-option value="NAP">Nap/Rest</wa-option>
+                  <wa-option value="BEHAVIOR">Behavior Note</wa-option>
+                  <wa-option value="MILESTONE">Milestone Achieved</wa-option>
+                  <wa-option value="INCIDENT">Minor Incident</wa-option>
+                  <wa-option value="ACCIDENT">Accident/Injury</wa-option>
+                  <wa-option value="MEDICATION">Medication Given</wa-option>
+                </wa-select>
+                <wa-select label="Severity *" name="severity" required value={getDefaultSeverity()}>
+                  <wa-option value="INFO">Info - FYI only</wa-option>
+                  <wa-option value="MINOR">Minor - No action needed</wa-option>
+                  <wa-option value="MODERATE">Moderate - May need follow-up</wa-option>
+                  <wa-option value="SEVERE">Severe - Requires attention</wa-option>
+                </wa-select>
+              </fieldset>
 
-              <div>
-                <label
-                  for="severity"
-                  style={{
-                    display: "block",
-                    "margin-bottom": "0.5rem",
-                    "font-weight": "600",
-                    color: "#2d3748",
-                  }}
+              <fieldset class="wa-stack wa-gap-m" style={{ border: "1px solid var(--wa-color-neutral-90)", "border-radius": "var(--wa-border-radius-m)", padding: "var(--wa-space-m)", margin: 0 }}>
+                <legend class="wa-heading-s">Which Child?</legend>
+                <Show
+                  when={familyData().children?.length}
+                  fallback={
+                    <p class="wa-color-text-quiet" style={{ "text-align": "center", padding: "var(--wa-space-m)" }}>
+                      No children for this family
+                    </p>
+                  }
                 >
-                  Severity *
-                </label>
-                <select
-                  id="severity"
-                  name="severity"
-                  required
-                  value={getDefaultSeverity()}
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "1px solid #cbd5e0",
-                    "border-radius": "4px",
-                    "font-size": "1rem",
-                  }}
-                >
-                  <option value="INFO">Info - FYI only</option>
-                  <option value="MINOR">Minor - No action needed</option>
-                  <option value="MODERATE">Moderate - May need follow-up</option>
-                  <option value="SEVERE">Severe - Requires attention</option>
-                </select>
-              </div>
-            </fieldset>
-
-            <fieldset
-              style={{
-                border: "1px solid #e2e8f0",
-                "border-radius": "4px",
-                padding: "1.5rem",
-                "margin-bottom": "1.5rem",
-              }}
-            >
-              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
-                Which Child?
-              </legend>
-
-              <Show
-                when={familyData().children?.length}
-                fallback={
-                  <p style={{ color: "#718096", "text-align": "center", padding: "1rem" }}>
-                    No children for this family
-                  </p>
-                }
-              >
-                <div style={{ display: "grid", gap: "0.75rem" }}>
-                  <For each={familyData().children}>
-                    {(child: any) => (
-                      <label
-                        style={{
-                          display: "flex",
-                          "align-items": "center",
-                          gap: "0.75rem",
-                          padding: "0.75rem",
-                          border: "1px solid #e2e8f0",
-                          "border-radius": "4px",
-                          cursor: "pointer",
-                          "background-color": "#f7fafc",
-                        }}
-                      >
-                        <input
-                          type="radio"
-                          name="childId"
-                          value={child.id}
-                          required
+                  <div class="wa-stack wa-gap-s">
+                    <For each={familyData().children}>
+                      {(child: any) => (
+                        <label
                           style={{
-                            width: "1.25rem",
-                            height: "1.25rem",
+                            display: "flex",
+                            "align-items": "center",
+                            gap: "var(--wa-space-s)",
+                            padding: "var(--wa-space-s)",
+                            border: "1px solid var(--wa-color-neutral-90)",
+                            "border-radius": "var(--wa-border-radius-m)",
                             cursor: "pointer",
                           }}
-                        />
-                        <div style={{ flex: "1" }}>
-                          <div style={{ "font-weight": "600", color: "#2d3748" }}>
-                            {child.firstName} {child.lastName}
-                          </div>
-                          <Show when={child.allergies}>
-                            <div style={{ "font-size": "0.75rem", color: "#c53030" }}>
-                              ⚠️ Allergies: {child.allergies}
+                        >
+                          <input type="radio" name="childId" value={child.id} required />
+                          <div>
+                            <div class="wa-heading-s">
+                              {child.firstName} {child.lastName}
                             </div>
-                          </Show>
-                        </div>
-                      </label>
-                    )}
-                  </For>
+                            <Show when={child.allergies}>
+                              <div class="wa-body-s" style={{ color: "var(--wa-color-danger-40)" }}>
+                                Allergies: {child.allergies}
+                              </div>
+                            </Show>
+                          </div>
+                        </label>
+                      )}
+                    </For>
+                  </div>
+                </Show>
+              </fieldset>
+
+              <div class="wa-stack wa-gap-s">
+                <label class="wa-heading-s">When did this happen? *</label>
+                <div class="wa-grid wa-gap-m" style={{ "--min-column-size": "200px" }}>
+                  <wa-input type="date" name="timestampDate" required value={currentDate} />
+                  <wa-input type="time" name="timestampTime" required value={currentTime} />
                 </div>
-              </Show>
-            </fieldset>
-
-            <div style={{ "margin-bottom": "1.5rem" }}>
-              <label
-                for="timestamp"
-                style={{
-                  display: "block",
-                  "margin-bottom": "0.5rem",
-                  "font-weight": "600",
-                  color: "#2d3748",
-                }}
-              >
-                When did this happen? *
-              </label>
-              <div
-                style={{
-                  display: "grid",
-                  "grid-template-columns": "1fr 1fr",
-                  gap: "1rem",
-                }}
-              >
-                <input
-                  type="date"
-                  name="timestampDate"
-                  required
-                  value={currentDate}
-                  style={{
-                    padding: "0.75rem",
-                    border: "1px solid #cbd5e0",
-                    "border-radius": "4px",
-                    "font-size": "1rem",
-                  }}
-                />
-                <input
-                  type="time"
-                  name="timestampTime"
-                  required
-                  value={currentTime}
-                  style={{
-                    padding: "0.75rem",
-                    border: "1px solid #cbd5e0",
-                    "border-radius": "4px",
-                    "font-size": "1rem",
-                  }}
-                />
+                <input type="hidden" name="timestamp" value={`${currentDate}T${currentTime}`} />
               </div>
-              <input type="hidden" name="timestamp" value={`${currentDate}T${currentTime}`} />
-            </div>
 
-            <div style={{ "margin-bottom": "1.5rem" }}>
-              <label
-                for="title"
-                style={{
-                  display: "block",
-                  "margin-bottom": "0.5rem",
-                  "font-weight": "600",
-                  color: "#2d3748",
-                }}
-              >
-                Brief Summary *
-              </label>
-              <input
-                id="title"
+              <wa-input
+                label="Brief Summary *"
                 name="title"
-                type="text"
                 required
                 placeholder={
                   reportType() === "MEAL"
@@ -291,30 +140,10 @@ export default function NewSessionReport() {
                         ? "e.g., Minor bump on playground"
                         : "Brief description..."
                 }
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  "font-size": "1rem",
-                }}
               />
-            </div>
 
-            <div style={{ "margin-bottom": "1.5rem" }}>
-              <label
-                for="description"
-                style={{
-                  display: "block",
-                  "margin-bottom": "0.5rem",
-                  "font-weight": "600",
-                  color: "#2d3748",
-                }}
-              >
-                Details *
-              </label>
-              <textarea
-                id="description"
+              <wa-textarea
+                label="Details *"
                 name="description"
                 rows={6}
                 required
@@ -327,152 +156,44 @@ export default function NewSessionReport() {
                         ? "What happened? Where? How did the child react?"
                         : "Provide detailed information about what happened..."
                 }
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  "font-size": "1rem",
-                  "font-family": "inherit",
-                }}
               />
-            </div>
 
-            <Show when={isIncidentType()}>
-              <div style={{ "margin-bottom": "1.5rem" }}>
-                <label
-                  for="actionTaken"
-                  style={{
-                    display: "block",
-                    "margin-bottom": "0.5rem",
-                    "font-weight": "600",
-                    color: "#2d3748",
-                  }}
-                >
-                  Action Taken
-                </label>
-                <textarea
-                  id="actionTaken"
+              <Show when={isIncidentType()}>
+                <wa-textarea
+                  label="Action Taken"
                   name="actionTaken"
                   rows={3}
                   placeholder="What did you do in response? First aid applied? Comfort given?"
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "1px solid #cbd5e0",
-                    "border-radius": "4px",
-                    "font-size": "1rem",
-                    "font-family": "inherit",
-                  }}
                 />
+              </Show>
+
+              <wa-checkbox name="followUpNeeded" value="true">
+                Follow-up Needed — check if parents need to take action or be contacted
+              </wa-checkbox>
+
+              <Show when={isIncidentType()}>
+                <wa-callout variant="danger">
+                  <strong>Important:</strong> Parents will be notified of this {reportType().toLowerCase()}.
+                  Make sure to include all relevant details.
+                </wa-callout>
+              </Show>
+
+              <Show when={submission.result}>
+                <wa-callout variant="danger">{submission.result!.message}</wa-callout>
+              </Show>
+
+              <div class="wa-cluster wa-gap-s" style={{ "justify-content": "flex-end" }}>
+                <wa-button href={`/families/${params.id}/sessions/${params.sessionId}`} appearance="outlined">
+                  Cancel
+                </wa-button>
+                <wa-button type="submit" variant="brand" appearance="filled" disabled={submission.pending || undefined}>
+                  {submission.pending ? "Saving..." : "Save Report"}
+                </wa-button>
               </div>
-            </Show>
-
-            <div style={{ "margin-bottom": "1.5rem" }}>
-              <label
-                style={{
-                  display: "flex",
-                  "align-items": "center",
-                  gap: "0.75rem",
-                  cursor: "pointer",
-                  padding: "0.75rem",
-                  border: "1px solid #e2e8f0",
-                  "border-radius": "4px",
-                  "background-color": "#fffbeb",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  name="followUpNeeded"
-                  value="true"
-                  style={{
-                    width: "1.25rem",
-                    height: "1.25rem",
-                    cursor: "pointer",
-                  }}
-                />
-                <div>
-                  <div style={{ "font-weight": "600", color: "#2d3748" }}>Follow-up Needed</div>
-                  <div style={{ "font-size": "0.875rem", color: "#78350f" }}>
-                    Check this if parents need to take action or be contacted
-                  </div>
-                </div>
-              </label>
-            </div>
-
-            <Show when={isIncidentType()}>
-              <div
-                style={{
-                  padding: "1rem",
-                  "background-color": "#fff5f5",
-                  border: "1px solid #feb2b2",
-                  "border-radius": "4px",
-                  "margin-bottom": "1.5rem",
-                }}
-              >
-                <p style={{ margin: 0, color: "#c53030", "font-size": "0.875rem" }}>
-                  <strong>⚠️ Important:</strong> Parents will be notified of this{" "}
-                  {reportType().toLowerCase()}. Make sure to include all relevant details.
-                </p>
-              </div>
-            </Show>
-
-            <Show when={submission.result}>
-              <div
-                style={{
-                  padding: "1rem",
-                  "background-color": "#fff5f5",
-                  border: "1px solid #feb2b2",
-                  "border-radius": "4px",
-                  color: "#c53030",
-                  "margin-bottom": "1rem",
-                }}
-              >
-                {submission.result!.message}
-              </div>
-            </Show>
-
-            <div
-              style={{
-                display: "flex",
-                gap: "1rem",
-                "justify-content": "flex-end",
-              }}
-            >
-              <A
-                href={`/families/${params.id}/sessions/${params.sessionId}`}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  "background-color": "#edf2f7",
-                  color: "#2d3748",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  "text-decoration": "none",
-                  "font-weight": "600",
-                }}
-              >
-                Cancel
-              </A>
-              <button
-                type="submit"
-                disabled={submission.pending}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  "background-color": "#4299e1",
-                  color: "white",
-                  border: "none",
-                  "border-radius": "4px",
-                  cursor: submission.pending ? "not-allowed" : "pointer",
-                  opacity: submission.pending ? "0.6" : "1",
-                  "font-weight": "600",
-                }}
-              >
-                {submission.pending ? "Saving..." : "Save Report"}
-              </button>
-            </div>
-          </form>
+            </form>
+          </wa-card>
         )}
       </Show>
-    </main>
+    </PageContent>
   );
 }

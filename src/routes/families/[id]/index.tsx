@@ -1,6 +1,12 @@
 import { createAsync, type RouteDefinition, A, useParams, useSubmission } from "@solidjs/router";
 import { Show, For, createSignal, createEffect } from "solid-js";
+import Modal from "~/components/Modal";
+import PageContent, { PageHeader } from "~/components/wa/PageContent";
+import { useConfirm } from "~/components/wa/ConfirmProvider";
+import { SessionStatusBadge, PaymentStatusBadge } from "~/components/wa/StatusBadge";
 import { getFamily, formatParentNames } from "~/lib/families";
+import { getUser } from "~/lib";
+import { formatCaregiverName } from "~/lib/display";
 import {
   getFamilyMembers,
   deleteFamilyMember,
@@ -35,11 +41,13 @@ export const route = {
 
 export default function FamilyDetailPage() {
   const params = useParams();
+  const { confirm } = useConfirm();
   const family = createAsync(() => getFamily(params.id!));
   const familyMembers = createAsync(() => getFamilyMembers(params.id!));
   const schedules = createAsync(() => getCareSchedules(params.id!));
   const children = createAsync(() => getChildren(params.id!));
   const services = createAsync(() => getServices());
+  const caregiver = createAsync(() => getUser());
 
   const [showInviteModal, setShowInviteModal] = createSignal<string | null>(null);
   const [showScheduleDialog, setShowScheduleDialog] = createSignal<
@@ -79,6 +87,14 @@ export default function FamilyDetailPage() {
     setGenerateScheduleId(null);
   };
 
+  const scheduleDialogTitle = () => {
+    const mode = showScheduleDialog();
+    if (mode === "view") return selectedSchedule()?.name ?? "Schedule Details";
+    if (mode === "create") return "Create New Schedule";
+    if (mode === "edit") return "Edit Schedule";
+    return "Schedule";
+  };
+
   const formatDate = (date: string | Date) => {
     return new Date(date).toLocaleDateString("en-US", {
       year: "numeric",
@@ -97,53 +113,13 @@ export default function FamilyDetailPage() {
     });
   };
 
-  const formatStatus = (status: string) => {
-    switch (status) {
-      case "SCHEDULED":
-        return "Scheduled";
-      case "IN_PROGRESS":
-        return "In Progress";
-      case "COMPLETED":
-        return "Completed";
-      case "CANCELLED":
-        return "Cancelled";
-      default:
-        return status;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "SCHEDULED":
-        return { bg: "#bee3f8", color: "#2c5282" };
-      case "IN_PROGRESS":
-        return { bg: "#feebc8", color: "#7c2d12" };
-      case "COMPLETED":
-        return { bg: "#c6f6d5", color: "#276749" };
-      case "CANCELLED":
-        return { bg: "#fed7d7", color: "#c53030" };
-      default:
-        return { bg: "#e2e8f0", color: "#2d3748" };
-    }
-  };
-
-  const getPaymentStatusColor = (status: string) => {
-    switch (status) {
-      case "PAID":
-        return { bg: "#c6f6d5", color: "#276749" };
-      case "PENDING":
-        return { bg: "#feebc8", color: "#7c2d12" };
-      case "OVERDUE":
-        return { bg: "#fed7d7", color: "#c53030" };
-      case "CANCELLED":
-        return { bg: "#e2e8f0", color: "#718096" };
-      default:
-        return { bg: "#e2e8f0", color: "#2d3748" };
-    }
-  };
-
   const handleDeleteMember = async (id: string, name: string) => {
-    if (confirm(`Are you sure you want to remove ${name} from the family?`)) {
+    const ok = await confirm({
+      title: "Remove member",
+      message: `Are you sure you want to remove ${name} from the family?`,
+      variant: "danger",
+    });
+    if (ok) {
       await deleteFamilyMember(id);
       window.location.reload();
     }
@@ -155,15 +131,51 @@ export default function FamilyDetailPage() {
     const formData = new FormData(form);
     const result = await inviteFamilyMember(formData);
     if (result && "success" in result) {
-      alert(result.message);
+      alert(
+        `${result.message}\n\nUsername and password must be shared with the family member manually.`
+      );
       setShowInviteModal(null);
       window.location.reload();
     }
   };
 
   const handleRevokeAccess = async (memberId: string, name: string) => {
-    if (confirm(`Are you sure you want to revoke app access for ${name}?`)) {
+    const ok = await confirm({
+      title: "Revoke access",
+      message: `Are you sure you want to revoke app access for ${name}?`,
+      variant: "danger",
+    });
+    if (ok) {
       await revokeAccess(memberId);
+      window.location.reload();
+    }
+  };
+
+  const handleDeleteSession = async (sessionId: string) => {
+    const ok = await confirm({
+      title: "Delete session",
+      message: "Are you sure you want to delete this session?",
+      variant: "danger",
+    });
+    if (ok) {
+      const formData = new FormData();
+      formData.append("id", sessionId);
+      const { deleteCareSession } = await import("~/lib/schedule");
+      await deleteCareSession(formData);
+      window.location.reload();
+    }
+  };
+
+  const handleDeleteSchedule = async (scheduleId: string, scheduleName: string) => {
+    const ok = await confirm({
+      title: "Delete schedule",
+      message: `Are you sure you want to delete "${scheduleName}"? This will not delete generated sessions.`,
+      variant: "danger",
+    });
+    if (ok) {
+      const formData = new FormData();
+      formData.append("id", scheduleId);
+      await deleteCareSchedule(formData);
       window.location.reload();
     }
   };
@@ -177,55 +189,27 @@ export default function FamilyDetailPage() {
   };
 
   return (
-    <main
-      style={{
-        "max-width": "1400px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
+    <PageContent>
       <Show
         when={family()}
         fallback={
           <div style={{ "text-align": "center", padding: "3rem" }}>Loading family details...</div>
         }
       >
-        <header style={{ "margin-bottom": "2rem" }}>
-          <A
-            href="/families"
-            style={{
-              color: "#4299e1",
-              "text-decoration": "none",
-              "margin-bottom": "0.5rem",
-              display: "inline-block",
-            }}
-          >
+        <div class="wa-stack wa-gap-l">
+          <A href="/families" class="wa-body-s wa-color-text-quiet">
             ← Back to Families
           </A>
-          <div
-            style={{
-              display: "flex",
-              "justify-content": "space-between",
-              "align-items": "center",
-            }}
-          >
-            <h1 style={{ color: "#2d3748", "font-size": "2rem" }}>{family()?.familyName}</h1>
-            <A
-              href={`/families/${params.id}/edit`}
-              style={{
-                padding: "0.5rem 1.5rem",
-                "background-color": "#4299e1",
-                color: "white",
-                border: "none",
-                "border-radius": "4px",
-                "text-decoration": "none",
-                "font-weight": "600",
-              }}
-            >
-              Edit Family
-            </A>
-          </div>
-        </header>
+          <PageHeader
+            title={family()!.familyName}
+            actions={
+              <A href={`/families/${params.id}/edit`}>
+                <wa-button variant="brand" appearance="filled">
+                  Edit Family
+                </wa-button>
+              </A>
+            }
+          />
 
         {/* Family Information */}
         <div
@@ -605,9 +589,7 @@ export default function FamilyDetailPage() {
                 </thead>
                 <tbody>
                   <For each={family()?.careSessions}>
-                    {(session) => {
-                      const statusColors = getStatusColor(session.status);
-                      return (
+                    {(session) => (
                         <tr style={{ "border-bottom": "1px solid #e2e8f0" }}>
                           <td style={{ padding: "0.75rem" }}>
                             {formatDateTime(session.scheduledStart)}
@@ -616,18 +598,7 @@ export default function FamilyDetailPage() {
                             {session.children?.map((c: any) => c.firstName).join(", ") || "N/A"}
                           </td>
                           <td style={{ padding: "0.75rem" }}>
-                            <span
-                              style={{
-                                padding: "0.25rem 0.75rem",
-                                "border-radius": "9999px",
-                                "background-color": statusColors.bg,
-                                color: statusColors.color,
-                                "font-size": "0.875rem",
-                                "font-weight": "600",
-                              }}
-                            >
-                              {formatStatus(session.status)}
-                            </span>
+                            <SessionStatusBadge status={session.status} />
                           </td>
                           <td style={{ padding: "0.75rem" }}>
                             {session.isConfirmed ? (
@@ -664,33 +635,18 @@ export default function FamilyDetailPage() {
                               >
                                 Edit
                               </A>
-                              <button
-                                onClick={async () => {
-                                  if (confirm("Are you sure you want to delete this session?")) {
-                                    const formData = new FormData();
-                                    formData.append("id", session.id);
-                                    const { deleteCareSession } = await import("~/lib/schedule");
-                                    await deleteCareSession(formData);
-                                    window.location.reload();
-                                  }
-                                }}
-                                style={{
-                                  padding: "0.25rem 0.75rem",
-                                  "background-color": "#f56565",
-                                  color: "#fff",
-                                  "border-radius": "4px",
-                                  border: "none",
-                                  cursor: "pointer",
-                                  "font-size": "0.875rem",
-                                }}
+                              <wa-button
+                                variant="danger"
+                                appearance="filled"
+                                size="small"
+                                onClick={() => handleDeleteSession(session.id)}
                               >
                                 Delete
-                              </button>
+                              </wa-button>
                             </div>
                           </td>
                         </tr>
-                      );
-                    }}
+                    )}
                   </For>
                 </tbody>
               </table>
@@ -855,34 +811,17 @@ export default function FamilyDetailPage() {
                           Generate Sessions
                         </button>
                         <form
-                          action={deleteCareSchedule}
                           method="post"
-                          onSubmit={(e) => {
-                            if (
-                              !confirm(
-                                `Are you sure you want to delete "${schedule.name}"? This will not delete generated sessions.`,
-                              )
-                            ) {
-                              e.preventDefault();
-                            }
+                          onSubmit={async (e) => {
+                            e.preventDefault();
+                            await handleDeleteSchedule(schedule.id, schedule.name);
                           }}
                           style={{ display: "inline" }}
                         >
                           <input type="hidden" name="id" value={schedule.id} />
-                          <button
-                            type="submit"
-                            style={{
-                              padding: "0.25rem 0.75rem",
-                              "background-color": "#f56565",
-                              color: "#fff",
-                              border: "none",
-                              "border-radius": "4px",
-                              cursor: "pointer",
-                              "font-size": "0.875rem",
-                            }}
-                          >
+                          <wa-button type="submit" variant="danger" appearance="filled" size="small">
                             Delete
-                          </button>
+                          </wa-button>
                         </form>
                       </div>
                     </div>
@@ -1105,22 +1044,15 @@ export default function FamilyDetailPage() {
                             Invite to App
                           </button>
                         </Show>
-                        <button
+                        <wa-button
+                          variant="danger"
+                          appearance="outlined"
                           onClick={() =>
                             handleDeleteMember(member.id, `${member.firstName} ${member.lastName}`)
                           }
-                          style={{
-                            padding: "0.5rem 1rem",
-                            "background-color": "#fff5f5",
-                            color: "#c53030",
-                            border: "1px solid #feb2b2",
-                            "border-radius": "4px",
-                            cursor: "pointer",
-                            "font-size": "0.875rem",
-                          }}
                         >
                           Remove
-                        </button>
+                        </wa-button>
                       </div>
                     </div>
                   </div>
@@ -1256,7 +1188,7 @@ export default function FamilyDetailPage() {
           >
             <h2 style={{ "font-size": "1.25rem", color: "#2d3748" }}>Recent Care Sessions</h2>
             <A
-              href={`/schedules/new?familyId=${params.id}`}
+              href={`/families/${params.id}/schedules/new`}
               style={{
                 padding: "0.5rem 1rem",
                 "background-color": "#4299e1",
@@ -1299,7 +1231,7 @@ export default function FamilyDetailPage() {
                         "border-bottom": "2px solid #e2e8f0",
                       }}
                     >
-                      Nanny
+                      Caregiver
                     </th>
                     <th
                       style={{
@@ -1323,34 +1255,22 @@ export default function FamilyDetailPage() {
                 </thead>
                 <tbody>
                   <For each={family()?.careSessions}>
-                    {(session) => {
-                      const statusColors = getStatusColor(session.status);
-                      return (
+                    {(session) => (
                         <tr style={{ "border-bottom": "1px solid #e2e8f0" }}>
                           <td style={{ padding: "0.75rem" }}>
                             {formatDateTime(session.scheduledStart)}
                           </td>
-                          <td style={{ padding: "0.75rem" }}>Lil Sprouts</td>
+                          <td style={{ padding: "0.75rem" }}>
+                            {caregiver() ? formatCaregiverName(caregiver()!) : "—"}
+                          </td>
                           <td style={{ padding: "0.75rem" }}>
                             {session.children.length} child(ren)
                           </td>
                           <td style={{ padding: "0.75rem" }}>
-                            <span
-                              style={{
-                                padding: "0.25rem 0.75rem",
-                                "border-radius": "12px",
-                                "background-color": statusColors.bg,
-                                color: statusColors.color,
-                                "font-size": "0.875rem",
-                                "font-weight": "600",
-                              }}
-                            >
-                              {session.status}
-                            </span>
+                            <SessionStatusBadge status={session.status} />
                           </td>
                         </tr>
-                      );
-                    }}
+                    )}
                   </For>
                 </tbody>
               </table>
@@ -1377,7 +1297,7 @@ export default function FamilyDetailPage() {
           >
             <h2 style={{ "font-size": "1.25rem", color: "#2d3748" }}>Recent Payments</h2>
             <A
-              href={`/payments/new?familyId=${params.id}`}
+              href={`/payments?familyId=${params.id}&record=1`}
               style={{
                 padding: "0.5rem 1rem",
                 "background-color": "#48bb78",
@@ -1453,9 +1373,7 @@ export default function FamilyDetailPage() {
                 </thead>
                 <tbody>
                   <For each={family()?.payments}>
-                    {(payment) => {
-                      const statusColors = getPaymentStatusColor(payment.status);
-                      return (
+                    {(payment) => (
                         <tr style={{ "border-bottom": "1px solid #e2e8f0" }}>
                           <td style={{ padding: "0.75rem" }}>{formatDate(payment.createdAt)}</td>
                           <td style={{ padding: "0.75rem", "font-weight": "600" }}>
@@ -1463,66 +1381,30 @@ export default function FamilyDetailPage() {
                           </td>
                           <td style={{ padding: "0.75rem" }}>{payment.method || "N/A"}</td>
                           <td style={{ padding: "0.75rem" }}>
-                            <span
-                              style={{
-                                padding: "0.25rem 0.75rem",
-                                "border-radius": "12px",
-                                "background-color": statusColors.bg,
-                                color: statusColors.color,
-                                "font-size": "0.875rem",
-                                "font-weight": "600",
-                              }}
-                            >
-                              {payment.status}
-                            </span>
+                            <PaymentStatusBadge status={payment.status} />
                           </td>
                           <td style={{ padding: "0.75rem", "font-size": "0.875rem" }}>
                             {payment.invoiceNumber || "-"}
                           </td>
                         </tr>
-                      );
-                    }}
+                    )}
                   </For>
                 </tbody>
               </table>
             </div>
           </Show>
         </div>
+        </div>
       </Show>
 
-      {/* Invite Modal */}
-      <Show when={showInviteModal()}>
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            "background-color": "rgba(0,0,0,0.5)",
-            display: "flex",
-            "align-items": "center",
-            "justify-content": "center",
-            "z-index": 1000,
-          }}
-          onClick={() => setShowInviteModal(null)}
-        >
-          <div
-            style={{
-              "background-color": "#fff",
-              padding: "2rem",
-              "border-radius": "8px",
-              "max-width": "500px",
-              width: "90%",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 style={{ "margin-bottom": "1rem", color: "#2d3748" }}>
-              Invite Family Member to App
-            </h2>
+      <Modal
+        open={!!showInviteModal()}
+        title="Create App Access"
+        onClose={() => setShowInviteModal(null)}
+      >
             <p style={{ "margin-bottom": "1.5rem", color: "#718096", "font-size": "0.875rem" }}>
-              Create login credentials for this family member so they can access the app and update
-              information.
+              Create login credentials for this family member. No email is sent — you will need to
+              share the username and password with them directly.
             </p>
             <form onSubmit={handleInvite}>
               <input type="hidden" name="memberId" value={showInviteModal()!} />
@@ -1580,8 +1462,8 @@ export default function FamilyDetailPage() {
                   }}
                 />
                 <p style={{ "margin-top": "0.5rem", "font-size": "0.75rem", color: "#718096" }}>
-                  Share this with the family member so they can log in. They should change it after
-                  first login.
+                  Share this password with the family member in person, by text, or email. They
+                  should change it after first login.
                 </p>
               </div>
               <div style={{ display: "flex", gap: "1rem", "justify-content": "flex-end" }}>
@@ -1612,71 +1494,21 @@ export default function FamilyDetailPage() {
                     "font-weight": "600",
                   }}
                 >
-                  Send Invite
+                  Create Access
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      </Show>
+      </Modal>
 
-      {/* Schedule Dialog Modals */}
-      <Show when={showScheduleDialog()}>
-        <div
-          onClick={closeScheduleDialog}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            "background-color": "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            "align-items": "center",
-            "justify-content": "center",
-            "z-index": 1000,
-            padding: "2rem",
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              "background-color": "white",
-              "border-radius": "8px",
-              "max-width": "800px",
-              width: "100%",
-              "max-height": "90vh",
-              "overflow-y": "auto",
-              padding: "2rem",
-            }}
-          >
+      <Modal
+        open={!!showScheduleDialog()}
+        title={scheduleDialogTitle()}
+        maxWidth="800px"
+        onClose={closeScheduleDialog}
+      >
             {/* View Schedule Dialog */}
             <Show when={showScheduleDialog() === "view" && selectedSchedule()}>
               <div>
-                <div
-                  style={{
-                    display: "flex",
-                    "justify-content": "space-between",
-                    "margin-bottom": "1.5rem",
-                  }}
-                >
-                  <h2 style={{ color: "#2d3748", "font-size": "1.5rem", margin: 0 }}>
-                    {selectedSchedule()?.name}
-                  </h2>
-                  <button
-                    onClick={closeScheduleDialog}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      "font-size": "1.5rem",
-                      cursor: "pointer",
-                      color: "#718096",
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-
                 <div style={{ display: "grid", gap: "1rem", "margin-bottom": "1.5rem" }}>
                   <div>
                     <strong style={{ color: "#4a5568" }}>Service:</strong>
@@ -1752,43 +1584,20 @@ export default function FamilyDetailPage() {
                   </Show>
                 </div>
 
-                <div style={{ display: "flex", gap: "1rem", "justify-content": "space-between" }}>
-                  <form
-                    action={deleteCareSchedule}
-                    method="post"
-                    onSubmit={(e) => {
-                      if (
-                        !confirm(
-                          `Are you sure you want to delete "${selectedSchedule()?.name}"? This will not delete generated sessions.`,
-                        )
-                      ) {
-                        e.preventDefault();
-                      } else {
-                        setTimeout(() => {
-                          closeScheduleDialog();
-                          window.location.reload();
-                        }, 100);
+                <div class="wa-split wa-gap-m wa-align-items-center">
+                  <wa-button
+                    variant="danger"
+                    appearance="filled"
+                    onClick={() => {
+                      const schedule = selectedSchedule();
+                      if (schedule) {
+                        handleDeleteSchedule(schedule.id, schedule.name);
                       }
                     }}
-                    style={{ display: "inline" }}
                   >
-                    <input type="hidden" name="id" value={selectedScheduleId()!} />
-                    <button
-                      type="submit"
-                      style={{
-                        padding: "0.5rem 1rem",
-                        "background-color": "#f56565",
-                        color: "#fff",
-                        border: "none",
-                        "border-radius": "4px",
-                        cursor: "pointer",
-                        "font-weight": "600",
-                      }}
-                    >
-                      Delete Schedule
-                    </button>
-                  </form>
-                  <div style={{ display: "flex", gap: "1rem" }}>
+                    Delete Schedule
+                  </wa-button>
+                  <div class="wa-cluster wa-gap-m">
                     <button
                       onClick={() => openScheduleDialog("edit", selectedScheduleId()!)}
                       style={{
@@ -1824,30 +1633,6 @@ export default function FamilyDetailPage() {
             {/* Create/Edit Schedule Dialog */}
             <Show when={showScheduleDialog() === "create" || showScheduleDialog() === "edit"}>
               <div>
-                <div
-                  style={{
-                    display: "flex",
-                    "justify-content": "space-between",
-                    "margin-bottom": "1.5rem",
-                  }}
-                >
-                  <h2 style={{ color: "#2d3748", "font-size": "1.5rem", margin: 0 }}>
-                    {showScheduleDialog() === "create" ? "Create New Schedule" : "Edit Schedule"}
-                  </h2>
-                  <button
-                    onClick={closeScheduleDialog}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      "font-size": "1.5rem",
-                      cursor: "pointer",
-                      color: "#718096",
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-
                 <form
                   action={
                     showScheduleDialog() === "create" ? createCareSchedule : updateCareSchedule
@@ -2266,62 +2051,13 @@ export default function FamilyDetailPage() {
                 </form>
               </div>
             </Show>
-          </div>
-        </div>
-      </Show>
+      </Modal>
 
-      {/* Generate Sessions Dialog */}
-      <Show when={showGenerateDialog()}>
-        <div
-          onClick={closeGenerateDialog}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            "background-color": "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            "align-items": "center",
-            "justify-content": "center",
-            "z-index": 1000,
-            padding: "2rem",
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              "background-color": "white",
-              "border-radius": "8px",
-              "max-width": "500px",
-              width: "100%",
-              padding: "2rem",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                "justify-content": "space-between",
-                "margin-bottom": "1.5rem",
-              }}
-            >
-              <h2 style={{ color: "#2d3748", "font-size": "1.5rem", margin: 0 }}>
-                Generate Sessions
-              </h2>
-              <button
-                onClick={closeGenerateDialog}
-                style={{
-                  background: "none",
-                  border: "none",
-                  "font-size": "1.5rem",
-                  cursor: "pointer",
-                  color: "#718096",
-                }}
-              >
-                ×
-              </button>
-            </div>
-
+      <Modal
+        open={showGenerateDialog()}
+        title="Generate Sessions"
+        onClose={closeGenerateDialog}
+      >
             <p style={{ color: "#718096", "margin-bottom": "1.5rem" }}>
               Generate care sessions from this schedule for a specific date range.
             </p>
@@ -2439,9 +2175,7 @@ export default function FamilyDetailPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      </Show>
-    </main>
+      </Modal>
+    </PageContent>
   );
 }

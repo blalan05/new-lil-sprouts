@@ -1,5 +1,8 @@
-import { createAsync, type RouteDefinition, A, useParams, useSubmission } from "@solidjs/router";
+import { createAsync, type RouteDefinition, useParams, useSubmission } from "@solidjs/router";
 import { Show, For, createSignal, createMemo, createEffect } from "solid-js";
+import PageContent, { PageHeader } from "~/components/wa/PageContent";
+import { useConfirm } from "~/components/wa/ConfirmProvider";
+import { SessionStatusBadge } from "~/components/wa/StatusBadge";
 import { getCareSession, updateCareSession } from "~/lib/schedule";
 import {
   formatDateLocal,
@@ -37,6 +40,7 @@ export const route = {
 
 export default function CareSessionDetail() {
   const params = useParams();
+  const { confirm } = useConfirm();
   const session = createAsync(() => getCareSession(params.sessionId!));
   const reports = createAsync(() => getSessionReports(params.sessionId!));
   const expenses = createAsync(() => getSessionExpenses(params.sessionId!));
@@ -99,33 +103,19 @@ export default function CareSessionDetail() {
   const formatDateTime = formatDateTimeLocal;
   const formatTime = formatTimeLocal;
 
-  const formatStatus = (status: string) => {
-    switch (status) {
-      case "SCHEDULED":
-        return "Scheduled";
-      case "IN_PROGRESS":
-        return "In Progress";
-      case "COMPLETED":
-        return "Completed";
-      case "CANCELLED":
-        return "Cancelled";
-      default:
-        return status;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "SCHEDULED":
-        return { bg: "#bee3f8", color: "#2c5282" };
-      case "IN_PROGRESS":
-        return { bg: "#feebc8", color: "#7c2d12" };
-      case "COMPLETED":
-        return { bg: "#c6f6d5", color: "#276749" };
-      case "CANCELLED":
-        return { bg: "#fed7d7", color: "#c53030" };
-      default:
-        return { bg: "#e2e8f0", color: "#2d3748" };
+  const handleDeleteSession = async () => {
+    const ok = await confirm({
+      title: "Delete Session",
+      message: "Are you sure you want to delete this session?",
+      confirmLabel: "Delete",
+      variant: "danger",
+    });
+    if (ok) {
+      const formData = new FormData();
+      formData.append("id", params.sessionId!);
+      const { deleteCareSession } = await import("~/lib/schedule");
+      await deleteCareSession(formData);
+      window.location.href = `/families/${params.id}`;
     }
   };
 
@@ -145,99 +135,37 @@ export default function CareSessionDetail() {
   };
 
   return (
-    <main
-      style={{
-        "max-width": "1200px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
+    <PageContent>
       <Show
         when={session()}
         fallback={
-          <div style={{ "text-align": "center", padding: "3rem" }}>Loading session details...</div>
+          <div style={{ "text-align": "center", padding: "var(--wa-space-2xl)" }} class="wa-color-text-quiet">
+            Loading session details...
+          </div>
         }
       >
-        <header style={{ "margin-bottom": "2rem" }}>
-          <A
-            href={`/families/${params.id}`}
-            style={{
-              color: "#4299e1",
-              "text-decoration": "none",
-              "margin-bottom": "0.5rem",
-              display: "inline-block",
-            }}
-          >
-            ← Back to Family
-          </A>
-          <div
-            style={{
-              display: "flex",
-              "justify-content": "space-between",
-              "align-items": "center",
-            }}
-          >
-            <div>
-              <h1 style={{ color: "#2d3748", "font-size": "2rem", "margin-bottom": "0.5rem" }}>
-                Care Session
-              </h1>
-              <p style={{ color: "#718096", margin: 0 }}>
-                {session()?.scheduledStart && formatDateTime(session()!.scheduledStart)}
-              </p>
-            </div>
-            <div style={{ display: "flex", "align-items": "center", gap: "1rem" }}>
-              <A
+        <wa-button href={`/families/${params.id}`} appearance="plain" size="small">
+          ← Back to Family
+        </wa-button>
+        <PageHeader
+          title="Care Session"
+          description={session()?.scheduledStart && formatDateTime(session()!.scheduledStart)}
+          actions={
+            <>
+              <wa-button
                 href={`/families/${params.id}/sessions/${params.sessionId}/edit`}
-                style={{
-                  padding: "0.5rem 1rem",
-                  "background-color": "#4299e1",
-                  color: "#fff",
-                  border: "none",
-                  "border-radius": "4px",
-                  "text-decoration": "none",
-                  "font-weight": "600",
-                  "font-size": "0.875rem",
-                }}
+                variant="brand"
+                appearance="filled"
               >
                 Edit Session
-              </A>
-              <button
-                onClick={async () => {
-                  if (confirm("Are you sure you want to delete this session?")) {
-                    const formData = new FormData();
-                    formData.append("id", params.sessionId!);
-                    const { deleteCareSession } = await import("~/lib/schedule");
-                    await deleteCareSession(formData);
-                    window.location.href = `/families/${params.id}`;
-                  }
-                }}
-                style={{
-                  padding: "0.5rem 1rem",
-                  "background-color": "#f56565",
-                  color: "#fff",
-                  border: "none",
-                  "border-radius": "4px",
-                  cursor: "pointer",
-                  "font-weight": "600",
-                  "font-size": "0.875rem",
-                }}
-              >
+              </wa-button>
+              <wa-button variant="danger" appearance="filled" onClick={handleDeleteSession}>
                 Delete Session
-              </button>
-              <span
-                style={{
-                  padding: "0.5rem 1.5rem",
-                  "border-radius": "9999px",
-                  "background-color": getStatusColor(session()?.status || "").bg,
-                  color: getStatusColor(session()?.status || "").color,
-                  "font-weight": "600",
-                }}
-              >
-                {formatStatus(session()?.status || "")}
-              </span>
-            </div>
-          </div>
-        </header>
+              </wa-button>
+              <SessionStatusBadge status={session()?.status || ""} />
+            </>
+          }
+        />
 
         {/* Session Details */}
         <div
@@ -1026,21 +954,14 @@ export default function CareSessionDetail() {
             <h2 style={{ "font-size": "1.25rem", color: "#2d3748", margin: 0 }}>
               Reports & Notes ({reports()?.length || 0})
             </h2>
-            <A
+            <wa-button
               href={`/families/${params.id}/sessions/${params.sessionId}/reports/new`}
-              style={{
-                padding: "0.5rem 1rem",
-                "background-color": "#805ad5",
-                color: "white",
-                border: "none",
-                "border-radius": "4px",
-                "text-decoration": "none",
-                "font-weight": "600",
-                "font-size": "0.875rem",
-              }}
+              variant="brand"
+              appearance="filled"
+              size="small"
             >
               + Add Report
-            </A>
+            </wa-button>
           </div>
 
           <Show
@@ -1472,32 +1393,31 @@ export default function CareSessionDetail() {
                           >
                             Edit
                           </button>
-                          <form
-                            action={deleteExpense}
-                            method="post"
-                            style={{ display: "inline" }}
-                            onSubmit={(e) => {
-                              if (!confirm("Are you sure you want to delete this expense?")) {
-                                e.preventDefault();
-                              }
-                            }}
-                          >
+                          <form action={deleteExpense} method="post" style={{ display: "inline" }}>
                             <input type="hidden" name="id" value={expense.id} />
-                            <button
+                            <wa-button
                               type="submit"
-                              disabled={deleteExpenseSubmission.pending}
-                              style={{
-                                padding: "0.25rem 0.5rem",
-                                "background-color": "#fff5f5",
-                                color: "#c53030",
-                                border: "1px solid #feb2b2",
-                                "border-radius": "4px",
-                                cursor: deleteExpenseSubmission.pending ? "not-allowed" : "pointer",
-                                "font-size": "0.75rem",
+                              variant="danger"
+                              appearance="outlined"
+                              size="small"
+                              disabled={deleteExpenseSubmission.pending || undefined}
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                const ok = await confirm({
+                                  title: "Delete Expense",
+                                  message: "Are you sure you want to delete this expense?",
+                                  confirmLabel: "Delete",
+                                  variant: "danger",
+                                });
+                                if (ok) {
+                                  const form = (e.currentTarget as HTMLElement).closest("form")!;
+                                  const formData = new FormData(form);
+                                  await deleteExpense(formData);
+                                }
                               }}
                             >
                               Delete
-                            </button>
+                            </wa-button>
                           </form>
                         </div>
                       </div>
@@ -1509,6 +1429,6 @@ export default function CareSessionDetail() {
           </Show>
         </div>
       </Show>
-    </main>
+    </PageContent>
   );
 }

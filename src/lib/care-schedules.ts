@@ -1,14 +1,18 @@
 import { action, query, reload } from "@solidjs/router";
 import { db } from "./db";
 import { datetimeLocalToUTC, parseFormDate } from "./datetime";
-import { getSession } from "./server";
 import { getSettingValue } from "./settings";
 import { calculateServiceRate } from "./services";
 import type { DayOfWeek, RecurrencePattern } from "../generated/prisma-client/client.js";
 import { serverRedirect } from "./server-redirect";
+import {
+  assertOwnerAction,
+  requireFamilyAccess,
+} from "./auth";
 
 export const getCareSchedules = query(async (familyId: string) => {
   "use server";
+  await requireFamilyAccess(familyId);
   const schedules = await db.careSchedule.findMany({
     where: { familyId },
     include: {
@@ -55,14 +59,15 @@ export const getCareSchedule = query(async (id: string) => {
     },
   });
   if (!schedule) throw new Error("Care schedule not found");
+  await requireFamilyAccess(schedule.familyId);
   return schedule;
 }, "care-schedule");
 
 export const createCareSchedule = action(async (formData: FormData) => {
   "use server";
   try {
-    const session = await getSession();
-    const userId = session.data.userId;
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
 
     const familyId = String(formData.get("familyId"));
     const name = String(formData.get("name"));
@@ -202,7 +207,7 @@ export const createCareSchedule = action(async (formData: FormData) => {
       return serverRedirect(`/families/${familyId}`);
     }
 
-    return serverRedirect(`/families/${familyId}/schedules/${schedule.id}`);
+    return serverRedirect(`/families/${familyId}`);
   } catch (err) {
     console.error("Error creating care schedule:", err);
     return new Error(err instanceof Error ? err.message : "Failed to create care schedule");
@@ -212,6 +217,9 @@ export const createCareSchedule = action(async (formData: FormData) => {
 export const updateCareSchedule = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const id = String(formData.get("id"));
     const familyId = String(formData.get("familyId"));
     const name = String(formData.get("name"));
@@ -299,7 +307,7 @@ export const updateCareSchedule = action(async (formData: FormData) => {
       },
     });
 
-    return serverRedirect(`/families/${familyId}/schedules/${id}`);
+    return serverRedirect(`/families/${familyId}`);
   } catch (err) {
     console.error("Error updating care schedule:", err);
     return new Error(err instanceof Error ? err.message : "Failed to update care schedule");
@@ -309,6 +317,9 @@ export const updateCareSchedule = action(async (formData: FormData) => {
 export const deleteCareSchedule = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const id = String(formData.get("id"));
 
     if (!id) {
@@ -329,6 +340,9 @@ export const deleteCareSchedule = action(async (formData: FormData) => {
 export const generateSessionsFromSchedule = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const scheduleId = String(formData.get("scheduleId"));
     const startDate = parseFormDate(String(formData.get("startDate")));
     const endDate = parseFormDate(String(formData.get("endDate")));
@@ -442,6 +456,9 @@ export const generateSessionsFromSchedule = action(async (formData: FormData) =>
 export const recordDropOff = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const sessionId = String(formData.get("sessionId"));
     const dropOffBy = String(formData.get("dropOffBy"));
     const dropOffById = String(formData.get("dropOffById") || "");
@@ -477,6 +494,9 @@ export const recordDropOff = action(async (formData: FormData) => {
 export const recordPickUp = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const sessionId = String(formData.get("sessionId"));
     const pickUpBy = String(formData.get("pickUpBy"));
     const pickUpById = String(formData.get("pickUpById") || "");

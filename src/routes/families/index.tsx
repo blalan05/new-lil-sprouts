@@ -1,7 +1,10 @@
 import { createAsync, type RouteDefinition, A, useNavigate } from "@solidjs/router";
-import { For, Show, createSignal, createEffect, onCleanup } from "solid-js";
+import { For, Show, createSignal, createEffect } from "solid-js";
+import PageContent, { PageHeader } from "~/components/wa/PageContent";
+import { useConfirm } from "~/components/wa/ConfirmProvider";
 import { getFamilies, deleteFamily, formatParentNames } from "~/lib/families";
 import { getAllChildren, deleteChild } from "~/lib/children";
+import { allergyLabel } from "~/lib/display";
 
 export const route = {
   preload() {
@@ -14,6 +17,7 @@ type ViewType = "families" | "children";
 
 export default function FamiliesPage() {
   const navigate = useNavigate();
+  const { confirm } = useConfirm();
   const [view, setView] = createSignal<ViewType>("families");
   const families = createAsync(() => getFamilies());
   const children = createAsync(() => getAllChildren());
@@ -75,18 +79,24 @@ export default function FamiliesPage() {
   };
 
   const handleDeleteFamily = async (id: string, name: string) => {
-    if (
-      confirm(
-        `Are you sure you want to delete the ${name} family? This will also delete all associated children and records.`,
-      )
-    ) {
+    const ok = await confirm({
+      title: "Delete family",
+      message: `Are you sure you want to delete the ${name} family? This will also delete all associated children and records.`,
+      variant: "danger",
+    });
+    if (ok) {
       await deleteFamily(id);
       window.location.reload();
     }
   };
 
   const handleDeleteChild = async (id: string, name: string) => {
-    if (confirm(`Are you sure you want to delete ${name}? This will also delete all associated records.`)) {
+    const ok = await confirm({
+      title: "Delete child",
+      message: `Are you sure you want to delete ${name}? This will also delete all associated records.`,
+      variant: "danger",
+    });
+    if (ok) {
       await deleteChild(id);
       window.location.reload();
     }
@@ -123,84 +133,38 @@ export default function FamiliesPage() {
   });
 
   return (
-    <main
-      style={{
-        "max-width": "1400px",
-        margin: "0 auto",
-        padding: "1.5rem",
-      }}
-    >
-      <header style={{ "margin-bottom": "1rem" }}>
-        <div
-          style={{
-            display: "flex",
-            "justify-content": "space-between",
-            "align-items": "center",
-            "flex-wrap": "wrap",
-            gap: "0.75rem",
-          }}
-        >
-          <div style={{ display: "flex", "align-items": "center", gap: "1rem", "flex-wrap": "wrap" }}>
-            <A
-              href="/"
-              style={{
-                color: "#4299e1",
-                "text-decoration": "none",
-                display: "inline-block",
-              }}
+    <PageContent>
+      <div class="wa-stack wa-gap-m">
+        <A href="/" class="wa-body-s wa-color-text-quiet">
+          ← Back to Dashboard
+        </A>
+        <PageHeader
+          title={view() === "families" ? "Manage Families" : "All Children"}
+          actions={
+            <Show
+              when={view() === "families"}
+              fallback={
+                <A href="/families">
+                  <wa-button variant="brand" appearance="filled">
+                    + Add Child (via Families)
+                  </wa-button>
+                </A>
+              }
             >
-              ← Back to Dashboard
-            </A>
-            <h1 style={{ color: "#2d3748", "font-size": "1.5rem", margin: 0, "font-weight": "700" }}>
-              {view() === "families" ? "Manage Families" : "All Children"}
-            </h1>
-          </div>
-        <div style={{ display: "flex", gap: "0.75rem", "align-items": "center" }}>
-          {view() === "families" ? (
-            <A
-              href="/families/new"
-              style={{
-                padding: "0.5rem 1rem",
-                "background-color": "#48bb78",
-                color: "white",
-                border: "none",
-                "border-radius": "4px",
-                "text-decoration": "none",
-                "font-weight": "600",
-                "font-size": "0.875rem",
-                display: "inline-block",
-              }}
-            >
-              + Add New Family
-            </A>
-          ) : (
-            <A
-              href="/families"
-              style={{
-                padding: "0.5rem 1rem",
-                "background-color": "#48bb78",
-                color: "white",
-                border: "none",
-                "border-radius": "4px",
-                "text-decoration": "none",
-                "font-weight": "600",
-                "font-size": "0.875rem",
-                display: "inline-block",
-              }}
-            >
-              + Add Child (via Families)
-            </A>
-          )}
-        </div>
-        </div>
-      </header>
+              <A href="/families/new">
+                <wa-button variant="brand" appearance="filled">
+                  + Add New Family
+                </wa-button>
+              </A>
+            </Show>
+          }
+        />
+      </div>
 
       {/* View Toggle */}
       <div
+        class="wa-cluster wa-gap-xs"
         style={{
-          display: "flex",
-          gap: "0.5rem",
-          "margin-bottom": "1rem",
           "background-color": "#fff",
           padding: "0.375rem",
           "border-radius": "8px",
@@ -349,7 +313,15 @@ export default function FamiliesPage() {
                           transition: "background-color 0.2s",
                           "background-color": index() % 2 === 0 ? "#fff" : "#f7fafc",
                         }}
+                        tabindex={0}
+                        role="link"
                         onClick={() => navigate(`/families/${family.id}`)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            navigate(`/families/${family.id}`);
+                          }
+                        }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.backgroundColor = "#edf2f7";
                         }}
@@ -382,7 +354,11 @@ export default function FamiliesPage() {
                                   }}
                                 >
                                   {child.firstName} {child.lastName}
-                                  {child.allergies && " ⚠️"}
+                                  {child.allergies && (
+                                    <span aria-label={allergyLabel(child.allergies)} title={allergyLabel(child.allergies)}>
+                                      {" "}(allergy)
+                                    </span>
+                                  )}
                                 </A>
                               )}
                             </For>
@@ -518,36 +494,18 @@ export default function FamiliesPage() {
                                   <span>✏️</span>
                                   <span>Edit</span>
                                 </A>
-                                <button
-                                  onClick={(e) => {
+                                <wa-button
+                                  variant="danger"
+                                  appearance="plain"
+                                  onClick={(e: Event) => {
                                     e.stopPropagation();
                                     setOpenDropdown(null);
                                     handleDeleteFamily(family.id, family.familyName);
                                   }}
-                                  style={{
-                                    display: "flex",
-                                    "align-items": "center",
-                                    gap: "0.5rem",
-                                    width: "100%",
-                                    padding: "0.5rem 0.75rem",
-                                    "background-color": "transparent",
-                                    color: "#c53030",
-                                    border: "none",
-                                    "text-align": "left",
-                                    cursor: "pointer",
-                                    "font-size": "0.875rem",
-                                    transition: "background-color 0.2s",
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = "#fff5f5";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = "transparent";
-                                  }}
+                                  style={{ width: "100%", "justify-content": "flex-start" }}
                                 >
-                                  <span>🗑️</span>
-                                  <span>Delete</span>
-                                </button>
+                                  🗑️ Delete
+                                </wa-button>
                                 </div>
                               )}
                             </Show>
@@ -753,36 +711,18 @@ export default function FamiliesPage() {
                                     <span>✏️</span>
                                     <span>Edit</span>
                                   </A>
-                                  <button
-                                    onClick={(e) => {
+                                  <wa-button
+                                    variant="danger"
+                                    appearance="plain"
+                                    onClick={(e: Event) => {
                                       e.stopPropagation();
                                       setOpenDropdown(null);
                                       handleDeleteChild(child.id, `${child.firstName} ${child.lastName}`);
                                     }}
-                                    style={{
-                                      display: "flex",
-                                      "align-items": "center",
-                                      gap: "0.5rem",
-                                      width: "100%",
-                                      padding: "0.5rem 0.75rem",
-                                      "background-color": "transparent",
-                                      color: "#c53030",
-                                      border: "none",
-                                      "text-align": "left",
-                                      cursor: "pointer",
-                                      "font-size": "0.875rem",
-                                      transition: "background-color 0.2s",
-                                    }}
-                                    onMouseEnter={(e) => {
-                                      e.currentTarget.style.backgroundColor = "#fff5f5";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.style.backgroundColor = "transparent";
-                                    }}
+                                    style={{ width: "100%", "justify-content": "flex-start" }}
                                   >
-                                    <span>🗑️</span>
-                                    <span>Delete</span>
-                                  </button>
+                                    🗑️ Delete
+                                  </wa-button>
                                 </div>
                               )}
                             </Show>
@@ -798,6 +738,6 @@ export default function FamiliesPage() {
         </Show>
         </Show>
       </Show>
-    </main>
+    </PageContent>
   );
 }

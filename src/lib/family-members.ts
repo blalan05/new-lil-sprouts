@@ -2,9 +2,15 @@ import { action, query, reload } from "@solidjs/router";
 import { db } from "./db";
 import type { MemberRelationship } from "../generated/prisma-client/client.js";
 import { serverRedirect } from "./server-redirect";
+import {
+  assertOwnerAction,
+  requireFamilyAccess,
+} from "./auth";
+import { hashPassword, validatePassword } from "./server";
 
 export const getFamilyMembers = query(async (familyId: string) => {
   "use server";
+  await requireFamilyAccess(familyId);
   const members = await db.familyMember.findMany({
     where: { familyId },
     include: {
@@ -39,6 +45,7 @@ export const getFamilyMember = query(async (id: string) => {
     },
   });
   if (!member) throw new Error("Family member not found");
+  await requireFamilyAccess(member.familyId);
   return member;
 }, "family-member");
 
@@ -46,6 +53,9 @@ export const createFamilyMember = action(async (formData: FormData) => {
   "use server";
   try {
     const familyId = String(formData.get("familyId"));
+    const access = await assertOwnerAction();
+    if (access instanceof Error) return access;
+
     const firstName = String(formData.get("firstName"));
     const lastName = String(formData.get("lastName"));
     const relationship = String(formData.get("relationship")) as MemberRelationship;
@@ -87,6 +97,9 @@ export const createFamilyMember = action(async (formData: FormData) => {
 export const updateFamilyMember = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const id = String(formData.get("id"));
     const familyId = String(formData.get("familyId"));
     const firstName = String(formData.get("firstName"));
@@ -130,6 +143,9 @@ export const updateFamilyMember = action(async (formData: FormData) => {
 export const deleteFamilyMember = action(async (id: string) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     await db.familyMember.delete({
       where: { id },
     });
@@ -143,9 +159,15 @@ export const deleteFamilyMember = action(async (id: string) => {
 export const inviteFamilyMember = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const memberId = String(formData.get("memberId"));
     const username = String(formData.get("username"));
     const password = String(formData.get("password"));
+
+    const passwordError = validatePassword(password);
+    if (passwordError) return new Error(passwordError);
 
     const member = await db.familyMember.findUnique({
       where: { id: memberId },
@@ -163,24 +185,21 @@ export const inviteFamilyMember = action(async (formData: FormData) => {
       return new Error("This family member already has app access");
     }
 
-    // Check if username is already taken
     const existingUser = await db.user.findUnique({ where: { username } });
     if (existingUser) {
       return new Error("Username already exists");
     }
 
-    // Check if email is already taken
     const existingEmail = await db.user.findUnique({ where: { email: member.email } });
     if (existingEmail) {
       return new Error("Email already registered");
     }
 
-    // Create user account
     const user = await db.user.create({
       data: {
         email: member.email,
         username,
-        password, // In production, this should be hashed
+        password: await hashPassword(password),
         firstName: member.firstName,
         lastName: member.lastName,
         phone: member.phone,
@@ -188,7 +207,6 @@ export const inviteFamilyMember = action(async (formData: FormData) => {
       },
     });
 
-    // Link user to family member
     await db.familyMember.update({
       where: { id: memberId },
       data: {
@@ -196,7 +214,11 @@ export const inviteFamilyMember = action(async (formData: FormData) => {
       },
     });
 
-    return { success: true, message: "Family member invited successfully" };
+    return {
+      success: true,
+      message:
+        "App access created. Share the username and password with the family member — no email is sent automatically.",
+    };
   } catch (err) {
     console.error("Error inviting family member:", err);
     return new Error(err instanceof Error ? err.message : "Failed to invite family member");
@@ -206,6 +228,9 @@ export const inviteFamilyMember = action(async (formData: FormData) => {
 export const revokeAccess = action(async (memberId: string) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const member = await db.familyMember.findUnique({
       where: { id: memberId },
       include: { user: true },
@@ -215,7 +240,6 @@ export const revokeAccess = action(async (memberId: string) => {
       return new Error("Family member does not have app access");
     }
 
-    // Unlink user from family member
     await db.familyMember.update({
       where: { id: memberId },
       data: {
@@ -223,7 +247,6 @@ export const revokeAccess = action(async (memberId: string) => {
       },
     });
 
-    // Optionally delete the user account
     if (member.user && !member.user.isOwner) {
       await db.user.delete({
         where: { id: member.userId },

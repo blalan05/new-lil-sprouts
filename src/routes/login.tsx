@@ -1,206 +1,57 @@
 import { useSubmission, type RouteSectionProps } from "@solidjs/router";
-import { createSignal, Show } from "solid-js";
+import { Show } from "solid-js";
 import { loginOrRegister } from "~/lib";
 
 export default function Login(props: RouteSectionProps) {
   const loggingIn = useSubmission(loginOrRegister);
-  const [isRegister, setIsRegister] = createSignal(false);
 
   return (
-    <main
-      style={{
-        "max-width": "500px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
-      <div
-        style={{
-          "text-align": "center",
-          "margin-bottom": "2rem",
-        }}
-      >
-        <img
-          src="/icons/icon-192x192.png"
-          alt="Lil Sprouts"
-          style={{
-            width: "96px",
-            height: "96px",
-            "margin-bottom": "1rem",
-          }}
-        />
-        <h1
-          style={{
-            "text-align": "center",
-            color: "#4a5568",
-            margin: 0,
-          }}
-        >
-          LOGIN
-        </h1>
-      </div>
-      <form action={loginOrRegister} method="post">
-        <input type="hidden" name="redirectTo" value={props.params.redirectTo ?? "/"} />
-        <fieldset
-          style={{
-            border: "1px solid #e2e8f0",
-            "border-radius": "8px",
-            padding: "1rem",
-            "margin-bottom": "1.5rem",
-          }}
-        >
-          <legend
-            style={{
-              padding: "0 0.5rem",
-              "font-weight": "600",
-            }}
-          >
-            Login or Register?
-          </legend>
-          <label
-            style={{
-              display: "block",
-              "margin-bottom": "0.5rem",
-              cursor: "pointer",
-            }}
-          >
-            <input
-              type="radio"
-              name="loginType"
-              value="login"
-              checked={!isRegister()}
-              onChange={() => setIsRegister(false)}
-            />{" "}
-            Login
-          </label>
-          <label
-            style={{
-              display: "block",
-              cursor: "pointer",
-            }}
-          >
-            <input
-              type="radio"
-              name="loginType"
-              value="register"
-              checked={isRegister()}
-              onChange={() => setIsRegister(true)}
-            />{" "}
-            Register
-          </label>
-        </fieldset>
-        <div style={{ "margin-bottom": "1rem" }}>
-          <label
-            for="username-input"
-            style={{
-              display: "block",
-              "margin-bottom": "0.5rem",
-              "font-weight": "500",
-            }}
-          >
-            Username
-          </label>
-          <input
-            id="username-input"
-            name="username"
-            placeholder="kody"
-            required
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              border: "1px solid #cbd5e0",
-              "border-radius": "4px",
-              "font-size": "1rem",
-            }}
-          />
-        </div>
-        <Show when={isRegister()}>
-          <div style={{ "margin-bottom": "1rem" }}>
-            <label
-              for="email-input"
-              style={{
-                display: "block",
-                "margin-bottom": "0.5rem",
-                "font-weight": "500",
-              }}
-            >
-              Email
-            </label>
-            <input
-              id="email-input"
-              name="email"
-              type="email"
-              placeholder="kody@example.com"
-              required={isRegister()}
-              style={{
-                width: "100%",
-                padding: "0.5rem",
-                border: "1px solid #cbd5e0",
-                "border-radius": "4px",
-                "font-size": "1rem",
-              }}
-            />
+    <div class="login-page">
+      <wa-card class="login-card">
+        <div class="wa-stack wa-gap-l">
+          <div class="wa-stack wa-gap-s" style={{ "text-align": "center" }}>
+            <img src="/icons/icon-192x192.png" alt="Lil Sprouts" width="96" height="96" />
+            <h1 class="wa-heading-xl">Lil Sprouts</h1>
+            <p class="wa-body-m wa-color-text-quiet">Sign in to your account</p>
           </div>
-        </Show>
-        <div style={{ "margin-bottom": "1.5rem" }}>
-          <label
-            for="password-input"
-            style={{
-              display: "block",
-              "margin-bottom": "0.5rem",
-              "font-weight": "500",
-            }}
-          >
-            Password
-          </label>
-          <input
-            id="password-input"
-            name="password"
-            type="password"
-            placeholder="••••••••"
-            required
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              border: "1px solid #cbd5e0",
-              "border-radius": "4px",
-              "font-size": "1rem",
-            }}
-          />
+
+          <Show when={loggingIn.error}>
+            <wa-callout variant="danger">
+              Invalid username or password. Please try again.
+            </wa-callout>
+          </Show>
+
+          <form action={loginOrRegister} method="post" class="wa-stack wa-gap-m">
+            <input type="hidden" name="loginType" value="login" />
+            <input type="hidden" name="redirectTo" value={props.params.redirectTo ?? "/"} />
+            <wa-input
+              label="Username"
+              name="username"
+              placeholder="username"
+              required
+              autocomplete="username"
+            />
+            <wa-input
+              label="Password"
+              name="password"
+              type="password"
+              placeholder="password"
+              required
+              autocomplete="current-password"
+              password-toggle
+            />
+            <wa-button
+              type="submit"
+              variant="brand"
+              appearance="filled"
+              disabled={loggingIn.pending || undefined}
+              style={{ width: "100%" }}
+            >
+              {loggingIn.pending ? "Signing in..." : "Sign In"}
+            </wa-button>
+          </form>
         </div>
-        <button
-          type="submit"
-          disabled={loggingIn.pending}
-          style={{
-            width: "100%",
-            padding: "0.75rem",
-            "background-color": "#4299e1",
-            color: "white",
-            border: "none",
-            "border-radius": "4px",
-            "font-size": "1rem",
-            "font-weight": "600",
-            cursor: loggingIn.pending ? "not-allowed" : "pointer",
-            opacity: loggingIn.pending ? "0.6" : "1",
-          }}
-        >
-          {loggingIn.pending ? "Processing..." : isRegister() ? "Register" : "Login"}
-        </button>
-        <Show when={loggingIn.result}>
-          <p
-            style={{
-              color: "red",
-              "margin-top": "1rem",
-              "text-align": "center",
-              "font-weight": "500",
-            }}
-            role="alert"
-            id="error-message"
-          >
-            {loggingIn.result!.message}
-          </p>
-        </Show>
-      </form>
-    </main>
+      </wa-card>
+    </div>
   );
 }

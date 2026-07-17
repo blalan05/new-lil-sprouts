@@ -60,6 +60,11 @@ function isPrismaModule(id: string): boolean {
 export default defineConfig({
   middleware: "src/middleware/index.ts",
   vite: {
+    server: {
+      fs: {
+        allow: [".."],
+      },
+    },
     plugins: [
       VitePWA({
         // Keep registration explicit in `src/entry-client.tsx`

@@ -1,5 +1,6 @@
-import { useSubmission, A, useParams, createAsync } from "@solidjs/router";
+import { useSubmission, useParams, createAsync } from "@solidjs/router";
 import { Show, For, createSignal, createEffect } from "solid-js";
+import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { createCareSchedule } from "~/lib/care-schedules";
 import { getFamily } from "~/lib/families";
 import { getServices } from "~/lib/services";
@@ -54,37 +55,22 @@ export default function NewCareSchedule() {
   const requiresChildren = () => selectedService()?.requiresChildren ?? false;
 
   return (
-    <main
-      style={{
-        "max-width": "800px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
-      <header style={{ "margin-bottom": "2rem" }}>
-        <A
-          href={`/families/${params.id}`}
-          style={{
-            color: "#4299e1",
-            "text-decoration": "none",
-            "margin-bottom": "0.5rem",
-            display: "inline-block",
-          }}
-        >
-          ← Back to Family
-        </A>
-        <h1 style={{ color: "#2d3748", "font-size": "2rem" }}>Schedule Care Session</h1>
-        <p style={{ color: "#718096", margin: "0.5rem 0 0 0" }}>
-          Create a {recurrence() === "ONCE" ? "one-time" : "recurring"} care schedule for{" "}
-          {family()?.familyName}
-        </p>
-      </header>
+    <PageContent>
+      <wa-button href={`/families/${params.id}`} appearance="plain" size="small">
+        ← Back to Family
+      </wa-button>
+      <PageHeader
+        title="Schedule Care Session"
+        description={`Create a ${recurrence() === "ONCE" ? "one-time" : "recurring"} care schedule for ${family()?.familyName ?? "this family"}`}
+      />
 
       <Show when={family()}>
         {(familyData) => (
+          <wa-card>
           <form
             action={createCareSchedule}
             method="post"
+            class="wa-stack wa-gap-l"
             onSubmit={(e) => {
               // Custom validation: if service requires children, at least one must be selected
               if (requiresChildren()) {
@@ -96,12 +82,6 @@ export default function NewCareSchedule() {
                   return false;
                 }
               }
-            }}
-            style={{
-              "background-color": "#fff",
-              padding: "2rem",
-              "border-radius": "8px",
-              border: "1px solid #e2e8f0",
             }}
           >
             <input type="hidden" name="familyId" value={params.id} />
@@ -182,7 +162,7 @@ export default function NewCareSchedule() {
                   </select>
                   <Show when={!familyData().services || familyData().services.length === 0}>
                     <p style={{ "margin-top": "0.5rem", "font-size": "0.875rem", color: "#718096" }}>
-                      No services assigned to this family. <A href={`/families/${params.id}/edit`} style={{ color: "#4299e1" }}>Assign services</A> to default this selection.
+                      No services assigned to this family. <a href={`/families/${params.id}/edit`}>Assign services</a> to default this selection.
                     </p>
                   </Show>
                 </Show>
@@ -700,20 +680,9 @@ export default function NewCareSchedule() {
                     <p style={{ color: "#718096", "margin-bottom": "1rem" }}>
                       No children found. Please add children to the family first.
                     </p>
-                    <A
-                      href={`/families/${params.id}/children/new`}
-                      style={{
-                        padding: "0.75rem 1.5rem",
-                        "background-color": "#48bb78",
-                        color: "white",
-                        border: "none",
-                        "border-radius": "4px",
-                        "text-decoration": "none",
-                        "font-weight": "600",
-                      }}
-                    >
+                    <wa-button href={`/families/${params.id}/children/new`} variant="success" appearance="filled">
                       Add First Child
-                    </A>
+                    </wa-button>
                   </div>
                 }
               >
@@ -833,33 +802,7 @@ export default function NewCareSchedule() {
               </p>
             </div>
 
-            <div style={{ "margin-bottom": "1.5rem" }}>
-              <label
-                for="notes"
-                style={{
-                  display: "block",
-                  "margin-bottom": "0.5rem",
-                  "font-weight": "600",
-                  color: "#2d3748",
-                }}
-              >
-                Notes
-              </label>
-              <textarea
-                id="notes"
-                name="notes"
-                rows={4}
-                placeholder="Any special instructions or notes..."
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  "font-size": "1rem",
-                  "font-family": "inherit",
-                }}
-              />
-            </div>
+            <wa-textarea label="Notes" id="notes" name="notes" rows={4} placeholder="Any special instructions or notes..." />
 
             <Show when={isRecurring()}>
               <div
@@ -880,68 +823,30 @@ export default function NewCareSchedule() {
             </Show>
 
             <Show when={submission.result}>
-              <div
-                style={{
-                  padding: "1rem",
-                  "background-color": "#fff5f5",
-                  border: "1px solid #feb2b2",
-                  "border-radius": "4px",
-                  color: "#c53030",
-                  "margin-bottom": "1rem",
-                }}
-              >
-                {submission.result!.message}
-              </div>
+              <wa-callout variant="danger">{submission.result!.message}</wa-callout>
             </Show>
 
-            <div
-              style={{
-                display: "flex",
-                gap: "1rem",
-                "justify-content": "flex-end",
-              }}
-            >
-              <A
-                href={`/families/${params.id}`}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  "background-color": "#edf2f7",
-                  color: "#2d3748",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  "text-decoration": "none",
-                  "font-weight": "600",
-                }}
-              >
+            <div class="wa-cluster wa-gap-s" style={{ "justify-content": "flex-end" }}>
+              <wa-button href={`/families/${params.id}`} appearance="outlined">
                 Cancel
-              </A>
-              <button
+              </wa-button>
+              <wa-button
                 type="submit"
-                disabled={submission.pending || !familyData().children?.length}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  "background-color": "#4299e1",
-                  color: "white",
-                  border: "none",
-                  "border-radius": "4px",
-                  cursor:
-                    submission.pending || !familyData().children?.length
-                      ? "not-allowed"
-                      : "pointer",
-                  opacity: submission.pending || !familyData().children?.length ? "0.6" : "1",
-                  "font-weight": "600",
-                }}
+                variant="brand"
+                appearance="filled"
+                disabled={submission.pending || !familyData().children?.length || undefined}
               >
                 {submission.pending
                   ? "Creating..."
                   : recurrence() === "ONCE"
                     ? "Schedule Session"
                     : "Create Schedule"}
-              </button>
+              </wa-button>
             </div>
           </form>
+          </wa-card>
         )}
       </Show>
-    </main>
+    </PageContent>
   );
 }

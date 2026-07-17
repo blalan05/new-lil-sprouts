@@ -9,25 +9,15 @@ import {
   validateEmail,
   validatePassword,
   validateUsername,
+  hashPassword,
+  verifyPassword,
 } from "./server";
+import { requireUser } from "./auth";
 
 export const getUser = query(async () => {
   "use server";
   try {
-    const session = await getSession();
-    const userId = session.data.userId;
-    if (userId === undefined) throw new Error("User not found");
-    const user = await db.user.findUnique({ where: { id: userId } });
-    if (!user) throw new Error("User not found");
-    return {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      phone: user.phone,
-      isOwner: user.isOwner,
-    };
+    return await requireUser();
   } catch {
     await logoutSession();
     throw serverRedirect("/login");
@@ -37,9 +27,7 @@ export const getUser = query(async () => {
 export const updateUser = action(async (formData: FormData) => {
   "use server";
   try {
-    const session = await getSession();
-    const userId = session.data.userId;
-    if (userId === undefined) throw new Error("User not found");
+    const user = await requireUser();
 
     const firstName = String(formData.get("firstName") || "");
     const lastName = String(formData.get("lastName") || "");
@@ -50,14 +38,13 @@ export const updateUser = action(async (formData: FormData) => {
       return new Error("Email is required");
     }
 
-    // Check if email is already taken by another user
     const existingUser = await db.user.findUnique({ where: { email } });
-    if (existingUser && existingUser.id !== userId) {
+    if (existingUser && existingUser.id !== user.id) {
       return new Error("Email is already in use");
     }
 
     await db.user.update({
-      where: { id: userId },
+      where: { id: user.id },
       data: {
         firstName: firstName || null,
         lastName: lastName || null,
@@ -76,9 +63,7 @@ export const updateUser = action(async (formData: FormData) => {
 export const updatePassword = action(async (formData: FormData) => {
   "use server";
   try {
-    const session = await getSession();
-    const userId = session.data.userId;
-    if (userId === undefined) throw new Error("User not found");
+    const authUser = await requireUser();
 
     const currentPassword = String(formData.get("currentPassword"));
     const newPassword = String(formData.get("newPassword"));
@@ -95,16 +80,15 @@ export const updatePassword = action(async (formData: FormData) => {
     const passwordError = validatePassword(newPassword);
     if (passwordError) return new Error(passwordError);
 
-    // Verify current password
-    const user = await db.user.findUnique({ where: { id: userId } });
-    if (!user || user.password !== currentPassword) {
+    const user = await db.user.findUnique({ where: { id: authUser.id } });
+    if (!user || !(await verifyPassword(currentPassword, user.password))) {
       return new Error("Current password is incorrect");
     }
 
     await db.user.update({
-      where: { id: userId },
+      where: { id: authUser.id },
       data: {
-        password: newPassword,
+        password: await hashPassword(newPassword),
       },
     });
 
@@ -121,6 +105,9 @@ export const loginOrRegister = action(async (formData: FormData) => {
   const email = String(formData.get("email") || "");
   const password = String(formData.get("password"));
   const loginType = String(formData.get("loginType"));
+  const redirectTo = String(formData.get("redirectTo") || "/");
+  const safeRedirect =
+    redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/";
 
   let error = validateUsername(username) || validatePassword(password);
   if (error) return new Error(error);
@@ -141,7 +128,7 @@ export const loginOrRegister = action(async (formData: FormData) => {
   } catch (err) {
     return err as Error;
   }
-  return serverRedirect("/");
+  return serverRedirect(safeRedirect);
 });
 
 export const logout = action(async () => {

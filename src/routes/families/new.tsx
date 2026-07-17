@@ -1,5 +1,6 @@
-import { useSubmission, A, createAsync } from "@solidjs/router";
+import { useSubmission, createAsync } from "@solidjs/router";
 import { Show, createSignal, For } from "solid-js";
+import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { createFamily } from "~/lib/families";
 import { getServices } from "~/lib/services";
 
@@ -20,196 +21,26 @@ export default function NewFamily() {
   ]);
 
   return (
-    <main
-      style={{
-        "max-width": "800px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
-      <header style={{ "margin-bottom": "2rem" }}>
-        <A
-          href="/families"
-          style={{
-            color: "#4299e1",
-            "text-decoration": "none",
-            "margin-bottom": "0.5rem",
-            display: "inline-block",
-          }}
-        >
-          ← Back to Families
-        </A>
-        <h1 style={{ color: "#2d3748", "font-size": "2rem" }}>Add New Family</h1>
-      </header>
+    <PageContent>
+      <wa-button href="/families" appearance="plain" size="small">
+        ← Back to Families
+      </wa-button>
+      <PageHeader title="Add New Family" />
 
-      <form
-        action={createFamily}
-        method="post"
-        style={{
-          "background-color": "#fff",
-          padding: "2rem",
-          "border-radius": "8px",
-          border: "1px solid #e2e8f0",
-        }}
-      >
-        <div style={{ "margin-bottom": "1.5rem" }}>
-          <label
-            for="familyName"
-            style={{
-              display: "block",
-              "margin-bottom": "0.5rem",
-              "font-weight": "600",
-              color: "#2d3748",
-            }}
-          >
-            Family Name *
-          </label>
-          <input
-            id="familyName"
-            name="familyName"
-            type="text"
-            required
-            placeholder="Smith Family"
-            style={{
-              width: "100%",
-              padding: "0.75rem",
-              border: "1px solid #cbd5e0",
-              "border-radius": "4px",
-              "font-size": "1rem",
-            }}
-          />
-        </div>
+      <wa-card>
+      <form action={createFamily} method="post" class="wa-stack wa-gap-l">
+        <wa-input label="Family Name *" id="familyName" name="familyName" required placeholder="Smith Family" />
 
-        <fieldset
-          style={{
-            border: "1px solid #e2e8f0",
-            "border-radius": "4px",
-            padding: "1.5rem",
-            "margin-bottom": "1.5rem",
-          }}
-        >
-          <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
-            Parent/Guardian Information
-          </legend>
+        <fieldset class="wa-stack wa-gap-m" style={{ border: "1px solid var(--wa-color-neutral-90)", "border-radius": "var(--wa-border-radius-m)", padding: "var(--wa-space-m)", margin: 0 }}>
+          <legend class="wa-heading-s">Parent/Guardian Information</legend>
 
-          <div
-            style={{
-              display: "grid",
-              "grid-template-columns": "1fr 1fr",
-              gap: "1rem",
-              "margin-bottom": "1rem",
-            }}
-          >
-            <div>
-              <label
-                for="parentFirstName"
-                style={{
-                  display: "block",
-                  "margin-bottom": "0.5rem",
-                  "font-weight": "500",
-                  color: "#4a5568",
-                }}
-              >
-                First Name *
-              </label>
-              <input
-                id="parentFirstName"
-                name="parentFirstName"
-                type="text"
-                required
-                placeholder="John"
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  "font-size": "1rem",
-                }}
-              />
-            </div>
-            <div>
-              <label
-                for="parentLastName"
-                style={{
-                  display: "block",
-                  "margin-bottom": "0.5rem",
-                  "font-weight": "500",
-                  color: "#4a5568",
-                }}
-              >
-                Last Name *
-              </label>
-              <input
-                id="parentLastName"
-                name="parentLastName"
-                type="text"
-                required
-                placeholder="Smith"
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  "font-size": "1rem",
-                }}
-              />
-            </div>
+          <div class="wa-grid wa-gap-m" style={{ "--min-column-size": "200px" }}>
+            <wa-input label="First Name *" id="parentFirstName" name="parentFirstName" required placeholder="John" />
+            <wa-input label="Last Name *" id="parentLastName" name="parentLastName" required placeholder="Smith" />
           </div>
 
-          <div style={{ "margin-bottom": "1rem" }}>
-            <label
-              for="email"
-              style={{
-                display: "block",
-                "margin-bottom": "0.5rem",
-                "font-weight": "500",
-                color: "#4a5568",
-              }}
-            >
-              Email *
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              placeholder="john.smith@example.com"
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid #cbd5e0",
-                "border-radius": "4px",
-                "font-size": "1rem",
-              }}
-            />
-          </div>
-
-          <div>
-            <label
-              for="phone"
-              style={{
-                display: "block",
-                "margin-bottom": "0.5rem",
-                "font-weight": "500",
-                color: "#4a5568",
-              }}
-            >
-              Phone
-            </label>
-            <input
-              id="phone"
-              name="phone"
-              type="tel"
-              placeholder="(555) 123-4567"
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid #cbd5e0",
-                "border-radius": "4px",
-                "font-size": "1rem",
-              }}
-            />
-          </div>
+          <wa-input label="Email *" id="email" name="email" type="email" required placeholder="john.smith@example.com" />
+          <wa-input label="Phone" id="phone" name="phone" type="tel" placeholder="(555) 123-4567" />
         </fieldset>
 
         {/* Spouse/Partner Section */}
@@ -735,282 +566,38 @@ export default function NewFamily() {
           </Show>
         </fieldset>
 
-        <fieldset
-          style={{
-            border: "1px solid #e2e8f0",
-            "border-radius": "4px",
-            padding: "1.5rem",
-            "margin-bottom": "1.5rem",
-          }}
-        >
-          <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
-            Address Information
-          </legend>
-
-          <div style={{ "margin-bottom": "1rem" }}>
-            <label
-              for="address"
-              style={{
-                display: "block",
-                "margin-bottom": "0.5rem",
-                "font-weight": "500",
-                color: "#4a5568",
-              }}
-            >
-              Street Address
-            </label>
-            <input
-              id="address"
-              name="address"
-              type="text"
-              placeholder="123 Main St"
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid #cbd5e0",
-                "border-radius": "4px",
-                "font-size": "1rem",
-              }}
-            />
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              "grid-template-columns": "1fr 1fr 1fr",
-              gap: "1rem",
-            }}
-          >
-            <div>
-              <label
-                for="city"
-                style={{
-                  display: "block",
-                  "margin-bottom": "0.5rem",
-                  "font-weight": "500",
-                  color: "#4a5568",
-                }}
-              >
-                City
-              </label>
-              <input
-                id="city"
-                name="city"
-                type="text"
-                placeholder="City"
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  "font-size": "1rem",
-                }}
-              />
-            </div>
-            <div>
-              <label
-                for="state"
-                style={{
-                  display: "block",
-                  "margin-bottom": "0.5rem",
-                  "font-weight": "500",
-                  color: "#4a5568",
-                }}
-              >
-                State
-              </label>
-              <input
-                id="state"
-                name="state"
-                type="text"
-                placeholder="State"
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  "font-size": "1rem",
-                }}
-              />
-            </div>
-            <div>
-              <label
-                for="zipCode"
-                style={{
-                  display: "block",
-                  "margin-bottom": "0.5rem",
-                  "font-weight": "500",
-                  color: "#4a5568",
-                }}
-              >
-                ZIP Code
-              </label>
-              <input
-                id="zipCode"
-                name="zipCode"
-                type="text"
-                placeholder="12345"
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  "font-size": "1rem",
-                }}
-              />
-            </div>
+        <fieldset class="wa-stack wa-gap-m" style={{ border: "1px solid var(--wa-color-neutral-90)", "border-radius": "var(--wa-border-radius-m)", padding: "var(--wa-space-m)", margin: 0 }}>
+          <legend class="wa-heading-s">Address Information</legend>
+          <wa-input label="Street Address" id="address" name="address" placeholder="123 Main St" />
+          <div class="wa-grid wa-gap-m" style={{ "--min-column-size": "140px" }}>
+            <wa-input label="City" id="city" name="city" placeholder="City" />
+            <wa-input label="State" id="state" name="state" placeholder="State" />
+            <wa-input label="ZIP Code" id="zipCode" name="zipCode" placeholder="12345" />
           </div>
         </fieldset>
 
-        <fieldset
-          style={{
-            border: "1px solid #e2e8f0",
-            "border-radius": "4px",
-            padding: "1.5rem",
-            "margin-bottom": "1.5rem",
-          }}
-        >
-          <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
-            Emergency Contact
-          </legend>
-
-          <div style={{ "margin-bottom": "1rem" }}>
-            <label
-              for="emergencyContact"
-              style={{
-                display: "block",
-                "margin-bottom": "0.5rem",
-                "font-weight": "500",
-                color: "#4a5568",
-              }}
-            >
-              Emergency Contact Name
-            </label>
-            <input
-              id="emergencyContact"
-              name="emergencyContact"
-              type="text"
-              placeholder="Jane Doe"
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid #cbd5e0",
-                "border-radius": "4px",
-                "font-size": "1rem",
-              }}
-            />
-          </div>
-
-          <div>
-            <label
-              for="emergencyPhone"
-              style={{
-                display: "block",
-                "margin-bottom": "0.5rem",
-                "font-weight": "500",
-                color: "#4a5568",
-              }}
-            >
-              Emergency Phone
-            </label>
-            <input
-              id="emergencyPhone"
-              name="emergencyPhone"
-              type="tel"
-              placeholder="(555) 123-4567"
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid #cbd5e0",
-                "border-radius": "4px",
-                "font-size": "1rem",
-              }}
-            />
-          </div>
+        <fieldset class="wa-stack wa-gap-m" style={{ border: "1px solid var(--wa-color-neutral-90)", "border-radius": "var(--wa-border-radius-m)", padding: "var(--wa-space-m)", margin: 0 }}>
+          <legend class="wa-heading-s">Emergency Contact</legend>
+          <wa-input label="Emergency Contact Name" id="emergencyContact" name="emergencyContact" placeholder="Jane Doe" />
+          <wa-input label="Emergency Phone" id="emergencyPhone" name="emergencyPhone" type="tel" placeholder="(555) 123-4567" />
         </fieldset>
 
-        <div style={{ "margin-bottom": "1.5rem" }}>
-          <label
-            for="notes"
-            style={{
-              display: "block",
-              "margin-bottom": "0.5rem",
-              "font-weight": "600",
-              color: "#2d3748",
-            }}
-          >
-            Notes
-          </label>
-          <textarea
-            id="notes"
-            name="notes"
-            rows={4}
-            placeholder="Any additional information about the family..."
-            style={{
-              width: "100%",
-              padding: "0.75rem",
-              border: "1px solid #cbd5e0",
-              "border-radius": "4px",
-              "font-size": "1rem",
-              "font-family": "inherit",
-            }}
-          />
-        </div>
+        <wa-textarea label="Notes" id="notes" name="notes" rows={4} placeholder="Any additional information about the family..." />
 
         <Show when={submission.result}>
-          <div
-            style={{
-              padding: "1rem",
-              "background-color": "#fff5f5",
-              border: "1px solid #feb2b2",
-              "border-radius": "4px",
-              color: "#c53030",
-              "margin-bottom": "1rem",
-            }}
-          >
-            {submission.result!.message}
-          </div>
+          <wa-callout variant="danger">{submission.result!.message}</wa-callout>
         </Show>
 
-        <div
-          style={{
-            display: "flex",
-            gap: "1rem",
-            "justify-content": "flex-end",
-          }}
-        >
-          <A
-            href="/families"
-            style={{
-              padding: "0.75rem 1.5rem",
-              "background-color": "#edf2f7",
-              color: "#2d3748",
-              border: "1px solid #cbd5e0",
-              "border-radius": "4px",
-              "text-decoration": "none",
-              "font-weight": "600",
-            }}
-          >
+        <div class="wa-cluster wa-gap-s" style={{ "justify-content": "flex-end" }}>
+          <wa-button href="/families" appearance="outlined">
             Cancel
-          </A>
-          <button
-            type="submit"
-            disabled={submission.pending}
-            style={{
-              padding: "0.75rem 1.5rem",
-              "background-color": "#48bb78",
-              color: "white",
-              border: "none",
-              "border-radius": "4px",
-              cursor: submission.pending ? "not-allowed" : "pointer",
-              opacity: submission.pending ? "0.6" : "1",
-              "font-weight": "600",
-            }}
-          >
+          </wa-button>
+          <wa-button type="submit" variant="success" appearance="filled" disabled={submission.pending || undefined}>
             {submission.pending ? "Creating..." : "Create Family"}
-          </button>
+          </wa-button>
         </div>
       </form>
-    </main>
+      </wa-card>
+    </PageContent>
   );
 }

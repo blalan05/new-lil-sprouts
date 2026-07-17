@@ -1,9 +1,11 @@
 import { action, query } from "@solidjs/router";
 import { db } from "./db";
+import { assertOwnerAction, requireOwner, requireUser } from "./auth";
 
 // Get a setting value by key
 export const getSetting = query(async (key: string) => {
   "use server";
+  await requireUser();
   const setting = await db.setting.findUnique({
     where: { key },
   });
@@ -13,6 +15,7 @@ export const getSetting = query(async (key: string) => {
 // Get all settings
 export const getAllSettings = query(async () => {
   "use server";
+  await requireOwner();
   const settings = await db.setting.findMany({
     orderBy: { key: "asc" },
   });
@@ -48,6 +51,9 @@ export const getSettingValue = async (key: string, defaultValue?: any) => {
 export const setSetting = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const key = String(formData.get("key"));
     const value = String(formData.get("value"));
     const type = String(formData.get("type") || "string");
@@ -79,6 +85,7 @@ export const setSetting = action(async (formData: FormData) => {
 // Helper function to get default hourly rate (query for client-side)
 export const getDefaultHourlyRate = query(async () => {
   "use server";
+  await requireUser();
   const rate = await getSettingValue("defaultHourlyRate", null);
   return rate;
 }, "defaultHourlyRate");
@@ -86,6 +93,7 @@ export const getDefaultHourlyRate = query(async () => {
 // Helper function to get default piano lesson rate
 export const getDefaultPianoLessonRate = query(async () => {
   "use server";
+  await requireUser();
   const rate = await getSettingValue("defaultPianoLessonRate", null);
   return rate;
 }, "defaultPianoLessonRate");

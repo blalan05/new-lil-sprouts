@@ -4,60 +4,99 @@ import {
   calculateHours as calcHours,
   calculateSessionCost,
   sumMoney,
-  addMoney,
   roundMoney,
 } from "./money";
+import { familyIdWhere, requireUser } from "./auth";
+
+function sessionScopeWhere(user: Awaited<ReturnType<typeof requireUser>>) {
+  return familyIdWhere(user);
+}
+
+function periodRange(period: "lastWeek" | "thisWeek" | "month" | "ytd") {
+  const now = new Date();
+  let startDate: Date;
+  let endDate: Date = new Date(now);
+  endDate.setHours(23, 59, 59, 999);
+
+  switch (period) {
+    case "lastWeek": {
+      const lastWeekStart = new Date(now);
+      lastWeekStart.setDate(now.getDate() - now.getDay() - 6);
+      lastWeekStart.setHours(0, 0, 0, 0);
+      startDate = lastWeekStart;
+      const lastWeekEnd = new Date(lastWeekStart);
+      lastWeekEnd.setDate(lastWeekStart.getDate() + 6);
+      endDate = lastWeekEnd;
+      endDate.setHours(23, 59, 59, 999);
+      break;
+    }
+    case "thisWeek": {
+      const thisWeekStart = new Date(now);
+      thisWeekStart.setDate(now.getDate() - now.getDay() + 1);
+      thisWeekStart.setHours(0, 0, 0, 0);
+      startDate = thisWeekStart;
+      const thisWeekEnd = new Date(thisWeekStart);
+      thisWeekEnd.setDate(thisWeekStart.getDate() + 6);
+      endDate = thisWeekEnd;
+      endDate.setHours(23, 59, 59, 999);
+      break;
+    }
+    case "month": {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      break;
+    }
+    case "ytd": {
+      startDate = new Date(now.getFullYear(), 0, 1);
+      startDate.setHours(0, 0, 0, 0);
+      break;
+    }
+  }
+
+  return { startDate, endDate };
+}
+
+function sumSessionHours(sessions: Array<{ scheduledStart: Date; scheduledEnd: Date }>) {
+  return sessions.reduce((total, session) => {
+    return (
+      total + calcHours(new Date(session.scheduledStart), new Date(session.scheduledEnd))
+    );
+  }, 0);
+}
+
+function sumSessionMoney(
+  sessions: Array<{
+    scheduledStart: Date;
+    scheduledEnd: Date;
+    hourlyRate: number | null;
+    expenses?: Array<{ amount: number }>;
+  }>,
+) {
+  const moneyAmounts: number[] = [];
+  for (const session of sessions) {
+    const sessionHours = calcHours(
+      new Date(session.scheduledStart),
+      new Date(session.scheduledEnd),
+    );
+    const rate = session.hourlyRate || 0;
+    moneyAmounts.push(calculateSessionCost(sessionHours, rate));
+
+    const expenseTotal = sumMoney((session.expenses || []).map((exp) => exp.amount));
+    if (expenseTotal > 0) {
+      moneyAmounts.push(expenseTotal);
+    }
+  }
+  return roundMoney(sumMoney(moneyAmounts));
+}
 
 // Get stats for a specific time period
 export const getStatsForPeriod = query(
   async (period: "lastWeek" | "thisWeek" | "month" | "ytd") => {
     "use server";
-    const now = new Date();
-    let startDate: Date;
-    let endDate: Date = new Date(now);
-    endDate.setHours(23, 59, 59, 999);
+    const user = await requireUser();
+    const { startDate, endDate } = periodRange(period);
 
-    switch (period) {
-      case "lastWeek": {
-        // Calculate last week (Monday to Sunday)
-        const lastWeekStart = new Date(now);
-        lastWeekStart.setDate(now.getDate() - now.getDay() - 6); // Last Monday
-        lastWeekStart.setHours(0, 0, 0, 0);
-        startDate = lastWeekStart;
-        const lastWeekEnd = new Date(lastWeekStart);
-        lastWeekEnd.setDate(lastWeekStart.getDate() + 6); // Last Sunday
-        endDate = lastWeekEnd;
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      }
-      case "thisWeek": {
-        // Calculate this week (Monday to Sunday)
-        const thisWeekStart = new Date(now);
-        thisWeekStart.setDate(now.getDate() - now.getDay() + 1); // Monday
-        thisWeekStart.setHours(0, 0, 0, 0);
-        startDate = thisWeekStart;
-        const thisWeekEnd = new Date(thisWeekStart);
-        thisWeekEnd.setDate(thisWeekStart.getDate() + 6); // Sunday
-        endDate = thisWeekEnd;
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      }
-      case "month": {
-        // This month
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        startDate.setHours(0, 0, 0, 0);
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-        break;
-      }
-      case "ytd": {
-        // Year to date
-        startDate = new Date(now.getFullYear(), 0, 1);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      }
-    }
-
-    // Get completed sessions for the period
     const sessions = await db.careSession.findMany({
       where: {
         scheduledStart: {
@@ -67,6 +106,7 @@ export const getStatsForPeriod = query(
         status: {
           in: ["COMPLETED", "IN_PROGRESS"],
         },
+        ...sessionScopeWhere(user),
       },
       include: {
         expenses: {
@@ -77,38 +117,9 @@ export const getStatsForPeriod = query(
       },
     });
 
-    // Calculate hours worked
-    const hours = sessions.reduce((total, session) => {
-      const sessionHours = calcHours(
-        new Date(session.scheduledStart),
-        new Date(session.scheduledEnd),
-      );
-      return total + sessionHours;
-    }, 0);
-
-    // Calculate money made (including expenses)
-    const moneyAmounts: number[] = [];
-    for (const session of sessions) {
-      const sessionHours = calcHours(
-        new Date(session.scheduledStart),
-        new Date(session.scheduledEnd),
-      );
-      const rate = session.hourlyRate || 0;
-      const sessionAmount = calculateSessionCost(sessionHours, rate);
-      moneyAmounts.push(sessionAmount);
-
-      // Add expenses
-      const expenses = session.expenses || [];
-      const expenseTotal = sumMoney(expenses.map((exp: any) => exp.amount));
-      if (expenseTotal > 0) {
-        moneyAmounts.push(expenseTotal);
-      }
-    }
-    const money = roundMoney(sumMoney(moneyAmounts));
-
     return {
-      hours,
-      money,
+      hours: sumSessionHours(sessions),
+      money: sumSessionMoney(sessions),
       period,
     };
   },
@@ -118,25 +129,33 @@ export const getStatsForPeriod = query(
 // Get weekly stats (hours worked and money made) - kept for backward compatibility
 export const getWeeklyStats = query(async () => {
   "use server";
+  const user = await requireUser();
   const now = new Date();
 
-  // Calculate this week (Monday to Sunday)
   const thisWeekStart = new Date(now);
-  thisWeekStart.setDate(now.getDate() - now.getDay() + 1); // Monday
+  thisWeekStart.setDate(now.getDate() - now.getDay() + 1);
   thisWeekStart.setHours(0, 0, 0, 0);
 
   const thisWeekEnd = new Date(thisWeekStart);
-  thisWeekEnd.setDate(thisWeekStart.getDate() + 6); // Sunday
+  thisWeekEnd.setDate(thisWeekStart.getDate() + 6);
   thisWeekEnd.setHours(23, 59, 59, 999);
 
-  // Calculate last week
   const lastWeekStart = new Date(thisWeekStart);
   lastWeekStart.setDate(thisWeekStart.getDate() - 7);
 
   const lastWeekEnd = new Date(thisWeekEnd);
   lastWeekEnd.setDate(thisWeekEnd.getDate() - 7);
 
-  // Get completed sessions for this week
+  const sessionInclude = {
+    expenses: {
+      select: {
+        amount: true,
+      },
+    },
+  };
+
+  const scope = sessionScopeWhere(user);
+
   const thisWeekSessions = await db.careSession.findMany({
     where: {
       scheduledStart: {
@@ -146,17 +165,11 @@ export const getWeeklyStats = query(async () => {
       status: {
         in: ["COMPLETED", "IN_PROGRESS"],
       },
+      ...scope,
     },
-    include: {
-      expenses: {
-        select: {
-          amount: true,
-        },
-      },
-    },
+    include: sessionInclude,
   });
 
-  // Get completed sessions for last week
   const lastWeekSessions = await db.careSession.findMany({
     where: {
       scheduledStart: {
@@ -166,56 +179,19 @@ export const getWeeklyStats = query(async () => {
       status: {
         in: ["COMPLETED", "IN_PROGRESS"],
       },
+      ...scope,
     },
-    include: {
-      expenses: {
-        select: {
-          amount: true,
-        },
-      },
-    },
+    include: sessionInclude,
   });
-
-  // Calculate hours worked
-  const calculateHours = (sessions: any[]) => {
-    return sessions.reduce((total, session) => {
-      const hours = calcHours(new Date(session.scheduledStart), new Date(session.scheduledEnd));
-      return total + hours;
-    }, 0);
-  };
-
-  // Calculate money made (including expenses)
-  const calculateMoney = (sessions: any[]) => {
-    const moneyAmounts: number[] = [];
-    for (const session of sessions) {
-      const hours = calcHours(new Date(session.scheduledStart), new Date(session.scheduledEnd));
-      const rate = session.hourlyRate || 0;
-      const sessionAmount = calculateSessionCost(hours, rate);
-      moneyAmounts.push(sessionAmount);
-
-      // Add expenses
-      const expenses = session.expenses || [];
-      const expenseTotal = sumMoney(expenses.map((exp: any) => exp.amount));
-      if (expenseTotal > 0) {
-        moneyAmounts.push(expenseTotal);
-      }
-    }
-    return roundMoney(sumMoney(moneyAmounts));
-  };
-
-  const thisWeekHours = calculateHours(thisWeekSessions);
-  const lastWeekHours = calculateHours(lastWeekSessions);
-  const thisWeekMoney = calculateMoney(thisWeekSessions);
-  const lastWeekMoney = calculateMoney(lastWeekSessions);
 
   return {
     thisWeek: {
-      hours: thisWeekHours,
-      money: thisWeekMoney,
+      hours: sumSessionHours(thisWeekSessions),
+      money: sumSessionMoney(thisWeekSessions),
     },
     lastWeek: {
-      hours: lastWeekHours,
-      money: lastWeekMoney,
+      hours: sumSessionHours(lastWeekSessions),
+      money: sumSessionMoney(lastWeekSessions),
     },
   };
 }, "weekly-stats");
@@ -223,28 +199,30 @@ export const getWeeklyStats = query(async () => {
 // Get dashboard stats
 export const getDashboardStats = query(async () => {
   "use server";
+  const user = await requireUser();
   const now = new Date();
+  const scope = sessionScopeWhere(user);
 
-  // This month
   const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const thisMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-  // Get active families count
-  const activeFamiliesCount = await db.family.count({
-    where: {
-      careSessions: {
-        some: {
-          scheduledStart: {
-            gte: thisMonthStart,
+  const activeFamiliesCount = user.isOwner
+    ? await db.family.count({
+        where: {
+          careSessions: {
+            some: {
+              scheduledStart: {
+                gte: thisMonthStart,
+              },
+            },
           },
         },
-      },
-    },
-  });
+      })
+    : 1;
 
-  // Get upcoming sessions count (next 7 days)
   const upcomingDate = new Date();
   upcomingDate.setDate(upcomingDate.getDate() + 7);
+
   const upcomingSessionsCount = await db.careSession.count({
     where: {
       scheduledStart: {
@@ -254,25 +232,27 @@ export const getDashboardStats = query(async () => {
       status: {
         not: "CANCELLED",
       },
+      ...scope,
     },
   });
 
-  // Get unpaid sessions count
-  const unpaidSessionsCount = await db.careSession.count({
-    where: {
-      isConfirmed: true,
-      status: {
-        in: ["SCHEDULED", "COMPLETED"],
-      },
-      payments: {
-        none: {
-          status: "PAID",
+  const unpaidSessionsCount = user.isOwner
+    ? await db.careSession.count({
+        where: {
+          isConfirmed: true,
+          status: {
+            in: ["SCHEDULED", "COMPLETED"],
+          },
+          payments: {
+            none: {
+              status: "PAID",
+            },
+          },
+          ...scope,
         },
-      },
-    },
-  });
+      })
+    : 0;
 
-  // Get total hours this month
   const thisMonthSessions = await db.careSession.findMany({
     where: {
       scheduledStart: {
@@ -282,15 +262,10 @@ export const getDashboardStats = query(async () => {
       status: {
         in: ["COMPLETED", "IN_PROGRESS"],
       },
+      ...scope,
     },
   });
 
-  const thisMonthHours = thisMonthSessions.reduce((total, session) => {
-    const hours = calcHours(new Date(session.scheduledStart), new Date(session.scheduledEnd));
-    return total + hours;
-  }, 0);
-
-  // Get total money this month
   const thisMonthSessionsWithExpenses = await db.careSession.findMany({
     where: {
       scheduledStart: {
@@ -300,6 +275,7 @@ export const getDashboardStats = query(async () => {
       status: {
         in: ["COMPLETED", "IN_PROGRESS"],
       },
+      ...scope,
     },
     include: {
       expenses: {
@@ -310,22 +286,6 @@ export const getDashboardStats = query(async () => {
     },
   });
 
-  const thisMonthMoneyAmounts: number[] = [];
-  for (const session of thisMonthSessionsWithExpenses) {
-    const hours = calcHours(new Date(session.scheduledStart), new Date(session.scheduledEnd));
-    const rate = session.hourlyRate || 0;
-    const sessionAmount = calculateSessionCost(hours, rate);
-    thisMonthMoneyAmounts.push(sessionAmount);
-
-    const expenses = session.expenses || [];
-    const expenseTotal = sumMoney(expenses.map((exp: any) => exp.amount));
-    if (expenseTotal > 0) {
-      thisMonthMoneyAmounts.push(expenseTotal);
-    }
-  }
-  const thisMonthMoney = roundMoney(sumMoney(thisMonthMoneyAmounts));
-
-  // Calculate average hourly rate
   const sessionsWithRates = thisMonthSessions.filter((s) => s.hourlyRate && s.hourlyRate > 0);
   const averageHourlyRate =
     sessionsWithRates.length > 0
@@ -337,8 +297,8 @@ export const getDashboardStats = query(async () => {
     activeFamilies: activeFamiliesCount,
     upcomingSessions: upcomingSessionsCount,
     unpaidSessions: unpaidSessionsCount,
-    thisMonthHours,
-    thisMonthMoney,
-    averageHourlyRate,
+    thisMonthHours: sumSessionHours(thisMonthSessions),
+    thisMonthMoney: user.isOwner ? sumSessionMoney(thisMonthSessionsWithExpenses) : 0,
+    averageHourlyRate: user.isOwner ? averageHourlyRate : 0,
   };
 }, "dashboard-stats");

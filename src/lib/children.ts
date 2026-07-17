@@ -1,9 +1,16 @@
 import { action, query, reload } from "@solidjs/router";
 import { db } from "./db";
 import { serverRedirect } from "./server-redirect";
+import {
+  assertOwnerAction,
+  familyIdWhere,
+  requireFamilyAccess,
+  requireUser,
+} from "./auth";
 
 export const getChildren = query(async (familyId: string) => {
   "use server";
+  await requireFamilyAccess(familyId);
   const children = await db.child.findMany({
     where: { familyId },
     orderBy: {
@@ -28,12 +35,15 @@ export const getChild = query(async (id: string) => {
     },
   });
   if (!child) throw new Error("Child not found");
+  await requireFamilyAccess(child.familyId);
   return child;
 }, "child");
 
 export const getAllChildren = query(async () => {
   "use server";
+  const user = await requireUser();
   const children = await db.child.findMany({
+    where: familyIdWhere(user),
     include: {
       family: {
         select: {
@@ -52,6 +62,9 @@ export const getAllChildren = query(async () => {
 export const createChild = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const familyId = String(formData.get("familyId"));
     const firstName = String(formData.get("firstName"));
     const lastName = String(formData.get("lastName"));
@@ -100,6 +113,9 @@ export const createChild = action(async (formData: FormData) => {
 export const updateChild = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const id = String(formData.get("id"));
     const familyId = String(formData.get("familyId"));
     const firstName = String(formData.get("firstName"));
@@ -149,6 +165,12 @@ export const updateChild = action(async (formData: FormData) => {
 export const deleteChild = action(async (id: string) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
+    const child = await db.child.findUnique({ where: { id }, select: { familyId: true } });
+    if (!child) return new Error("Child not found");
+
     await db.child.delete({
       where: { id },
     });

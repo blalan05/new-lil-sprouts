@@ -1,5 +1,6 @@
-import { createAsync, type RouteDefinition, A, useParams, useSubmission } from "@solidjs/router";
+import { createAsync, type RouteDefinition, useParams, useSubmission } from "@solidjs/router";
 import { Show, For } from "solid-js";
+import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { getCareSession } from "~/lib/schedule";
 import { editCareSessionFull } from "~/lib/schedule";
 import { getChildren } from "~/lib/children";
@@ -25,338 +26,96 @@ export default function EditCareSession() {
   };
 
   return (
-    <main
-      style={{
-        "max-width": "800px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
+    <PageContent>
       <Show
         when={session() && children()}
         fallback={
-          <div style={{ "text-align": "center", padding: "3rem" }}>Loading...</div>
+          <div style={{ "text-align": "center", padding: "var(--wa-space-2xl)" }} class="wa-color-text-quiet">
+            Loading...
+          </div>
         }
       >
-        <header style={{ "margin-bottom": "2rem" }}>
-          <A
-            href={`/families/${params.id}/sessions/${params.sessionId}`}
-            style={{
-              color: "#4299e1",
-              "text-decoration": "none",
-              "margin-bottom": "0.5rem",
-              display: "inline-block",
-            }}
-          >
-            ← Back to Session
-          </A>
-          <h1 style={{ color: "#2d3748", "font-size": "2rem", "margin-bottom": "0.5rem" }}>
-            Edit Care Session
-          </h1>
-          <p style={{ color: "#718096", margin: 0 }}>
-            Update session details, times, and assigned children
-          </p>
-        </header>
+        <wa-button href={`/families/${params.id}/sessions/${params.sessionId}`} appearance="plain" size="small">
+          ← Back to Session
+        </wa-button>
+        <PageHeader
+          title="Edit Care Session"
+          description="Update session details, times, and assigned children"
+        />
 
-        <div
-          style={{
-            "background-color": "#fff",
-            padding: "2rem",
-            "border-radius": "8px",
-            border: "1px solid #e2e8f0",
-          }}
-        >
-          <form action={editCareSessionFull} method="post">
+        <wa-card>
+          <form action={editCareSessionFull} method="post" class="wa-stack wa-gap-m">
             <input type="hidden" name="sessionId" value={params.sessionId} />
             <input type="hidden" name="timezoneOffset" value={new Date().getTimezoneOffset() * -1} />
 
-            {/* Scheduled Start Time */}
-            <div style={{ "margin-bottom": "1.5rem" }}>
-              <label
-                for="scheduledStart"
-                style={{
-                  display: "block",
-                  "margin-bottom": "0.5rem",
-                  "font-weight": "500",
-                  color: "#2d3748",
-                }}
-              >
-                Scheduled Start Time *
-              </label>
-              <input
-                type="datetime-local"
-                id="scheduledStart"
-                name="scheduledStart"
-                value={session()?.scheduledStart ? utcToDatetimeLocal(session()!.scheduledStart) : ""}
-                required
-                style={{
-                  width: "100%",
-                  padding: "0.5rem",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  "font-size": "1rem",
-                }}
-              />
-            </div>
+            <wa-input
+              label="Scheduled Start Time *"
+              name="scheduledStart"
+              type="datetime-local"
+              required
+              value={session()?.scheduledStart ? utcToDatetimeLocal(session()!.scheduledStart) : ""}
+            />
+            <wa-input
+              label="Scheduled End Time *"
+              name="scheduledEnd"
+              type="datetime-local"
+              required
+              value={session()?.scheduledEnd ? utcToDatetimeLocal(session()!.scheduledEnd) : ""}
+            />
 
-            {/* Scheduled End Time */}
-            <div style={{ "margin-bottom": "1.5rem" }}>
-              <label
-                for="scheduledEnd"
-                style={{
-                  display: "block",
-                  "margin-bottom": "0.5rem",
-                  "font-weight": "500",
-                  color: "#2d3748",
-                }}
-              >
-                Scheduled End Time *
-              </label>
-              <input
-                type="datetime-local"
-                id="scheduledEnd"
-                name="scheduledEnd"
-                value={session()?.scheduledEnd ? utcToDatetimeLocal(session()!.scheduledEnd) : ""}
-                required
-                style={{
-                  width: "100%",
-                  padding: "0.5rem",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  "font-size": "1rem",
-                }}
-              />
-            </div>
+            <wa-select label="Status *" name="status" required value={session()?.status || "SCHEDULED"}>
+              <wa-option value="SCHEDULED">Scheduled</wa-option>
+              <wa-option value="IN_PROGRESS">In Progress</wa-option>
+              <wa-option value="COMPLETED">Completed</wa-option>
+              <wa-option value="CANCELLED">Cancelled</wa-option>
+            </wa-select>
 
-            {/* Status */}
-            <div style={{ "margin-bottom": "1.5rem" }}>
-              <label
-                for="status"
-                style={{
-                  display: "block",
-                  "margin-bottom": "0.5rem",
-                  "font-weight": "500",
-                  color: "#2d3748",
-                }}
-              >
-                Status *
-              </label>
-              <select
-                id="status"
-                name="status"
-                value={session()?.status || "SCHEDULED"}
-                required
-                style={{
-                  width: "100%",
-                  padding: "0.5rem",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  "font-size": "1rem",
-                }}
-              >
-                <option value="SCHEDULED">Scheduled</option>
-                <option value="IN_PROGRESS">In Progress</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="CANCELLED">Cancelled</option>
-              </select>
-            </div>
+            <wa-input
+              label="Hourly Rate (optional)"
+              name="hourlyRate"
+              type="number"
+              step="0.01"
+              min="0"
+              value={session()?.hourlyRate?.toString() || ""}
+              placeholder="Leave empty to use service default"
+            />
 
-            {/* Hourly Rate */}
-            <div style={{ "margin-bottom": "1.5rem" }}>
-              <label
-                for="hourlyRate"
-                style={{
-                  display: "block",
-                  "margin-bottom": "0.5rem",
-                  "font-weight": "500",
-                  color: "#2d3748",
-                }}
-              >
-                Hourly Rate (optional)
-              </label>
-              <input
-                type="number"
-                id="hourlyRate"
-                name="hourlyRate"
-                value={session()?.hourlyRate || ""}
-                step="0.01"
-                min="0"
-                placeholder="Leave empty to use service default"
-                style={{
-                  width: "100%",
-                  padding: "0.5rem",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  "font-size": "1rem",
-                }}
-              />
-            </div>
+            <wa-checkbox name="isConfirmed" value="true" checked={session()?.isConfirmed || undefined}>
+              Session Confirmed
+            </wa-checkbox>
 
-            {/* Confirmed */}
-            <div style={{ "margin-bottom": "1.5rem" }}>
-              <label
-                style={{
-                  display: "flex",
-                  "align-items": "center",
-                  gap: "0.5rem",
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  name="isConfirmed"
-                  value="true"
-                  checked={session()?.isConfirmed || false}
-                  style={{
-                    width: "1.25rem",
-                    height: "1.25rem",
-                    cursor: "pointer",
-                  }}
-                />
-                <span style={{ color: "#2d3748", "font-weight": "500" }}>
-                  Session Confirmed
-                </span>
-              </label>
-            </div>
-
-            {/* Children Selection */}
             <Show when={children() && children()!.length > 0}>
-              <div style={{ "margin-bottom": "1.5rem" }}>
-                <label
-                  style={{
-                    display: "block",
-                    "margin-bottom": "0.5rem",
-                    "font-weight": "500",
-                    color: "#2d3748",
-                  }}
-                >
-                  Children (select all that apply)
-                </label>
-                <div
-                  style={{
-                    display: "flex",
-                    "flex-direction": "column",
-                    gap: "0.75rem",
-                    padding: "1rem",
-                    "background-color": "#f7fafc",
-                    "border-radius": "4px",
-                    border: "1px solid #e2e8f0",
-                  }}
-                >
+              <div class="wa-stack wa-gap-s">
+                <label class="wa-heading-s">Children (select all that apply)</label>
+                <div class="wa-stack wa-gap-s" style={{ padding: "var(--wa-space-m)", "background-color": "var(--wa-color-neutral-95)", "border-radius": "var(--wa-border-radius-m)" }}>
                   <For each={children()}>
                     {(child) => (
-                      <label
-                        style={{
-                          display: "flex",
-                          "align-items": "center",
-                          gap: "0.5rem",
-                          cursor: "pointer",
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          name={`child_${child.id}`}
-                          value={child.id}
-                          checked={isChildSelected(child.id)}
-                          style={{
-                            width: "1.25rem",
-                            height: "1.25rem",
-                            cursor: "pointer",
-                          }}
-                        />
-                        <span style={{ color: "#2d3748" }}>
-                          {child.firstName} {child.lastName}
-                        </span>
-                      </label>
+                      <wa-checkbox name={`child_${child.id}`} value={child.id} checked={isChildSelected(child.id) || undefined}>
+                        {child.firstName} {child.lastName}
+                      </wa-checkbox>
                     )}
                   </For>
                 </div>
               </div>
             </Show>
 
-            {/* Notes */}
-            <div style={{ "margin-bottom": "1.5rem" }}>
-              <label
-                for="notes"
-                style={{
-                  display: "block",
-                  "margin-bottom": "0.5rem",
-                  "font-weight": "500",
-                  color: "#2d3748",
-                }}
-              >
-                Notes
-              </label>
-              <textarea
-                id="notes"
-                name="notes"
-                rows={4}
-                placeholder="Add any notes about this session..."
-                style={{
-                  width: "100%",
-                  padding: "0.5rem",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  "font-size": "1rem",
-                  "font-family": "inherit",
-                  resize: "vertical",
-                }}
-              >
-                {session()?.notes || ""}
-              </textarea>
-            </div>
-
-            {/* Submit Buttons */}
-            <div style={{ display: "flex", gap: "1rem", "justify-content": "flex-end" }}>
-              <A
-                href={`/families/${params.id}/sessions/${params.sessionId}`}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  "background-color": "#fff",
-                  color: "#4a5568",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  cursor: "pointer",
-                  "text-decoration": "none",
-                  display: "inline-block",
-                }}
-              >
-                Cancel
-              </A>
-              <button
-                type="submit"
-                disabled={editSubmission.pending}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  "background-color": "#4299e1",
-                  color: "#fff",
-                  border: "none",
-                  "border-radius": "4px",
-                  cursor: editSubmission.pending ? "not-allowed" : "pointer",
-                  "font-weight": "600",
-                  opacity: editSubmission.pending ? "0.6" : "1",
-                }}
-              >
-                {editSubmission.pending ? "Saving..." : "Save Changes"}
-              </button>
-            </div>
+            <wa-textarea label="Notes" name="notes" rows={4} value={session()?.notes || ""} placeholder="Add any notes about this session..." />
 
             <Show when={editSubmission.result instanceof Error}>
-              <div
-                style={{
-                  "margin-top": "1rem",
-                  padding: "1rem",
-                  "background-color": "#fed7d7",
-                  color: "#c53030",
-                  "border-radius": "4px",
-                }}
-              >
-                Error: {(editSubmission.result as Error).message}
-              </div>
+              <wa-callout variant="danger">Error: {(editSubmission.result as Error).message}</wa-callout>
             </Show>
+
+            <div class="wa-cluster wa-gap-s" style={{ "justify-content": "flex-end" }}>
+              <wa-button href={`/families/${params.id}/sessions/${params.sessionId}`} appearance="outlined">
+                Cancel
+              </wa-button>
+              <wa-button type="submit" variant="brand" appearance="filled" disabled={editSubmission.pending || undefined}>
+                {editSubmission.pending ? "Saving..." : "Save Changes"}
+              </wa-button>
+            </div>
           </form>
-        </div>
+        </wa-card>
       </Show>
-    </main>
+    </PageContent>
   );
 }

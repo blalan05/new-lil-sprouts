@@ -1,5 +1,8 @@
-import { createAsync, type RouteDefinition, A, useSubmission } from "@solidjs/router";
-import { Show, For, createSignal, createEffect } from "solid-js";
+import { createAsync, type RouteDefinition, A, useSubmission, useSearchParams } from "@solidjs/router";
+import { Show, For, createSignal, createEffect, onMount } from "solid-js";
+import Modal from "~/components/Modal";
+import PageContent, { PageHeader } from "~/components/wa/PageContent";
+import { PaymentStatusBadge } from "~/components/wa/StatusBadge";
 import { getFamilies } from "~/lib/families";
 import { getUnpaidSessions, createPayment, getPayments } from "~/lib/payments";
 import { formatTimeLocal } from "~/lib/datetime";
@@ -16,6 +19,7 @@ type SortField = "date" | "family" | "amount" | "method" | "status";
 type SortDirection = "asc" | "desc";
 
 export default function PaymentsPage() {
+  const [searchParams] = useSearchParams();
   const families = createAsync(() => getFamilies());
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = createSignal<number>(currentYear);
@@ -31,30 +35,19 @@ export default function PaymentsPage() {
   const [selectedFamilyId, setSelectedFamilyId] = createSignal<string>("");
   const unpaidSessions = createAsync(async () => {
     const familyId = selectedFamilyId();
-    console.log("[Frontend] selectedFamilyId:", familyId);
     if (!familyId) {
-      console.log("[Frontend] No familyId, returning empty array");
       return [];
     }
-    console.log("[Frontend] Calling getUnpaidSessions...");
-    const result = await getUnpaidSessions(familyId);
-    console.log("[Frontend] getUnpaidSessions returned:", result);
-    console.log("[Frontend] result type:", typeof result);
-    console.log("[Frontend] result is array:", Array.isArray(result));
-    console.log("[Frontend] result length:", result?.length);
-    console.log("[Frontend] result stringified:", JSON.stringify(result));
-    return result;
+    return getUnpaidSessions(familyId);
   });
-  
-  // Debug: Log when unpaidSessions changes
-  createEffect(() => {
-    const sessions = unpaidSessions();
-    console.log("[Frontend] unpaidSessions() reactive value:", sessions);
-    console.log("[Frontend] unpaidSessions() length:", sessions?.length);
-    console.log("[Frontend] unpaidSessions() type:", typeof sessions);
-    console.log("[Frontend] unpaidSessions() is array:", Array.isArray(sessions));
-    if (sessions && sessions.length > 0) {
-      console.log("[Frontend] First session:", sessions[0]);
+
+  onMount(() => {
+    const familyId = searchParams.familyId;
+    if (typeof familyId === "string" && familyId) {
+      setSelectedFamilyId(familyId);
+    }
+    if (searchParams.record === "1" || searchParams.record === "true") {
+      setShowRecordPayment(true);
     }
   });
   const [selectedSessionIds, setSelectedSessionIds] = createSignal<string[]>([]);
@@ -213,136 +206,40 @@ export default function PaymentsPage() {
   });
 
   return (
-    <main
-      style={{
-        "max-width": "1200px",
-        margin: "0 auto",
-        padding: "1.5rem",
-      }}
-    >
-      <header style={{ "margin-bottom": "0.75rem" }}>
-        <div
-          style={{
-            display: "flex",
-            "justify-content": "space-between",
-            "align-items": "center",
-            "flex-wrap": "wrap",
-            gap: "0.75rem",
-          }}
-          class="flex-row-mobile"
-        >
-          <div style={{ display: "flex", "align-items": "center", gap: "0.75rem", "flex-wrap": "wrap" }}>
-            <A
-              href="/"
-              style={{
-                color: "#4299e1",
-                "text-decoration": "none",
-                display: "inline-block",
-              }}
-            >
-              ← Back to Dashboard
-            </A>
-            <h1 style={{ color: "#2d3748", "font-size": "1.5rem", margin: 0, "font-weight": "700" }}>
-              Payments
-            </h1>
-          </div>
-          <button
+    <PageContent>
+      <PageHeader
+        title="Payments"
+        actions={
+          <wa-button
+            variant="success"
+            appearance="filled"
             onClick={() => setShowRecordPayment(!showRecordPayment())}
-            style={{
-              padding: "0.5rem 1rem",
-              "background-color": "#48bb78",
-              color: "white",
-              border: "none",
-              "border-radius": "4px",
-              "font-weight": "600",
-              "font-size": "0.875rem",
-              cursor: "pointer",
-            }}
           >
             {showRecordPayment() ? "Hide Record Payment" : "+ Record Payment"}
-          </button>
-        </div>
-      </header>
+          </wa-button>
+        }
+      />
 
-      {/* Payments Table */}
-      <div
-        style={{
-          "background-color": "#fff",
-          padding: "0.75rem",
-          "border-radius": "8px",
-          border: "1px solid #e2e8f0",
-          "margin-bottom": "1rem",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            "justify-content": "space-between",
-            "align-items": "center",
-            "margin-bottom": "0.5rem",
-            "flex-wrap": "wrap",
-            gap: "0.75rem",
-          }}
-        >
-          <div style={{ display: "flex", gap: "1rem", "align-items": "center", "flex-wrap": "wrap" }}>
-            <div>
-              <label
-                for="yearFilter"
-                style={{
-                  display: "block",
-                  "margin-bottom": "0.25rem",
-                  "font-size": "0.875rem",
-                  color: "#4a5568",
-                  "font-weight": "500",
-                }}
-              >
-                Year
-              </label>
-              <select
-                id="yearFilter"
-                value={selectedYear()}
-                onChange={(e) => setSelectedYear(parseInt(e.currentTarget.value))}
-                style={{
-                  padding: "0.5rem",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  "font-size": "0.875rem",
-                }}
-              >
-                {Array.from({ length: 5 }, (_, i) => currentYear - i).map((year) => (
-                  <option value={year}>{year}</option>
-                ))}
-              </select>
-            </div>
-            <div style={{ flex: "1", "min-width": "200px" }}>
-              <label
-                for="searchPayments"
-                style={{
-                  display: "block",
-                  "margin-bottom": "0.25rem",
-                  "font-size": "0.875rem",
-                  color: "#4a5568",
-                  "font-weight": "500",
-                }}
-              >
-                Search
-              </label>
-              <input
-                id="searchPayments"
-                type="text"
-                placeholder="Search by family, invoice, method..."
-                value={searchTerm()}
-                onInput={(e) => setSearchTerm(e.currentTarget.value)}
-                style={{
-                  width: "100%",
-                  padding: "0.5rem",
-                  border: "1px solid #cbd5e0",
-                  "border-radius": "4px",
-                  "font-size": "0.875rem",
-                }}
-              />
-            </div>
-          </div>
+      <wa-card>
+        <div class="wa-grid wa-gap-m" style={{ "--min-column-size": "200px", "margin-bottom": "var(--wa-space-m)" }}>
+          <wa-select
+            label="Year"
+            value={String(selectedYear())}
+            onChange={(e) =>
+              setSelectedYear(parseInt((e.currentTarget as HTMLSelectElement & { value: string }).value))
+            }
+          >
+            {Array.from({ length: 5 }, (_, i) => currentYear - i).map((year) => (
+              <wa-option value={String(year)}>{year}</wa-option>
+            ))}
+          </wa-select>
+          <wa-input
+            label="Search"
+            type="search"
+            placeholder="Search by family, invoice, method..."
+            value={searchTerm()}
+            onInput={(e) => setSearchTerm((e.currentTarget as HTMLInputElement & { value: string }).value)}
+          />
         </div>
 
         <Show
@@ -439,13 +336,6 @@ export default function PaymentsPage() {
                 <tbody>
                   <For each={filteredAndSortedPayments()}>
                     {(payment) => {
-                      const statusColors = {
-                        PAID: { bg: "#c6f6d5", color: "#276749" },
-                        PENDING: { bg: "#feebc8", color: "#7c2d12" },
-                        OVERDUE: { bg: "#fed7d7", color: "#c53030" },
-                        CANCELLED: { bg: "#e2e8f0", color: "#4a5568" },
-                      }[payment.status] || { bg: "#e2e8f0", color: "#4a5568" };
-
                       return (
                         <tr
                           style={{
@@ -475,18 +365,7 @@ export default function PaymentsPage() {
                             {payment.method || "-"}
                           </td>
                           <td style={{ padding: "0.75rem" }}>
-                            <span
-                              style={{
-                                padding: "0.25rem 0.75rem",
-                                "border-radius": "12px",
-                                "background-color": statusColors.bg,
-                                color: statusColors.color,
-                                "font-size": "0.875rem",
-                                "font-weight": "600",
-                              }}
-                            >
-                              {payment.status}
-                            </span>
+                            <PaymentStatusBadge status={payment.status} />
                           </td>
                         </tr>
                       );
@@ -526,72 +405,14 @@ export default function PaymentsPage() {
             </div>
           </Show>
         </Show>
-      </div>
+      </wa-card>
 
-      {/* Record Payment Modal */}
-      <Show when={showRecordPayment()}>
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            "background-color": "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            "align-items": "center",
-            "justify-content": "center",
-            "z-index": 1000,
-            padding: "1.5rem",
-          }}
-          class="modal-overlay"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowRecordPayment(false);
-            }
-          }}
-        >
-          <div
-            style={{
-              "background-color": "#fff",
-              "border-radius": "8px",
-              padding: "1.5rem",
-              "max-width": "900px",
-              width: "100%",
-              "max-height": "90vh",
-              overflow: "auto",
-              "box-shadow": "0 10px 25px rgba(0, 0, 0, 0.2)",
-            }}
-            class="modal-content"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              style={{
-                display: "flex",
-                "justify-content": "space-between",
-                "align-items": "center",
-                "margin-bottom": "1rem",
-              }}
-            >
-              <h2 style={{ color: "#2d3748", "font-size": "1.25rem", margin: 0 }}>
-                Record Payment
-              </h2>
-              <button
-                onClick={() => setShowRecordPayment(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  "font-size": "1.5rem",
-                  color: "#718096",
-                  cursor: "pointer",
-                  padding: "0.25rem 0.5rem",
-                  "line-height": 1,
-                }}
-              >
-                ×
-              </button>
-            </div>
-
+      <Modal
+        open={showRecordPayment()}
+        title="Record Payment"
+        maxWidth="900px"
+        onClose={() => setShowRecordPayment(false)}
+      >
             <form
               action={createPayment}
               method="post"
@@ -599,38 +420,20 @@ export default function PaymentsPage() {
         <input type="hidden" name="familyId" value={selectedFamilyId()} />
         <input type="hidden" name="paidDate" value={new Date().toISOString()} />
 
-        {/* Family Selection */}
-        <div style={{ "margin-bottom": "1rem" }}>
-          <label
-            for="familySelect"
-            style={{
-              display: "block",
-              "margin-bottom": "0.5rem",
-              "font-weight": "600",
-              color: "#2d3748",
-            }}
-          >
-            Select Family *
-          </label>
-          <select
-            id="familySelect"
-            required
-            value={selectedFamilyId()}
-            onChange={(e) => setSelectedFamilyId(e.currentTarget.value)}
-            style={{
-              width: "100%",
-              padding: "0.75rem",
-              border: "1px solid #cbd5e0",
-              "border-radius": "4px",
-              "font-size": "1rem",
-            }}
-          >
-            <option value="">Select a family...</option>
-            <For each={families()}>
-              {(family) => <option value={family.id}>{family.familyName}</option>}
-            </For>
-          </select>
-        </div>
+        <wa-select
+          label="Select Family *"
+          name="familySelect"
+          required
+          value={selectedFamilyId()}
+          onChange={(e) =>
+            setSelectedFamilyId((e.currentTarget as HTMLSelectElement & { value: string }).value)
+          }
+        >
+          <wa-option value="">Select a family...</wa-option>
+          <For each={families()}>
+            {(family) => <wa-option value={family.id}>{family.familyName}</wa-option>}
+          </For>
+        </wa-select>
 
         {/* Unpaid Sessions */}
         <Show when={selectedFamilyId()}>
@@ -669,23 +472,11 @@ export default function PaymentsPage() {
                   Select Unpaid Sessions *
                 </label>
                 <Show when={unpaidSessions() && unpaidSessions()!.length > 0}>
-                  <button
-                    type="button"
-                    onClick={toggleAllSessions}
-                    style={{
-                      padding: "0.5rem 1rem",
-                      "background-color": "#edf2f7",
-                      color: "#2d3748",
-                      border: "1px solid #cbd5e0",
-                      "border-radius": "4px",
-                      cursor: "pointer",
-                      "font-size": "0.875rem",
-                    }}
-                  >
+                  <wa-button type="button" appearance="outlined" size="small" onClick={toggleAllSessions}>
                     {selectedSessionIds().length === unpaidSessions()!.length
                       ? "Deselect All"
                       : "Select All"}
-                  </button>
+                  </wa-button>
                 </Show>
               </div>
 
@@ -854,102 +645,41 @@ export default function PaymentsPage() {
             </h3>
 
             <div style={{ display: "grid", gap: "0.75rem", "margin-bottom": "1rem" }}>
-              <div>
-                <label
-                  for="tips"
-                  style={{
-                    display: "block",
-                    "margin-bottom": "0.5rem",
-                    "font-weight": "500",
-                    color: "#4a5568",
-                  }}
-                >
-                  Tips / Bonuses ($)
-                </label>
-                <input
-                  id="tips"
-                  name="tips"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={tips()}
-                  onInput={(e) => setTips(e.currentTarget.value)}
-                  placeholder="0.00"
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "1px solid #cbd5e0",
-                    "border-radius": "4px",
-                    "font-size": "1rem",
-                  }}
-                />
-              </div>
+              <wa-input
+                label="Tips / Bonuses ($)"
+                name="tips"
+                type="number"
+                step="0.01"
+                min="0"
+                value={tips()}
+                onInput={(e) => setTips((e.currentTarget as HTMLInputElement & { value: string }).value)}
+                placeholder="0.00"
+              />
 
-              <div>
-                <label
-                  for="method"
-                  style={{
-                    display: "block",
-                    "margin-bottom": "0.5rem",
-                    "font-weight": "500",
-                    color: "#4a5568",
-                  }}
-                >
-                  Payment Method
-                </label>
-                <select
-                  id="method"
-                  name="method"
-                  value={method()}
-                  onChange={(e) => setMethod(e.currentTarget.value)}
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "1px solid #cbd5e0",
-                    "border-radius": "4px",
-                    "font-size": "1rem",
-                  }}
-                >
-                  <option value="">Select method...</option>
-                  <option value="cash">Cash</option>
-                  <option value="check">Check</option>
-                  <option value="venmo">Venmo</option>
-                  <option value="zelle">Zelle</option>
-                  <option value="paypal">PayPal</option>
-                  <option value="bank_transfer">Bank Transfer</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
+              <wa-select
+                label="Payment Method"
+                name="method"
+                value={method()}
+                onChange={(e) => setMethod((e.currentTarget as HTMLSelectElement & { value: string }).value)}
+              >
+                <wa-option value="">Select method...</wa-option>
+                <wa-option value="cash">Cash</wa-option>
+                <wa-option value="check">Check</wa-option>
+                <wa-option value="venmo">Venmo</wa-option>
+                <wa-option value="zelle">Zelle</wa-option>
+                <wa-option value="paypal">PayPal</wa-option>
+                <wa-option value="bank_transfer">Bank Transfer</wa-option>
+                <wa-option value="other">Other</wa-option>
+              </wa-select>
 
-              <div>
-                <label
-                  for="notes"
-                  style={{
-                    display: "block",
-                    "margin-bottom": "0.5rem",
-                    "font-weight": "500",
-                    color: "#4a5568",
-                  }}
-                >
-                  Notes (Optional)
-                </label>
-                <textarea
-                  id="notes"
-                  name="notes"
-                  value={notes()}
-                  onInput={(e) => setNotes(e.currentTarget.value)}
-                  rows={3}
-                  placeholder="Additional notes about this payment..."
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "1px solid #cbd5e0",
-                    "border-radius": "4px",
-                    "font-size": "1rem",
-                    "font-family": "inherit",
-                  }}
-                />
-              </div>
+              <wa-textarea
+                label="Notes (Optional)"
+                name="notes"
+                value={notes()}
+                onInput={(e) => setNotes((e.currentTarget as HTMLTextAreaElement & { value: string }).value)}
+                rows={3}
+                placeholder="Additional notes about this payment..."
+              />
             </div>
 
             <div
@@ -993,45 +723,22 @@ export default function PaymentsPage() {
           </div>
         </Show>
 
-              {/* Submit Button */}
-              <div style={{ display: "flex", gap: "1rem", "justify-content": "flex-end" }}>
-                <button
-                  type="button"
-                  onClick={() => setShowRecordPayment(false)}
-                  style={{
-                    padding: "0.75rem 1.5rem",
-                    "background-color": "#edf2f7",
-                    color: "#2d3748",
-                    border: "1px solid #cbd5e0",
-                    "border-radius": "4px",
-                    cursor: "pointer",
-                    "font-weight": "600",
-                  }}
-                >
+              <div class="wa-cluster wa-gap-s" style={{ "justify-content": "flex-end" }}>
+                <wa-button type="button" appearance="outlined" onClick={() => setShowRecordPayment(false)}>
                   Cancel
-                </button>
-                <button
+                </wa-button>
+                <wa-button
                   type="submit"
-                  disabled={submission.pending || selectedSessionIds().length === 0}
-                  style={{
-                    padding: "0.75rem 1.5rem",
-                    "background-color": "#48bb78",
-                    color: "white",
-                    border: "none",
-                    "border-radius": "4px",
-                    cursor: submission.pending || selectedSessionIds().length === 0 ? "not-allowed" : "pointer",
-                    opacity: submission.pending || selectedSessionIds().length === 0 ? "0.6" : "1",
-                    "font-weight": "600",
-                  }}
+                  variant="success"
+                  appearance="filled"
+                  disabled={submission.pending || selectedSessionIds().length === 0 || undefined}
                 >
                   {submission.pending ? "Recording Payment..." : "Record Payment"}
-                </button>
+                </wa-button>
               </div>
             </form>
-          </div>
-        </div>
-      </Show>
-    </main>
+      </Modal>
+    </PageContent>
   );
 }
 

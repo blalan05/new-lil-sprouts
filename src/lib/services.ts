@@ -1,9 +1,11 @@
 import { query, action } from "@solidjs/router";
 import { db } from "./db";
+import { assertOwnerAction, requireUser } from "./auth";
 
 // Get all active services
 export const getServices = query(async () => {
   "use server";
+  await requireUser();
   const services = await db.service.findMany({
     where: {
       isActive: true,
@@ -18,6 +20,7 @@ export const getServices = query(async () => {
 // Get all services (including inactive) for management
 export const getAllServices = query(async () => {
   "use server";
+  await requireUser();
   const services = await db.service.findMany({
     orderBy: {
       name: "asc",
@@ -29,6 +32,7 @@ export const getAllServices = query(async () => {
 // Get a single service by ID
 export const getService = query(async (id: string) => {
   "use server";
+  await requireUser();
   const service = await db.service.findUnique({
     where: { id },
   });
@@ -39,6 +43,7 @@ export const getService = query(async (id: string) => {
 // Get service by code (for backward compatibility)
 export const getServiceByCode = query(async (code: string) => {
   "use server";
+  await requireUser();
   const service = await db.service.findUnique({
     where: { code },
   });
@@ -49,6 +54,9 @@ export const getServiceByCode = query(async (code: string) => {
 export const createService = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const name = String(formData.get("name"));
     const code = String(formData.get("code"));
     const description = String(formData.get("description") || "");
@@ -91,6 +99,9 @@ export const createService = action(async (formData: FormData) => {
 export const updateService = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const id = String(formData.get("id"));
     const name = String(formData.get("name"));
     const description = String(formData.get("description") || "");

@@ -104,7 +104,7 @@ model User {
   id        String   @id @default(uuid())
   email     String   @unique
   username  String   @unique
-  password  String // In production, should be hashed
+  password  String // Stored hashed (scrypt)
   firstName String?
   lastName  String?
   phone     String?

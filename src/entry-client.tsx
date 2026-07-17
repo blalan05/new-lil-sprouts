@@ -1,6 +1,7 @@
 // @refresh reload
 import { mount, StartClient } from "@solidjs/start/client";
 import { registerSW } from "virtual:pwa-register";
+import "~/lib/register-webawesome";
 
 if (typeof window !== "undefined") {
   // Only register in production builds (avoids noisy 404s in dev)

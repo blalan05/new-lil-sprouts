@@ -2,9 +2,25 @@ import { action, query, reload } from "@solidjs/router";
 import { db } from "./db";
 import type { ReportType, ReportSeverity } from "../generated/prisma-client/client.js";
 import { serverRedirect } from "./server-redirect";
+import {
+  assertOwnerAction,
+  familyIdWhere,
+  requireFamilyAccess,
+  requireUser,
+} from "./auth";
+
+async function requireSessionAccess(careSessionId: string) {
+  const session = await db.careSession.findUnique({
+    where: { id: careSessionId },
+    select: { familyId: true },
+  });
+  if (!session) throw new Error("Care session not found");
+  await requireFamilyAccess(session.familyId);
+}
 
 export const getSessionReports = query(async (careSessionId: string) => {
   "use server";
+  await requireSessionAccess(careSessionId);
   const reports = await db.sessionReport.findMany({
     where: { careSessionId },
     include: {
@@ -32,6 +48,13 @@ export const getSessionReports = query(async (careSessionId: string) => {
 
 export const getChildReports = query(async (childId: string, limit?: number) => {
   "use server";
+  const child = await db.child.findUnique({
+    where: { id: childId },
+    select: { familyId: true },
+  });
+  if (!child) throw new Error("Child not found");
+  await requireFamilyAccess(child.familyId);
+
   const reports = await db.sessionReport.findMany({
     where: { childId },
     include: {
@@ -60,6 +83,7 @@ export const getChildReports = query(async (childId: string, limit?: number) => 
 
 export const getFamilyReports = query(async (familyId: string, limit?: number) => {
   "use server";
+  await requireFamilyAccess(familyId);
   const reports = await db.sessionReport.findMany({
     where: {
       careSession: {
@@ -119,12 +143,16 @@ export const getSessionReport = query(async (id: string) => {
     },
   });
   if (!report) throw new Error("Report not found");
+  await requireFamilyAccess(report.careSession.familyId);
   return report;
 }, "session-report");
 
 export const createSessionReport = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const careSessionId = String(formData.get("careSessionId"));
     const childId = String(formData.get("childId"));
     const type = String(formData.get("type")) as ReportType;
@@ -134,7 +162,7 @@ export const createSessionReport = action(async (formData: FormData) => {
     const timestamp = String(formData.get("timestamp"));
     const actionTaken = String(formData.get("actionTaken") || "");
     const followUpNeeded = formData.get("followUpNeeded") === "true";
-    const reportedById = String(formData.get("reportedById") || "");
+    const reportedById = String(formData.get("reportedById") || owner.id);
 
     if (!title) {
       return new Error("Title is required");
@@ -152,7 +180,7 @@ export const createSessionReport = action(async (formData: FormData) => {
       return new Error("Child is required");
     }
 
-    const report = await db.sessionReport.create({
+    await db.sessionReport.create({
       data: {
         careSessionId,
         childId,
@@ -167,7 +195,6 @@ export const createSessionReport = action(async (formData: FormData) => {
       },
     });
 
-    // Get the family ID for redirect
     const session = await db.careSession.findUnique({
       where: { id: careSessionId },
       select: { familyId: true },
@@ -183,6 +210,9 @@ export const createSessionReport = action(async (formData: FormData) => {
 export const updateSessionReport = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const id = String(formData.get("id"));
     const type = String(formData.get("type")) as ReportType;
     const severity = String(formData.get("severity")) as ReportSeverity;
@@ -223,6 +253,9 @@ export const updateSessionReport = action(async (formData: FormData) => {
 export const deleteSessionReport = action(async (id: string) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     await db.sessionReport.delete({
       where: { id },
     });
@@ -233,12 +266,20 @@ export const deleteSessionReport = action(async (id: string) => {
   }
 });
 
-// Get reports that need follow-up
 export const getFollowUpReports = query(async () => {
   "use server";
+  const user = await requireUser();
+  const scope = familyIdWhere(user);
   const reports = await db.sessionReport.findMany({
     where: {
       followUpNeeded: true,
+      ...(scope.familyId
+        ? {
+            careSession: {
+              familyId: scope.familyId,
+            },
+          }
+        : {}),
     },
     include: {
       child: {
@@ -273,10 +314,18 @@ export const getFollowUpReports = query(async () => {
   return reports;
 }, "follow-up-reports");
 
-// Get recent reports across all families
 export const getRecentReports = query(async (limit: number = 10) => {
   "use server";
+  const user = await requireUser();
+  const scope = familyIdWhere(user);
   const reports = await db.sessionReport.findMany({
+    where: scope.familyId
+      ? {
+          careSession: {
+            familyId: scope.familyId,
+          },
+        }
+      : {},
     include: {
       child: {
         select: {

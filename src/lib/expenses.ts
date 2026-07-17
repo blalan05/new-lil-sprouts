@@ -1,9 +1,12 @@
 import { action, query, reload } from "@solidjs/router";
 import { db } from "./db";
+import { parseFormDate } from "./datetime";
+import { assertOwnerAction, requireOwner } from "./auth";
 
 // Get all expenses for a session
 export const getSessionExpenses = query(async (sessionId: string) => {
   "use server";
+  await requireOwner();
   const expenses = await db.sessionExpense.findMany({
     where: {
       sessionId,
@@ -19,6 +22,9 @@ export const getSessionExpenses = query(async (sessionId: string) => {
 export const createExpense = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const sessionId = String(formData.get("sessionId"));
     const description = String(formData.get("description"));
     const amount = String(formData.get("amount"));
@@ -50,6 +56,9 @@ export const createExpense = action(async (formData: FormData) => {
 export const updateExpense = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const id = String(formData.get("id"));
     const description = String(formData.get("description"));
     const amount = String(formData.get("amount"));
@@ -81,6 +90,9 @@ export const updateExpense = action(async (formData: FormData) => {
 export const deleteExpense = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const id = String(formData.get("id"));
 
     await db.sessionExpense.delete({
@@ -97,6 +109,7 @@ export const deleteExpense = action(async (formData: FormData) => {
 // Get total expenses for a session
 export const getSessionExpenseTotal = query(async (sessionId: string) => {
   "use server";
+  await requireOwner();
   const expenses = await db.sessionExpense.findMany({
     where: {
       sessionId,
@@ -112,6 +125,7 @@ export const getSessionExpenseTotal = query(async (sessionId: string) => {
 // Get all standalone expenses (optionally filtered by family)
 export const getExpenses = query(async (familyId?: string) => {
   "use server";
+  await requireOwner();
   const expenses = await db.expense.findMany({
     where: familyId ? { familyId } : {},
     include: {
@@ -132,6 +146,7 @@ export const getExpenses = query(async (familyId?: string) => {
 // Get expenses for a specific date range (for reports)
 export const getExpensesByDateRange = query(async (startDate: Date, endDate: Date, familyId?: string) => {
   "use server";
+  await requireOwner();
   const expenses = await db.expense.findMany({
     where: {
       expenseDate: {
@@ -159,6 +174,9 @@ export const getExpensesByDateRange = query(async (startDate: Date, endDate: Dat
 export const createStandaloneExpense = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const description = String(formData.get("description"));
     const amount = String(formData.get("amount"));
     const category = String(formData.get("category") || "");
@@ -192,6 +210,9 @@ export const createStandaloneExpense = action(async (formData: FormData) => {
 export const updateStandaloneExpense = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const id = String(formData.get("id"));
     const description = String(formData.get("description"));
     const amount = String(formData.get("amount"));
@@ -227,6 +248,9 @@ export const updateStandaloneExpense = action(async (formData: FormData) => {
 export const deleteStandaloneExpense = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const id = String(formData.get("id"));
     if (!id) {
       return new Error("Expense ID is required");

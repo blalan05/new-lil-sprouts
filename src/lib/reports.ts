@@ -1,6 +1,7 @@
 import { query } from "@solidjs/router";
 import { db } from "./db";
 import { formatParentNames } from "./families";
+import { requireOwner } from "./auth";
 
 export interface YearEndFamilyReport {
   familyId: string;
@@ -53,12 +54,14 @@ export interface YearEndFamilyReport {
 // Get year-end report for a specific family
 export const getYearEndFamilyReport = query(async (familyId: string, year: number) => {
   "use server";
+  await requireOwner();
   return generateYearEndReport(familyId, year);
 });
 
 // Get all families for year-end reports
 export const getAllFamiliesForReports = query(async () => {
   "use server";
+  await requireOwner();
   const families = await db.family.findMany({
     select: {
       id: true,
@@ -272,6 +275,7 @@ async function generateYearEndReport(familyId: string, year: number): Promise<Ye
 // Get year-end report for all families
 export const getAllYearEndReports = query(async (year: number) => {
   "use server";
+  await requireOwner();
   const families = await db.family.findMany({
     select: {
       id: true,
@@ -314,6 +318,7 @@ export interface IncomeReport {
 // Get income report for a specific period (year or year-month)
 export const getIncomeReport = query(async (year: number, month?: number) => {
   "use server";
+  await requireOwner();
   
   let startDate: Date;
   let endDate: Date;

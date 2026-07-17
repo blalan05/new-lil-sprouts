@@ -1,5 +1,6 @@
 import { createAsync, type RouteDefinition, A } from "@solidjs/router";
 import { createSignal, Show, For } from "solid-js";
+import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { getUser } from "~/lib";
 import { getAllFamiliesForReports, getYearEndFamilyReport, getAllYearEndReports, type YearEndFamilyReport } from "~/lib/reports";
 import { formatParentNames } from "~/lib/families";
@@ -343,35 +344,14 @@ export default function YearEndReports() {
   };
 
   return (
-    <main
-      style={{
-        "max-width": "1600px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
-      <div style={{ "margin-bottom": "2rem" }}>
-        <A
-          href="/reports"
-          style={{
-            display: "inline-flex",
-            "align-items": "center",
-            gap: "0.5rem",
-            color: "#4299e1",
-            "text-decoration": "none",
-            "margin-bottom": "1rem",
-            "font-weight": "600",
-          }}
-        >
-          ← Back to Reports
-        </A>
-        <h1 style={{ "font-size": "2rem", "font-weight": "700", color: "#2d3748", "margin-bottom": "0.5rem" }}>
-          Year-End Receipt Report
-        </h1>
-        <p style={{ color: "#718096", "font-size": "1rem" }}>
-          Generate detailed year-end reports for families with session details, hours, and payment information.
-        </p>
-      </div>
+    <PageContent>
+      <wa-button href="/reports" appearance="plain" size="small">
+        ← Back to Reports
+      </wa-button>
+      <PageHeader
+        title="Year-End Receipt Report"
+        description="Generate detailed year-end reports for families with session details, hours, and payment information."
+      />
 
       {/* Controls */}
       <div
@@ -896,7 +876,7 @@ export default function YearEndReports() {
           <div style={{ color: "#718096" }}>Choose a family from the dropdown above to generate their report for {selectedYear()}.</div>
         </div>
       </Show>
-    </main>
+    </PageContent>
   );
 }
 

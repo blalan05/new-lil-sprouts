@@ -1,11 +1,12 @@
 {
-  "name": "example-with-prisma",
+  "name": "lil-sprouts",
   "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "vinxi dev",
     "build": "prisma generate && vinxi build",
     "start": "vinxi start",
+    "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "node scripts/migrate.js deploy",
@@ -16,6 +17,7 @@
     "@types/pg": "^8.11.10",
     "prisma": "^7.0.0",
     "sharp": "^0.34.5",
+    "typescript": "^5.9.2",
     "vite-plugin-pwa": "^1.2.0"
   },
   "dependencies": {
@@ -23,6 +25,7 @@
     "@prisma/client": "^7.3.0",
     "@solidjs/router": "^0.15.4",
     "@solidjs/start": "^1.2.1",
+    "@web.awesome.me/webawesome-pro": "3.10.0",
     "dotenv": "^16.6.1",
     "pg": "^8.17.2",
     "solid-js": "^1.9.11",

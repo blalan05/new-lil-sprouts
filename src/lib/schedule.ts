@@ -2,16 +2,25 @@ import { query, action, reload } from "@solidjs/router";
 import { db } from "./db";
 import { startOfDayUTC, endOfDayUTC } from "./datetime";
 import { serverRedirect } from "./server-redirect";
+import {
+  assertOwnerAction,
+  familyIdWhere,
+  requireFamilyAccess,
+  requireOwner,
+  requireUser,
+} from "./auth";
 
 // Get care sessions for a date range
 export const getCareSessionsForRange = query(async (startDate: Date, endDate: Date) => {
   "use server";
+  const user = await requireUser();
   const sessions = await db.careSession.findMany({
     where: {
       scheduledStart: {
         gte: startDate,
         lte: endDate,
       },
+      ...familyIdWhere(user),
     },
     include: {
       family: {
@@ -74,6 +83,7 @@ export const getCareSessionsForRange = query(async (startDate: Date, endDate: Da
 // Get sessions for a specific day
 export const getSessionsForDay = query(async (date: Date) => {
   "use server";
+  const user = await requireUser();
   const startOfDay = startOfDayUTC(date);
   const endOfDay = endOfDayUTC(date);
 
@@ -86,6 +96,7 @@ export const getSessionsForDay = query(async (date: Date) => {
       status: {
         not: "CANCELLED",
       },
+      ...familyIdWhere(user),
     },
     include: {
       family: {
@@ -119,6 +130,7 @@ export const getSessionsForDay = query(async (date: Date) => {
 // Get upcoming care sessions (next 7 days)
 export const getUpcomingSessions = query(async (limit: number = 10) => {
   "use server";
+  const user = await requireUser();
   const now = new Date();
   const futureDate = new Date();
   futureDate.setDate(futureDate.getDate() + 7);
@@ -132,6 +144,7 @@ export const getUpcomingSessions = query(async (limit: number = 10) => {
       status: {
         not: "CANCELLED",
       },
+      ...familyIdWhere(user),
     },
     include: {
       family: {
@@ -201,12 +214,14 @@ export const getCareSession = query(async (id: string) => {
     },
   });
   if (!session) throw new Error("Care session not found");
+  await requireFamilyAccess(session.familyId);
   return session;
 }, "care-session");
 
 // Get unavailabilities for a date range
 export const getUnavailabilitiesForRange = query(async (startDate: Date, endDate: Date) => {
   "use server";
+  await requireOwner();
   const unavailabilities = await db.unavailability.findMany({
     where: {
       OR: [
@@ -252,6 +267,9 @@ export const getUnavailabilitiesForRange = query(async (startDate: Date, endDate
 export const updateCareSession = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const sessionId = String(formData.get("sessionId"));
     const breakfastCount = parseInt(String(formData.get("breakfastCount") || "0"));
     const morningSnackCount = parseInt(String(formData.get("morningSnackCount") || "0"));
@@ -290,6 +308,9 @@ export const updateCareSession = action(async (formData: FormData) => {
 export const editCareSessionFull = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const sessionId = String(formData.get("sessionId"));
     const scheduledStart = String(formData.get("scheduledStart"));
     const scheduledEnd = String(formData.get("scheduledEnd"));
@@ -350,6 +371,9 @@ export const editCareSessionFull = action(async (formData: FormData) => {
 export const deleteCareSession = action(async (formData: FormData) => {
   "use server";
   try {
+    const owner = await assertOwnerAction();
+    if (owner instanceof Error) return owner;
+
     const id = String(formData.get("id"));
 
     if (!id) {

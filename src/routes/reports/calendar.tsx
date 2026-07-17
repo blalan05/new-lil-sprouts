@@ -1,5 +1,6 @@
-import { type RouteDefinition, A, createAsync } from "@solidjs/router";
+import { type RouteDefinition, createAsync } from "@solidjs/router";
 import { Show, For, createSignal, createMemo, createEffect } from "solid-js";
+import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { getCareSessionsForRange } from "~/lib/schedule";
 import { formatTimeLocal, ensureDate, isSameDay } from "~/lib/datetime";
 
@@ -124,33 +125,21 @@ export default function CalendarReport() {
   });
 
   return (
-    <div style={{ "max-width": "1200px", margin: "0 auto", padding: "1.5rem" }}>
-      {/* Print Controls - Hidden when printing */}
-      <div style={{ "margin-bottom": "1rem" }} class="no-print">
-        <A
-          href="/reports"
-          style={{
-            color: "#4299e1",
-            "text-decoration": "none",
-            "margin-bottom": "0.5rem",
-            display: "inline-block",
-          }}
-        >
+    <PageContent>
+      <div class="no-print wa-stack wa-gap-m">
+        <wa-button href="/reports" appearance="plain" size="small">
           ← Back to Reports
-        </A>
-        <div
-          style={{
-            display: "flex",
-            "justify-content": "space-between",
-            "align-items": "center",
-            "flex-wrap": "wrap",
-            gap: "1rem",
-            "margin-top": "0.5rem",
-          }}
-        >
-          <div
-            style={{ display: "flex", gap: "1rem", "align-items": "center", "flex-wrap": "wrap" }}
-          >
+        </wa-button>
+        <PageHeader
+          title="Care Sessions Calendar"
+          description={monthName()}
+          actions={
+            <wa-button variant="brand" appearance="filled" onClick={handlePrint}>
+              Print Calendar
+            </wa-button>
+          }
+        />
+        <div class="wa-cluster wa-gap-m" style={{ "flex-wrap": "wrap" }}>
             <div>
               <label
                 style={{
@@ -208,22 +197,6 @@ export default function CalendarReport() {
                 })}
               </select>
             </div>
-          </div>
-          <button
-            onClick={handlePrint}
-            style={{
-              padding: "0.5rem 1rem",
-              "background-color": "#4299e1",
-              color: "white",
-              border: "none",
-              "border-radius": "4px",
-              cursor: "pointer",
-              "font-weight": "600",
-              "font-size": "0.875rem",
-            }}
-          >
-            🖨️ Print Calendar
-          </button>
         </div>
       </div>
 
@@ -592,6 +565,6 @@ export default function CalendarReport() {
           }
         `}
       </style>
-    </div>
+    </PageContent>
   );
 }

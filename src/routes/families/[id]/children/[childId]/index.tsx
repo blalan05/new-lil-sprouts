@@ -1,5 +1,7 @@
-import { createAsync, type RouteDefinition, A, useParams } from "@solidjs/router";
+import { createAsync, type RouteDefinition, useParams } from "@solidjs/router";
 import { Show, For } from "solid-js";
+import PageContent, { PageHeader } from "~/components/wa/PageContent";
+import { SessionStatusBadge } from "~/components/wa/StatusBadge";
 import { getChild } from "~/lib/children";
 
 export const route = {
@@ -43,319 +45,141 @@ export default function ChildDetailPage() {
     return age;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "SCHEDULED":
-        return { bg: "#bee3f8", color: "#2c5282" };
-      case "IN_PROGRESS":
-        return { bg: "#feebc8", color: "#7c2d12" };
-      case "COMPLETED":
-        return { bg: "#c6f6d5", color: "#276749" };
-      case "CANCELLED":
-        return { bg: "#fed7d7", color: "#c53030" };
-      default:
-        return { bg: "#e2e8f0", color: "#2d3748" };
-    }
-  };
-
   return (
-    <main
-      style={{
-        "max-width": "1200px",
-        margin: "0 auto",
-        padding: "2rem",
-      }}
-    >
+    <PageContent>
       <Show
         when={child()}
         fallback={
-          <div style={{ "text-align": "center", padding: "3rem" }}>Loading child details...</div>
+          <div style={{ "text-align": "center", padding: "var(--wa-space-2xl)" }} class="wa-color-text-quiet">
+            Loading child details...
+          </div>
         }
       >
-        <header style={{ "margin-bottom": "2rem" }}>
-          <A
-            href={`/families/${params.id}`}
-            style={{
-              color: "#4299e1",
-              "text-decoration": "none",
-              "margin-bottom": "0.5rem",
-              display: "inline-block",
-            }}
-          >
-            ← Back to Family
-          </A>
-          <div
-            style={{
-              display: "flex",
-              "justify-content": "space-between",
-              "align-items": "center",
-            }}
-          >
-            <h1 style={{ color: "#2d3748", "font-size": "2rem" }}>
-              {child()?.firstName} {child()?.lastName}
-            </h1>
-            <A
-              href={`/families/${params.id}/children/${params.childId}/edit`}
-              style={{
-                padding: "0.5rem 1.5rem",
-                "background-color": "#4299e1",
-                color: "white",
-                border: "none",
-                "border-radius": "4px",
-                "text-decoration": "none",
-                "font-weight": "600",
-              }}
-            >
+        <wa-button href={`/families/${params.id}`} appearance="plain" size="small">
+          ← Back to Family
+        </wa-button>
+        <PageHeader
+          title={`${child()?.firstName} ${child()?.lastName}`}
+          actions={
+            <wa-button href={`/families/${params.id}/children/${params.childId}/edit`} variant="brand" appearance="filled">
               Edit Child
-            </A>
-          </div>
-        </header>
+            </wa-button>
+          }
+        />
 
-        {/* Basic Information */}
-        <div
-          style={{
-            "background-color": "#fff",
-            padding: "1.5rem",
-            "border-radius": "8px",
-            border: "1px solid #e2e8f0",
-            "margin-bottom": "2rem",
-          }}
-        >
-          <h2
-            style={{
-              "font-size": "1.25rem",
-              "margin-bottom": "1rem",
-              color: "#2d3748",
-            }}
-          >
-            Basic Information
-          </h2>
-          <div
-            style={{
-              display: "grid",
-              "grid-template-columns": "repeat(auto-fit, minmax(250px, 1fr))",
-              gap: "1rem",
-            }}
-          >
-            <div>
-              <strong style={{ color: "#4a5568" }}>Date of Birth:</strong>
-              <p style={{ margin: "0.25rem 0 0 0" }}>
-                {child()?.dateOfBirth && formatDate(child()!.dateOfBirth)}
-              </p>
-            </div>
-            <div>
-              <strong style={{ color: "#4a5568" }}>Age:</strong>
-              <p style={{ margin: "0.25rem 0 0 0" }}>
-                {child()?.dateOfBirth && calculateAge(child()!.dateOfBirth)} years old
-              </p>
-            </div>
-            <Show when={child()?.gender}>
+        <wa-card>
+          <div class="wa-stack wa-gap-m">
+            <h2 class="wa-heading-l">Basic Information</h2>
+            <div class="wa-grid wa-gap-m" style={{ "--min-column-size": "200px" }}>
               <div>
-                <strong style={{ color: "#4a5568" }}>Gender:</strong>
-                <p style={{ margin: "0.25rem 0 0 0" }}>
-                  {child()
-                    ?.gender?.replace(/_/g, " ")
-                    .toLowerCase()
-                    .replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                </p>
+                <strong class="wa-color-text-quiet">Date of Birth:</strong>
+                <p>{child()?.dateOfBirth && formatDate(child()!.dateOfBirth)}</p>
               </div>
-            </Show>
-          </div>
-        </div>
-
-        {/* School Information */}
-        <Show when={child()?.schoolName || child()?.schoolGrade || child()?.schoolTeacher}>
-          <div
-            style={{
-              "background-color": "#fff",
-              padding: "1.5rem",
-              "border-radius": "8px",
-              border: "1px solid #e2e8f0",
-              "margin-bottom": "2rem",
-            }}
-          >
-            <h2
-              style={{
-                "font-size": "1.25rem",
-                "margin-bottom": "1rem",
-                color: "#2d3748",
-              }}
-            >
-              School Information
-            </h2>
-            <div
-              style={{
-                display: "grid",
-                "grid-template-columns": "repeat(auto-fit, minmax(250px, 1fr))",
-                gap: "1rem",
-              }}
-            >
-              <Show when={child()?.schoolName}>
+              <div>
+                <strong class="wa-color-text-quiet">Age:</strong>
+                <p>{child()?.dateOfBirth && calculateAge(child()!.dateOfBirth)} years old</p>
+              </div>
+              <Show when={child()?.gender}>
                 <div>
-                  <strong style={{ color: "#4a5568" }}>School:</strong>
-                  <p style={{ margin: "0.25rem 0 0 0" }}>{child()?.schoolName}</p>
-                </div>
-              </Show>
-              <Show when={child()?.schoolGrade}>
-                <div>
-                  <strong style={{ color: "#4a5568" }}>Grade:</strong>
-                  <p style={{ margin: "0.25rem 0 0 0" }}>{child()?.schoolGrade}</p>
-                </div>
-              </Show>
-              <Show when={child()?.schoolTeacher}>
-                <div>
-                  <strong style={{ color: "#4a5568" }}>Teacher:</strong>
-                  <p style={{ margin: "0.25rem 0 0 0" }}>{child()?.schoolTeacher}</p>
+                  <strong class="wa-color-text-quiet">Gender:</strong>
+                  <p>
+                    {child()
+                      ?.gender?.replace(/_/g, " ")
+                      .toLowerCase()
+                      .replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                  </p>
                 </div>
               </Show>
             </div>
           </div>
+        </wa-card>
+
+        <Show when={child()?.schoolName || child()?.schoolGrade || child()?.schoolTeacher}>
+          <wa-card>
+            <div class="wa-stack wa-gap-m">
+              <h2 class="wa-heading-l">School Information</h2>
+              <div class="wa-grid wa-gap-m" style={{ "--min-column-size": "200px" }}>
+                <Show when={child()?.schoolName}>
+                  <div>
+                    <strong class="wa-color-text-quiet">School:</strong>
+                    <p>{child()?.schoolName}</p>
+                  </div>
+                </Show>
+                <Show when={child()?.schoolGrade}>
+                  <div>
+                    <strong class="wa-color-text-quiet">Grade:</strong>
+                    <p>{child()?.schoolGrade}</p>
+                  </div>
+                </Show>
+                <Show when={child()?.schoolTeacher}>
+                  <div>
+                    <strong class="wa-color-text-quiet">Teacher:</strong>
+                    <p>{child()?.schoolTeacher}</p>
+                  </div>
+                </Show>
+              </div>
+            </div>
+          </wa-card>
         </Show>
 
-        {/* Medical Information */}
         <Show when={child()?.allergies || child()?.medications || child()?.specialNeeds}>
-          <div
-            style={{
-              "background-color": "#fff5f5",
-              padding: "1.5rem",
-              "border-radius": "8px",
-              border: "1px solid #feb2b2",
-              "margin-bottom": "2rem",
-            }}
-          >
-            <h2
-              style={{
-                "font-size": "1.25rem",
-                "margin-bottom": "1rem",
-                color: "#c53030",
-              }}
-            >
-              ⚠️ Medical Information
-            </h2>
-            <div style={{ display: "grid", gap: "1rem" }}>
+          <wa-callout variant="danger">
+            <div class="wa-stack wa-gap-s">
+              <h2 class="wa-heading-m">Medical Information</h2>
               <Show when={child()?.allergies}>
                 <div>
-                  <strong style={{ color: "#742a2a" }}>Allergies:</strong>
-                  <p style={{ margin: "0.25rem 0 0 0", color: "#742a2a" }}>{child()?.allergies}</p>
+                  <strong>Allergies:</strong> {child()?.allergies}
                 </div>
               </Show>
               <Show when={child()?.medications}>
                 <div>
-                  <strong style={{ color: "#742a2a" }}>Medications:</strong>
-                  <p style={{ margin: "0.25rem 0 0 0", color: "#742a2a" }}>
-                    {child()?.medications}
-                  </p>
+                  <strong>Medications:</strong> {child()?.medications}
                 </div>
               </Show>
               <Show when={child()?.specialNeeds}>
                 <div>
-                  <strong style={{ color: "#742a2a" }}>Special Needs:</strong>
-                  <p style={{ margin: "0.25rem 0 0 0", color: "#742a2a" }}>
-                    {child()?.specialNeeds}
-                  </p>
+                  <strong>Special Needs:</strong> {child()?.specialNeeds}
                 </div>
               </Show>
             </div>
-          </div>
+          </wa-callout>
         </Show>
 
-        {/* Additional Notes */}
         <Show when={child()?.notes}>
-          <div
-            style={{
-              "background-color": "#fff",
-              padding: "1.5rem",
-              "border-radius": "8px",
-              border: "1px solid #e2e8f0",
-              "margin-bottom": "2rem",
-            }}
-          >
-            <h2
-              style={{
-                "font-size": "1.25rem",
-                "margin-bottom": "1rem",
-                color: "#2d3748",
-              }}
-            >
-              Additional Notes
-            </h2>
-            <p style={{ color: "#4a5568", margin: 0 }}>{child()?.notes}</p>
-          </div>
+          <wa-card>
+            <div class="wa-stack wa-gap-s">
+              <h2 class="wa-heading-l">Additional Notes</h2>
+              <p>{child()?.notes}</p>
+            </div>
+          </wa-card>
         </Show>
 
-        {/* Care Session History */}
-        <div
-          style={{
-            "background-color": "#fff",
-            padding: "1.5rem",
-            "border-radius": "8px",
-            border: "1px solid #e2e8f0",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              "justify-content": "space-between",
-              "align-items": "center",
-              "margin-bottom": "1rem",
-            }}
-          >
-            <h2 style={{ "font-size": "1.25rem", color: "#2d3748" }}>
-              Recent Care Sessions ({child()?.careSessions?.length || 0})
-            </h2>
-          </div>
-
-          <Show
-            when={child()?.careSessions?.length}
-            fallback={
-              <p style={{ color: "#718096", "text-align": "center", padding: "2rem" }}>
-                No care sessions recorded yet.
-              </p>
-            }
-          >
-            <div style={{ "overflow-x": "auto" }}>
-              <table style={{ width: "100%", "border-collapse": "collapse" }}>
-                <thead style={{ "background-color": "#f7fafc" }}>
-                  <tr>
-                    <th
-                      style={{
-                        padding: "0.75rem",
-                        "text-align": "left",
-                        "border-bottom": "1px solid #e2e8f0",
-                      }}
-                    >
-                      Date/Time
-                    </th>
-                    <th
-                      style={{
-                        padding: "0.75rem",
-                        "text-align": "left",
-                        "border-bottom": "1px solid #e2e8f0",
-                      }}
-                    >
-                      Duration
-                    </th>
-                    <th
-                      style={{
-                        padding: "0.75rem",
-                        "text-align": "left",
-                        "border-bottom": "1px solid #e2e8f0",
-                      }}
-                    >
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <For each={child()?.careSessions}>
-                    {(session) => {
-                      const statusColors = getStatusColor(session.status);
-                      return (
-                        <tr style={{ "border-bottom": "1px solid #e2e8f0" }}>
-                          <td style={{ padding: "0.75rem" }}>
-                            {formatDateTime(session.scheduledStart)}
-                          </td>
-                          <td style={{ padding: "0.75rem" }}>
+        <wa-card>
+          <div class="wa-stack wa-gap-m">
+            <h2 class="wa-heading-l">Recent Care Sessions ({child()?.careSessions?.length || 0})</h2>
+            <Show
+              when={child()?.careSessions?.length}
+              fallback={
+                <p class="wa-color-text-quiet" style={{ "text-align": "center", padding: "var(--wa-space-xl)" }}>
+                  No care sessions recorded yet.
+                </p>
+              }
+            >
+              <div style={{ "overflow-x": "auto" }}>
+                <table style={{ width: "100%", "border-collapse": "collapse" }}>
+                  <thead>
+                    <tr style={{ "border-bottom": "1px solid var(--wa-color-neutral-90)" }}>
+                      <th style={{ padding: "var(--wa-space-s)", "text-align": "left" }}>Date/Time</th>
+                      <th style={{ padding: "var(--wa-space-s)", "text-align": "left" }}>Duration</th>
+                      <th style={{ padding: "var(--wa-space-s)", "text-align": "left" }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <For each={child()?.careSessions}>
+                      {(session) => (
+                        <tr style={{ "border-bottom": "1px solid var(--wa-color-neutral-90)" }}>
+                          <td style={{ padding: "var(--wa-space-s)" }}>{formatDateTime(session.scheduledStart)}</td>
+                          <td style={{ padding: "var(--wa-space-s)" }}>
                             {session.scheduledEnd
                               ? `${Math.round(
                                   (new Date(session.scheduledEnd).getTime() -
@@ -364,30 +188,19 @@ export default function ChildDetailPage() {
                                 )} hours`
                               : "N/A"}
                           </td>
-                          <td style={{ padding: "0.75rem" }}>
-                            <span
-                              style={{
-                                padding: "0.25rem 0.75rem",
-                                "border-radius": "9999px",
-                                "background-color": statusColors.bg,
-                                color: statusColors.color,
-                                "font-size": "0.875rem",
-                                "font-weight": "600",
-                              }}
-                            >
-                              {session.status}
-                            </span>
+                          <td style={{ padding: "var(--wa-space-s)" }}>
+                            <SessionStatusBadge status={session.status} />
                           </td>
                         </tr>
-                      );
-                    }}
-                  </For>
-                </tbody>
-              </table>
-            </div>
-          </Show>
-        </div>
+                      )}
+                    </For>
+                  </tbody>
+                </table>
+              </div>
+            </Show>
+          </div>
+        </wa-card>
       </Show>
-    </main>
+    </PageContent>
   );
 }
