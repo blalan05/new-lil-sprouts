@@ -7,6 +7,7 @@ import { SessionStatusBadge, PaymentStatusBadge } from "~/components/wa/StatusBa
 import { getFamily, formatParentNames } from "~/lib/families";
 import { getUser } from "~/lib";
 import { formatCaregiverName } from "~/lib/display";
+import { formatMoneyDisplay } from "~/lib/money-display";
 import {
   getFamilyMembers,
   deleteFamilyMember,
@@ -1377,7 +1378,7 @@ export default function FamilyDetailPage() {
                         <tr style={{ "border-bottom": "1px solid #e2e8f0" }}>
                           <td style={{ padding: "0.75rem" }}>{formatDate(payment.createdAt)}</td>
                           <td style={{ padding: "0.75rem", "font-weight": "600" }}>
-                            ${payment.amount.toFixed(2)}
+                            {formatMoneyDisplay(payment.amount)}
                           </td>
                           <td style={{ padding: "0.75rem" }}>{payment.method || "N/A"}</td>
                           <td style={{ padding: "0.75rem" }}>

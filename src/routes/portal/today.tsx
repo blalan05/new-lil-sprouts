@@ -3,6 +3,7 @@ import { createAsync, type RouteDefinition, A } from "@solidjs/router";
 import { createSignal, For, Show } from "solid-js";
 import { getMyDailyDigest } from "~/lib/portal";
 import { formatTimeLocal } from "~/lib/datetime";
+import { hoursDisplay } from "~/lib/money-display";
 
 export const route = {
   preload() {
@@ -63,7 +64,7 @@ export default function PortalToday() {
                 <div style={{ "font-weight": "600" }}>
                   {formatTimeLocal(session.scheduledStart)} – {formatTimeLocal(session.scheduledEnd)}
                   <span class="text-muted" style={{ "font-weight": "400", "margin-left": "0.5rem" }}>
-                    ({session.hours.toFixed(1)} hrs)
+                    ({hoursDisplay(session.hours)} hrs)
                   </span>
                 </div>
                 <Show when={session.children.length > 0}>

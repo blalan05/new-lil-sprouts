@@ -23,11 +23,11 @@ export default function IncomeReport() {
     return getIncomeReport(year, month || undefined);
   });
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | string | null | undefined) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-    }).format(amount);
+    }).format(Number(String(amount ?? 0).replace(/[$,\s]/g, "")) || 0);
   };
 
   const formatMonth = (monthKey: string) => {

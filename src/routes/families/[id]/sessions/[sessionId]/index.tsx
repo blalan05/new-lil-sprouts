@@ -20,6 +20,7 @@ import {
   deleteExpense,
   getSessionExpenseTotal,
 } from "~/lib/expenses";
+import { formatMoneyDisplay, moneyDisplay } from "~/lib/money-display";
 
 export const route = {
   preload({ params }) {
@@ -1083,9 +1084,12 @@ export default function CareSessionDetail() {
               <h2 style={{ "font-size": "1.25rem", color: "#2d3748", margin: 0 }}>
                 Expenses ({expenses()?.length || 0})
               </h2>
-              <Show when={expenseTotal() && expenseTotal()! > 0}>
+              <Show when={Number(moneyDisplay(expenseTotal())) > 0}>
                 <p style={{ margin: "0.25rem 0 0 0", color: "#718096", "font-size": "0.875rem" }}>
-                  Total: <strong style={{ color: "#2d3748" }}>${expenseTotal()?.toFixed(2)}</strong>
+                  Total:{" "}
+                  <strong style={{ color: "#2d3748" }}>
+                    {formatMoneyDisplay(expenseTotal())}
+                  </strong>
                 </p>
               </Show>
             </div>
@@ -1372,7 +1376,7 @@ export default function CareSessionDetail() {
                               color: "#2d3748",
                             }}
                           >
-                            ${expense.amount.toFixed(2)}
+                            {formatMoneyDisplay(expense.amount)}
                           </div>
                         </div>
                         <div style={{ display: "flex", gap: "0.5rem" }}>

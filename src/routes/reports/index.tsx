@@ -4,6 +4,7 @@ import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { getUser } from "~/lib";
 import { getAllServices, getService, createService, updateService } from "~/lib/services";
 import { useSubmission } from "@solidjs/router";
+import { formatMoneyDisplay } from "~/lib/money-display";
 
 export const route = {
   preload() {
@@ -291,8 +292,8 @@ export default function Reports() {
                               <div class="wa-cluster wa-gap-l">
                                 <Show when={service.defaultHourlyRate}>
                                   <span class="wa-body-s wa-color-text-quiet">
-                                    <strong class="wa-color-text-normal">Rate:</strong> $
-                                    {service.defaultHourlyRate!.toFixed(2)}/hr
+                                    <strong class="wa-color-text-normal">Rate:</strong>{" "}
+                                    {formatMoneyDisplay(service.defaultHourlyRate)}/hr
                                     {service.pricingType === "PER_CHILD" && " per child"}
                                   </span>
                                 </Show>

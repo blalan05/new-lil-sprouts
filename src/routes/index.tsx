@@ -12,6 +12,7 @@ import { createCareSchedule } from "~/lib/care-schedules";
 import { getServices } from "~/lib/services";
 import { getWeeklyStats, getDashboardStats, getStatsForPeriod } from "~/lib/stats";
 import { formatTimeLocal, ensureDate, isSameDay } from "~/lib/datetime";
+import { formatMoneyDisplay, hoursDisplay, moneyDisplay } from "~/lib/money-display";
 
 export const route = {
   preload() {
@@ -596,7 +597,7 @@ export default function Home() {
             </div>
           </div>
           <Show when={hoursStats()}>
-            <div class="wa-heading-xl">{hoursStats()?.hours.toFixed(1) || "0.0"}</div>
+            <div class="wa-heading-xl">{hoursDisplay(hoursStats()?.hours)}</div>
           </Show>
         </wa-card>
 
@@ -641,7 +642,7 @@ export default function Home() {
           </div>
           <Show when={moneyStats()}>
             <div class="wa-heading-xl" style={{ color: "var(--wa-color-success-40)" }}>
-              ${moneyStats()?.money.toFixed(2) || "0.00"}
+              {formatMoneyDisplay(moneyStats()?.money)}
             </div>
           </Show>
         </wa-card>
@@ -654,9 +655,9 @@ export default function Home() {
           <Show when={isOwner()}>
             <wa-card>
               <div class="wa-body-s wa-color-text-quiet">Hours This Month</div>
-              <div class="wa-heading-xl">{dashboardStats()?.thisMonthHours.toFixed(1) || "0.0"}</div>
+              <div class="wa-heading-xl">{hoursDisplay(dashboardStats()?.thisMonthHours)}</div>
               <div class="wa-body-s wa-color-text-quiet">
-                ${dashboardStats()?.thisMonthMoney.toFixed(2) || "0.00"} earned
+                {formatMoneyDisplay(dashboardStats()?.thisMonthMoney)} earned
               </div>
             </wa-card>
           </Show>
@@ -664,7 +665,7 @@ export default function Home() {
           <Show when={!isOwner()}>
             <wa-card>
               <div class="wa-body-s wa-color-text-quiet">Care Hours This Month</div>
-              <div class="wa-heading-xl">{dashboardStats()?.thisMonthHours.toFixed(1) || "0.0"}</div>
+              <div class="wa-heading-xl">{hoursDisplay(dashboardStats()?.thisMonthHours)}</div>
             </wa-card>
           </Show>
 
@@ -691,13 +692,11 @@ export default function Home() {
               <div class="wa-body-s wa-color-text-quiet">This month</div>
             </wa-card>
 
-            <Show
-              when={dashboardStats()?.averageHourlyRate && dashboardStats()!.averageHourlyRate > 0}
-            >
+            <Show when={Number(moneyDisplay(dashboardStats()?.averageHourlyRate)) > 0}>
               <wa-card>
                 <div class="wa-body-s wa-color-text-quiet">Avg Hourly Rate</div>
                 <div class="wa-heading-xl">
-                  ${dashboardStats()?.averageHourlyRate.toFixed(2) || "0.00"}
+                  {formatMoneyDisplay(dashboardStats()?.averageHourlyRate)}
                 </div>
                 <div class="wa-body-s wa-color-text-quiet">This month</div>
               </wa-card>

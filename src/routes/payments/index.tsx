@@ -6,6 +6,7 @@ import { PaymentStatusBadge } from "~/components/wa/StatusBadge";
 import { getFamilies } from "~/lib/families";
 import { getUnpaidSessions, createPayment, getPayments } from "~/lib/payments";
 import { formatTimeLocal } from "~/lib/datetime";
+import { formatMoneyDisplay, moneyDisplay } from "~/lib/money-display";
 
 export const route = {
   preload() {
@@ -68,11 +69,15 @@ export default function PaymentsPage() {
       const startTime = new Date(session.scheduledStart).getTime();
       const endTime = new Date(session.scheduledEnd).getTime();
       const hours = (endTime - startTime) / (1000 * 60 * 60);
-      const rate = session.hourlyRate || 0;
+      const rate = Number(moneyDisplay(session.hourlyRate));
       total += hours * rate;
 
       // Add expenses for this session
-      const expenseTotal = (session as any).expenses?.reduce((sum: number, exp: any) => sum + exp.amount, 0) || 0;
+      const expenseTotal =
+        (session as any).expenses?.reduce(
+          (sum: number, exp: any) => sum + Number(moneyDisplay(exp.amount)),
+          0,
+        ) || 0;
       total += expenseTotal;
     }
 
@@ -359,7 +364,7 @@ export default function PaymentsPage() {
                             {payment.invoiceNumber || "-"}
                           </td>
                           <td style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600" }}>
-                            ${payment.amount.toFixed(2)}
+                            {formatMoneyDisplay(payment.amount)}
                           </td>
                           <td style={{ padding: "0.75rem", "font-size": "0.875rem" }}>
                             {payment.method || "-"}
@@ -393,10 +398,12 @@ export default function PaymentsPage() {
                         color: "#48bb78",
                       }}
                     >
-                      $
-                      {filteredAndSortedPayments()
-                        .reduce((sum, p) => sum + p.amount, 0)
-                        .toFixed(2)}
+                      {formatMoneyDisplay(
+                        filteredAndSortedPayments().reduce(
+                          (sum, p) => sum + Number(moneyDisplay(p.amount)),
+                          0,
+                        ),
+                      )}
                     </td>
                     <td colSpan={2}></td>
                   </tr>
@@ -567,9 +574,13 @@ export default function PaymentsPage() {
                           const startTime = new Date(session.scheduledStart);
                           const endTime = new Date(session.scheduledEnd);
                           const hours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
-                          const rate = session.hourlyRate || 0;
+                          const rate = Number(moneyDisplay(session.hourlyRate));
                           const sessionAmount = hours * rate;
-                          const expenseTotal = (session as any).expenses?.reduce((sum: number, exp: any) => sum + exp.amount, 0) || 0;
+                          const expenseTotal =
+                            (session as any).expenses?.reduce(
+                              (sum: number, exp: any) => sum + Number(moneyDisplay(exp.amount)),
+                              0,
+                            ) || 0;
                           const amount = sessionAmount + expenseTotal;
                           const isSelected = selectedSessionIds().includes(session.id);
 
@@ -614,10 +625,10 @@ export default function PaymentsPage() {
                                 {formatDuration(startTime, endTime)}
                               </td>
                               <td style={{ padding: "0.75rem", "text-align": "right" }}>
-                                ${rate.toFixed(2)}/hr
+                                {formatMoneyDisplay(rate)}/hr
                               </td>
                               <td style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600" }}>
-                                ${amount.toFixed(2)}
+                                {formatMoneyDisplay(amount)}
                               </td>
                             </tr>
                           );
@@ -701,7 +712,7 @@ export default function PaymentsPage() {
                 }}
               >
                 <span>Total Amount:</span>
-                <span style={{ color: "#48bb78" }}>${calculateTotal().toFixed(2)}</span>
+                <span style={{ color: "#48bb78" }}>{formatMoneyDisplay(calculateTotal())}</span>
               </div>
             </div>
           </div>

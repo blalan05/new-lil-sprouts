@@ -5,6 +5,7 @@ import { getUser } from "~/lib";
 import { getAllFamiliesForReports, getYearEndFamilyReport, getAllYearEndReports, type YearEndFamilyReport } from "~/lib/reports";
 import { formatParentNames } from "~/lib/families";
 import { formatTimeLocal } from "~/lib/datetime";
+import { hoursDisplay } from "~/lib/money-display";
 
 export const route = {
   preload() {
@@ -38,11 +39,11 @@ export default function YearEndReports() {
     return null;
   });
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | string | null | undefined) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-    }).format(amount);
+    }).format(Number(String(amount ?? 0).replace(/[$,\s]/g, "")) || 0);
   };
 
   const formatDate = (date: Date) => {
@@ -95,7 +96,7 @@ export default function YearEndReports() {
         `"${children}"`,
         formatTime(session.startTime),
         formatTime(session.endTime),
-        session.hours.toFixed(2),
+        hoursDisplay(session.hours, 2),
         session.hourlyRate ? formatCurrency(session.hourlyRate) : "N/A",
         formatCurrency(session.sessionAmount),
         formatCurrency(session.totalAmount),
@@ -106,7 +107,7 @@ export default function YearEndReports() {
     // Summary
     csvRows.push("Summary");
     csvRows.push(`Total Sessions,${report.totalSessions}`);
-    csvRows.push(`Total Hours,${report.totalHours.toFixed(2)}`);
+    csvRows.push(`Total Hours,${hoursDisplay(report.totalHours, 2)}`);
     csvRows.push(`Total Amount,${formatCurrency(report.totalAmount)}`);
     csvRows.push(`Total Paid,${formatCurrency(report.totalPaid)}`);
     if (report.totalOutstanding > 0) {
@@ -292,7 +293,7 @@ export default function YearEndReports() {
                     <td>${session.serviceName}</td>
                     <td>${session.children.map(c => `${c.firstName} ${c.lastName}`).join(", ") || "N/A"}</td>
                     <td>${formatTime(session.startTime)} - ${formatTime(session.endTime)}</td>
-                    <td>${session.hours.toFixed(2)}</td>
+                    <td>${hoursDisplay(session.hours, 2)}</td>
                     <td>${session.hourlyRate ? formatCurrency(session.hourlyRate) : "N/A"}</td>
                     <td>${formatCurrency(session.sessionAmount)}</td>
                     <td>${formatCurrency(session.totalAmount)}</td>
@@ -310,7 +311,7 @@ export default function YearEndReports() {
             </div>
             <div class="total-row">
               <span class="total-label">Total Hours:</span>
-              <span class="total-amount">${report.totalHours.toFixed(2)} hours</span>
+              <span class="total-amount">${hoursDisplay(report.totalHours, 2)} hours</span>
             </div>
             <div class="total-row">
               <span class="total-label">Total Amount:</span>
@@ -642,7 +643,7 @@ export default function YearEndReports() {
                             {formatTime(session.startTime)} - {formatTime(session.endTime)}
                           </td>
                           <td style={{ padding: "0.75rem", border: "1px solid #e2e8f0", "text-align": "right" }}>
-                            {session.hours.toFixed(2)}
+                            {hoursDisplay(session.hours, 2)}
                           </td>
                           <td style={{ padding: "0.75rem", border: "1px solid #e2e8f0", "text-align": "right" }}>
                             {session.hourlyRate ? formatCurrency(session.hourlyRate) : "N/A"}
@@ -681,7 +682,7 @@ export default function YearEndReports() {
                 <div>
                   <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.25rem" }}>Total Hours</div>
                   <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
-                    {report().totalHours.toFixed(2)} hrs
+                    {hoursDisplay(report().totalHours, 2)} hrs
                   </div>
                 </div>
                 <div>
@@ -835,7 +836,7 @@ export default function YearEndReports() {
                     </div>
                     <div>
                       <div style={{ "font-size": "0.875rem", color: "#718096" }}>Hours</div>
-                      <div style={{ "font-weight": "600", color: "#2d3748" }}>{report.totalHours.toFixed(2)}</div>
+                      <div style={{ "font-weight": "600", color: "#2d3748" }}>{hoursDisplay(report.totalHours, 2)}</div>
                     </div>
                     <div>
                       <div style={{ "font-size": "0.875rem", color: "#718096" }}>Total Amount</div>

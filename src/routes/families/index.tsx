@@ -5,6 +5,7 @@ import { useConfirm } from "~/components/wa/ConfirmProvider";
 import { getFamilies, deleteFamily, formatParentNames } from "~/lib/families";
 import { getAllChildren, deleteChild } from "~/lib/children";
 import { allergyLabel } from "~/lib/display";
+import { formatMoneyDisplay, moneyDisplay } from "~/lib/money-display";
 
 export const route = {
   preload() {
@@ -375,10 +376,13 @@ export default function FamiliesPage() {
                             <span
                               style={{
                                 "font-weight": "700",
-                                color: (family as any).amountOwed > 0 ? "#c53030" : "#276749",
+                                color:
+                                  Number(moneyDisplay((family as any).amountOwed)) > 0
+                                    ? "#c53030"
+                                    : "#276749",
                               }}
                             >
-                              ${((family as any).amountOwed || 0).toFixed(2)}
+                              {formatMoneyDisplay((family as any).amountOwed)}
                             </span>
                             {(family as any).unpaidSessionCount > 0 && (
                               <div style={{ color: "#718096", "font-size": "0.75rem", "margin-top": "0.125rem" }}>

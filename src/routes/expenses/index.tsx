@@ -49,11 +49,11 @@ export default function ExpensesPage() {
 
   const formatDate = formatDateLocal;
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | string | null | undefined) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-    }).format(amount);
+    }).format(Number(String(amount ?? 0).replace(/[$,\s]/g, "")) || 0);
   };
 
   const filteredExpenses = () => {
@@ -111,7 +111,10 @@ export default function ExpensesPage() {
   };
 
   const totalExpenses = () => {
-    return filteredExpenses().reduce((sum, exp) => sum + exp.amount, 0);
+    return filteredExpenses().reduce((sum, exp) => {
+      const amount = Number(String(exp.amount ?? 0).replace(/[$,\s]/g, "")) || 0;
+      return sum + amount;
+    }, 0);
   };
 
   const handleSort = (field: SortField) => {
