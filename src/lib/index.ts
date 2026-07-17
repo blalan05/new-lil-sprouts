@@ -1,6 +1,12 @@
-import { action, query } from "@solidjs/router";
+import { action, query, revalidate } from "@solidjs/router";
+import { getRequestEvent } from "solid-js/web";
+import { setCookie } from "vinxi/http";
 import { db } from "./db";
+import { requireUser } from "./auth";
+import { hashPassword, verifyPassword } from "./password";
 import { serverRedirect } from "./server-redirect";
+import { authenticatedHomePath } from "./route-access";
+import { ROLE_COOKIE, roleCookieValue } from "./role-cookie";
 import {
   getSession,
   login,
@@ -9,25 +15,42 @@ import {
   validateEmail,
   validatePassword,
   validateUsername,
-  hashPassword,
-  verifyPassword,
 } from "./server";
-import { requireUser } from "./auth";
 
 export const getUser = query(async () => {
   "use server";
-  try {
-    return await requireUser();
-  } catch {
-    await logoutSession();
-    throw serverRedirect("/login");
-  }
+  const session = await getSession();
+  const userId = session.data?.userId;
+  if (userId === undefined) return null;
+
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    include: {
+      familyMember: {
+        select: { familyId: true },
+      },
+    },
+  });
+  if (!user) return null;
+
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    phone: user.phone,
+    isOwner: user.isOwner,
+    role: user.isOwner ? ("owner" as const) : ("parent" as const),
+    familyId: user.familyMember?.familyId ?? null,
+  };
 }, "user");
 
 export const updateUser = action(async (formData: FormData) => {
   "use server";
+  const user = await requireUser();
+  const userId = user.id;
   try {
-    const user = await requireUser();
 
     const firstName = String(formData.get("firstName") || "");
     const lastName = String(formData.get("lastName") || "");
@@ -38,13 +61,14 @@ export const updateUser = action(async (formData: FormData) => {
       return new Error("Email is required");
     }
 
+    // Check if email is already taken by another user
     const existingUser = await db.user.findUnique({ where: { email } });
-    if (existingUser && existingUser.id !== user.id) {
+    if (existingUser && existingUser.id !== userId) {
       return new Error("Email is already in use");
     }
 
     await db.user.update({
-      where: { id: user.id },
+      where: { id: userId },
       data: {
         firstName: firstName || null,
         lastName: lastName || null,
@@ -62,8 +86,9 @@ export const updateUser = action(async (formData: FormData) => {
 
 export const updatePassword = action(async (formData: FormData) => {
   "use server";
+  const sessionUser = await requireUser();
+  const userId = sessionUser.id;
   try {
-    const authUser = await requireUser();
 
     const currentPassword = String(formData.get("currentPassword"));
     const newPassword = String(formData.get("newPassword"));
@@ -80,15 +105,16 @@ export const updatePassword = action(async (formData: FormData) => {
     const passwordError = validatePassword(newPassword);
     if (passwordError) return new Error(passwordError);
 
-    const user = await db.user.findUnique({ where: { id: authUser.id } });
-    if (!user || !(await verifyPassword(currentPassword, user.password))) {
+    // Verify current password
+    const user = await db.user.findUnique({ where: { id: userId } });
+    if (!user || !verifyPassword(currentPassword, user.password)) {
       return new Error("Current password is incorrect");
     }
 
     await db.user.update({
-      where: { id: authUser.id },
+      where: { id: userId },
       data: {
-        password: await hashPassword(newPassword),
+        password: hashPassword(newPassword),
       },
     });
 
@@ -101,13 +127,10 @@ export const updatePassword = action(async (formData: FormData) => {
 
 export const loginOrRegister = action(async (formData: FormData) => {
   "use server";
-  const username = String(formData.get("username"));
-  const email = String(formData.get("email") || "");
+  const username = String(formData.get("username")).trim();
+  const email = String(formData.get("email") || "").trim();
   const password = String(formData.get("password"));
   const loginType = String(formData.get("loginType"));
-  const redirectTo = String(formData.get("redirectTo") || "/");
-  const safeRedirect =
-    redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/";
 
   let error = validateUsername(username) || validatePassword(password);
   if (error) return new Error(error);
@@ -115,6 +138,11 @@ export const loginOrRegister = action(async (formData: FormData) => {
   if (loginType !== "login") {
     const emailError = validateEmail(email);
     if (emailError) return new Error(emailError);
+
+    const userCount = await db.user.count();
+    if (userCount > 0) {
+      return new Error("Registration is closed. Ask the owner for a parent account.");
+    }
   }
 
   try {
@@ -125,14 +153,31 @@ export const loginOrRegister = action(async (formData: FormData) => {
     await session.update((d) => {
       d.userId = user.id;
     });
+    const reqEvent = getRequestEvent()?.nativeEvent;
+    if (reqEvent) {
+      setCookie(reqEvent, ROLE_COOKIE, roleCookieValue(user.isOwner), {
+        path: "/",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 365,
+      });
+    }
+    revalidate("user");
+    if (!user.isOwner) {
+      const member = await db.familyMember.findUnique({
+        where: { userId: user.id },
+        select: { familyId: true },
+      });
+      return serverRedirect(authenticatedHomePath(false, member?.familyId ?? null));
+    }
   } catch (err) {
     return err as Error;
   }
-  return serverRedirect(safeRedirect);
+  return serverRedirect("/");
 });
 
 export const logout = action(async () => {
   "use server";
   await logoutSession();
+  revalidate("user");
   return serverRedirect("/login");
 });

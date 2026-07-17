@@ -10,27 +10,31 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "node scripts/migrate.js deploy",
-    "prisma:migrate:status": "node scripts/migrate.js status"
+    "prisma:migrate:status": "node scripts/migrate.js status",
+    "postinstall": "prisma generate",
+    "test:auth": "node --experimental-strip-types --test tests/auth.test.ts",
+    "reset-password": "node --experimental-strip-types scripts/reset-password.js"
   },
   "devDependencies": {
-    "@types/node": "^24.1.0",
-    "@types/pg": "^8.11.10",
-    "prisma": "^7.0.0",
+    "@types/node": "^25.9.2",
+    "@types/pg": "^8.20.0",
+    "prisma": "^7.8.0",
     "sharp": "^0.34.5",
     "typescript": "^5.9.2",
-    "vite-plugin-pwa": "^1.2.0"
+    "vite-plugin-pwa": "^1.3.0",
+    "workbox-build": "^7.4.1"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.3.0",
-    "@prisma/client": "^7.3.0",
-    "@solidjs/router": "^0.15.4",
-    "@solidjs/start": "^1.2.1",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "@solidjs/router": "^0.16.1",
+    "@solidjs/start": "^1.3.2",
     "@web.awesome.me/webawesome-pro": "3.10.0",
-    "dotenv": "^16.6.1",
-    "pg": "^8.17.2",
-    "solid-js": "^1.9.11",
+    "dotenv": "^17.4.2",
+    "pg": "^8.21.0",
+    "solid-js": "^1.9.13",
     "vinxi": "^0.5.11",
-    "workbox-window": "^7.4.0"
+    "workbox-window": "^7.4.1"
   },
   "engines": {
     "node": ">=22"

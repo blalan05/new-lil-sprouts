@@ -1,14 +1,20 @@
 import { action, query } from "@solidjs/router";
 import { db } from "./db";
+import { requireOwner, assertFamilyExists } from "./auth";
 import { getSessionExpenseTotal } from "./expenses";
-import { calculateHours, calculateSessionCost, sumMoney, addMoney, roundMoney } from "./money";
+import { calculateHours, calculateSessionCost, sumMoney, addMoney, roundMoney, parseMoney, isPositiveMoney, serializeMoneyDeep } from "./money";
 import { serverRedirect } from "./server-redirect";
-import { assertOwnerAction, familyIdWhere, requireOwner } from "./auth";
 
+// Get unpaid confirmed sessions for a family
 export const getUnpaidSessions = query(async (familyId: string) => {
   "use server";
   await requireOwner();
+  await assertFamilyExists(familyId);
 
+  console.log("[getUnpaidSessions] ========== START ==========");
+  console.log("[getUnpaidSessions] familyId:", familyId);
+
+  // Get all confirmed sessions for the family
   const allSessions = await db.careSession.findMany({
     where: {
       familyId,
@@ -42,15 +48,31 @@ export const getUnpaidSessions = query(async (familyId: string) => {
     },
   });
 
-  return allSessions.filter((session) => session.payments.length === 0);
+  console.log("[getUnpaidSessions] allSessions count:", allSessions.length);
+  allSessions.forEach((s, i) => {
+    console.log(`[getUnpaidSessions] Session ${i}:`, {
+      id: s.id,
+      status: s.status,
+      isConfirmed: s.isConfirmed,
+      scheduledStart: s.scheduledStart,
+      paymentsCount: s.payments.length,
+    });
+  });
+
+  // Filter out sessions that already have a PAID payment
+  const unpaidSessions = allSessions.filter((session) => session.payments.length === 0);
+
+  console.log("[getUnpaidSessions] unpaidSessions count:", unpaidSessions.length);
+  console.log("[getUnpaidSessions] ========== END ==========");
+
+  return serializeMoneyDeep(unpaidSessions);
 }, "unpaidSessions");
 
+// Create a payment for multiple sessions
 export const createPayment = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
-    const owner = await assertOwnerAction();
-    if (owner instanceof Error) return owner;
-
     const familyId = String(formData.get("familyId"));
     const sessionIds = formData.getAll("sessionIds") as string[];
     const tips = String(formData.get("tips") || "0");
@@ -62,10 +84,13 @@ export const createPayment = action(async (formData: FormData) => {
       return new Error("Family is required");
     }
 
+    await assertFamilyExists(familyId);
+
     if (sessionIds.length === 0) {
       return new Error("Please select at least one session");
     }
 
+    // Get the sessions to calculate total
     const sessions = await db.careSession.findMany({
       where: {
         id: {
@@ -82,7 +107,9 @@ export const createPayment = action(async (formData: FormData) => {
       return new Error("No sessions found");
     }
 
-    const sessionAmounts: number[] = [];
+    // Calculate total amount using precise money math
+    // Note: hourlyRate is already the total rate (per-child rate * number of children)
+    const sessionAmounts: ReturnType<typeof calculateSessionCost>[] = [];
 
     for (const session of sessions) {
       const hours = calculateHours(
@@ -90,29 +117,28 @@ export const createPayment = action(async (formData: FormData) => {
         new Date(session.scheduledEnd),
       );
 
-      const rate = session.hourlyRate || 0;
-      const sessionCost = calculateSessionCost(hours, rate);
+      const sessionCost = calculateSessionCost(hours, session.hourlyRate);
       sessionAmounts.push(sessionCost);
 
       const expenses = await db.sessionExpense.findMany({
         where: { sessionId: session.id },
         select: { amount: true },
       });
-      const expenseTotal = sumMoney(expenses.map((exp) => exp.amount));
-      sessionAmounts.push(expenseTotal);
+      sessionAmounts.push(sumMoney(expenses.map((exp) => exp.amount)));
     }
 
-    const tipsAmount = parseFloat(tips) || 0;
-    if (tipsAmount > 0) {
+    const tipsAmount = parseMoney(tips);
+    if (isPositiveMoney(tipsAmount)) {
       sessionAmounts.push(tipsAmount);
     }
 
-    const totalAmount = roundMoney(sumMoney(sessionAmounts));
+    const totalAmount = sumMoney(sessionAmounts);
 
-    if (totalAmount <= 0) {
+    if (!isPositiveMoney(totalAmount)) {
       return new Error("Total amount must be greater than 0");
     }
 
+    // Generate invoice number (simple format: INV-YYYYMMDD-XXX)
     const today = new Date();
     const dateStr = today.toISOString().split("T")[0].replace(/-/g, "");
     const randomSuffix = Math.floor(Math.random() * 1000)
@@ -120,6 +146,7 @@ export const createPayment = action(async (formData: FormData) => {
       .padStart(3, "0");
     const baseInvoiceNumber = `INV-${dateStr}-${randomSuffix}`;
 
+    // Create individual payment records for each session to mark them as paid
     let sessionIndex = 0;
     for (const sessionId of sessionIds) {
       const session = sessions.find((s) => s.id === sessionId);
@@ -128,15 +155,13 @@ export const createPayment = action(async (formData: FormData) => {
           new Date(session.scheduledStart),
           new Date(session.scheduledEnd),
         );
-        const rate = session.hourlyRate || 0;
-        const sessionAmount = calculateSessionCost(hours, rate);
+        const sessionAmount = calculateSessionCost(hours, session.hourlyRate);
 
         const expenses = await db.sessionExpense.findMany({
           where: { sessionId },
           select: { amount: true },
         });
-        const expenseTotal = sumMoney(expenses.map((exp) => exp.amount));
-        const totalSessionAmount = roundMoney(addMoney(sessionAmount, expenseTotal));
+        const totalSessionAmount = addMoney(sessionAmount, sumMoney(expenses.map((exp) => exp.amount)));
 
         await db.payment.create({
           data: {
@@ -155,7 +180,8 @@ export const createPayment = action(async (formData: FormData) => {
       }
     }
 
-    if (tipsAmount > 0) {
+    // Create a separate payment record for tips if there are tips
+    if (isPositiveMoney(tipsAmount)) {
       await db.payment.create({
         data: {
           familyId,
@@ -177,13 +203,13 @@ export const createPayment = action(async (formData: FormData) => {
   }
 });
 
+// Get all payments with optional year filter
 export const getPayments = query(async (year?: number) => {
   "use server";
-  const user = await requireOwner();
-  const where: Record<string, unknown> = {
-    ...familyIdWhere(user),
-  };
+  await requireOwner();
+  const where: any = {};
 
+  // Filter by year if provided (based on paidDate or createdAt)
   if (year) {
     const startOfYear = new Date(year, 0, 1);
     const endOfYear = new Date(year, 11, 31, 23, 59, 59);
@@ -214,5 +240,5 @@ export const getPayments = query(async (year?: number) => {
       createdAt: "desc",
     },
   });
-  return payments;
+  return serializeMoneyDeep(payments);
 }, "payments");

@@ -1,8 +1,9 @@
 import { query, action, reload } from "@solidjs/router";
 import { db } from "./db";
-import { calculateHours, calculateSessionCost, sumMoney, roundMoney } from "./money";
+import { requireOwner, requireFamilyAccess } from "./auth";
+import { calculateHours, calculateSessionCost, sumMoney, roundMoney, serializeMoneyDeep } from "./money";
+import { cascadeSoftDeleteFamily } from "./soft-delete";
 import { serverRedirect } from "./server-redirect";
-import { assertOwnerAction, familyWhere, requireFamilyAccess, requireUser } from "./auth";
 
 // Helper function to format parent names
 export function formatParentNames(
@@ -27,9 +28,8 @@ export function formatParentNames(
 
 export const getFamilies = query(async () => {
   "use server";
-  const user = await requireUser();
+  await requireOwner();
   const families = await db.family.findMany({
-    where: familyWhere(user),
     include: {
       children: {
         orderBy: {
@@ -57,53 +57,52 @@ export const getFamilies = query(async () => {
     },
   });
 
-  // Calculate amount owed for each family
-  const familiesWithAmountOwed = await Promise.all(
-    families.map(async (family) => {
-      // Get all confirmed unpaid sessions for this family
-      const unpaidSessions = await db.careSession.findMany({
-        where: {
-          familyId: family.id,
-          isConfirmed: true,
-          status: {
-            in: ["SCHEDULED", "COMPLETED"],
-          },
+  // Single query for all unpaid confirmed sessions across families
+  const unpaidSessions = await db.careSession.findMany({
+    where: {
+      isConfirmed: true,
+      status: {
+        in: ["SCHEDULED", "COMPLETED"],
+      },
+      payments: {
+        none: {
+          status: "PAID",
         },
-        include: {
-          payments: {
-            where: {
-              status: "PAID",
-            },
-          },
-        },
-      });
+      },
+    },
+    select: {
+      familyId: true,
+      scheduledStart: true,
+      scheduledEnd: true,
+      hourlyRate: true,
+    },
+  });
 
-      // Filter out sessions that already have a PAID payment
-      const trulyUnpaid = unpaidSessions.filter((session) => session.payments.length === 0);
+  const owedByFamily = new Map<string, { total: ReturnType<typeof sumMoney>; count: number }>();
 
-      // Calculate total amount owed using precise money math
-      // Note: hourlyRate is already the total rate (per-child rate * number of children)
-      const sessionAmounts: number[] = [];
-      for (const session of trulyUnpaid) {
-        const hours = calculateHours(
-          new Date(session.scheduledStart),
-          new Date(session.scheduledEnd),
-        );
-        const rate = session.hourlyRate || 0;
-        const sessionCost = calculateSessionCost(hours, rate);
-        sessionAmounts.push(sessionCost);
-      }
-      const amountOwed = roundMoney(sumMoney(sessionAmounts));
+  for (const session of unpaidSessions) {
+    const hours = calculateHours(
+      new Date(session.scheduledStart),
+      new Date(session.scheduledEnd),
+    );
+    const sessionCost = calculateSessionCost(hours, session.hourlyRate);
+    const existing = owedByFamily.get(session.familyId) ?? {
+      total: sumMoney([]),
+      count: 0,
+    };
+    owedByFamily.set(session.familyId, {
+      total: existing.total.plus(sessionCost),
+      count: existing.count + 1,
+    });
+  }
 
-      return {
-        ...family,
-        amountOwed,
-        unpaidSessionCount: trulyUnpaid.length,
-      };
-    }),
-  );
+  const familiesWithAmountOwed = families.map((family) => ({
+    ...family,
+    amountOwed: roundMoney(owedByFamily.get(family.id)?.total ?? 0),
+    unpaidSessionCount: owedByFamily.get(family.id)?.count ?? 0,
+  }));
 
-  return familiesWithAmountOwed;
+  return serializeMoneyDeep(familiesWithAmountOwed);
 }, "families");
 
 export const getFamily = query(async (id: string) => {
@@ -185,15 +184,13 @@ export const getFamily = query(async (id: string) => {
     },
   });
   if (!family) throw new Error("Family not found");
-  return family;
+  return serializeMoneyDeep(family);
 }, "family");
 
 export const createFamily = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
-    const owner = await assertOwnerAction();
-    if (owner instanceof Error) return owner;
-
     const familyName = String(formData.get("familyName"));
     const parentFirstName = String(formData.get("parentFirstName"));
     const parentLastName = String(formData.get("parentLastName"));
@@ -313,10 +310,8 @@ export const createFamily = action(async (formData: FormData) => {
 
 export const updateFamily = action(async (formData: FormData) => {
   "use server";
+  await requireOwner();
   try {
-    const owner = await assertOwnerAction();
-    if (owner instanceof Error) return owner;
-
     const id = String(formData.get("id"));
     const familyName = String(formData.get("familyName"));
     const parentFirstName = String(formData.get("parentFirstName"));
@@ -379,13 +374,9 @@ export const updateFamily = action(async (formData: FormData) => {
 
 export const deleteFamily = action(async (id: string) => {
   "use server";
+  await requireOwner();
   try {
-    const owner = await assertOwnerAction();
-    if (owner instanceof Error) return owner;
-
-    await db.family.delete({
-      where: { id },
-    });
+    await cascadeSoftDeleteFamily(id);
     return reload();
   } catch (err) {
     console.error("Error deleting family:", err);

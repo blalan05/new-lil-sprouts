@@ -1,113 +1,183 @@
-/* Theme */
-@import '@web.awesome.me/webawesome-pro/dist/styles/themes/default.css';
-
-/* Native styles */
-@import '@web.awesome.me/webawesome-pro/dist/styles/native.css';
-
-/* CSS utilities */
-@import '@web.awesome.me/webawesome-pro/dist/styles/utilities.css';
-
-:root {
-  /* Lil Sprouts brand — slate header + green accent */
-  --wa-color-brand-05: #1a202c;
-  --wa-color-brand-10: #2d3748;
-  --wa-color-brand-20: #4a5568;
-  --wa-color-brand-30: #276749;
-  --wa-color-brand-40: #38a169;
-  --wa-color-brand-50: #48bb78;
-  --wa-color-brand-60: #68d391;
-  --wa-color-brand-70: #9ae6b4;
-  --wa-color-brand-80: #c6f6d5;
-  --wa-color-brand-90: #f0fff4;
-  --wa-color-brand-95: #f7fafc;
-}
-
-body {
-  margin: 0;
-  color: var(--wa-color-text-normal);
-  background-color: var(--wa-color-neutral-95);
-}
-
-main {
-  text-align: left;
-  padding: 0;
-  margin: 0 auto;
-}
-
-h1 {
-  text-transform: none;
-  font-size: inherit;
-  font-weight: inherit;
-  line-height: inherit;
-  margin: 0;
-  max-width: none;
-}
-
-p {
-  max-width: none;
-  margin: 0;
-  line-height: 1.5;
-}
-
-a {
-  margin-right: 0;
-  color: inherit;
-  text-decoration: none;
-}
-
-/* App shell */
-.app-shell {
-  min-height: 100dvh;
-}
-
-.app-header {
-  background-color: var(--wa-color-brand-10);
-  color: white;
-  padding: var(--wa-space-s) var(--wa-space-l);
-  box-shadow: var(--wa-shadow-s);
-}
-
-.app-header .brand-link {
-  color: white;
-  font-weight: 700;
-}
-
-.app-header wa-button.nav-link::part(base) {
-  color: white;
-}
-
-.app-header wa-button::part(base) {
-  color: white;
-}
-
-.page-content {
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: var(--wa-space-l);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.page-content--narrow {
-  max-width: 540px;
-}
-
-.login-page {
-  min-height: 100dvh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--wa-space-l);
-}
-
-.login-card {
-  width: 100%;
-  max-width: 420px;
-}
-
-@media print {
-  .no-print {
-    display: none !important;
-  }
-}
-
+/* Web Awesome */
+@import "@web.awesome.me/webawesome-pro/dist/styles/themes/default.css";
+@import "@web.awesome.me/webawesome-pro/dist/styles/native.css";
+@import "@web.awesome.me/webawesome-pro/dist/styles/utilities.css";
+
+:root {
+  /* Lil Sprouts brand — slate header + green accent */
+  --wa-color-brand-05: #1a202c;
+  --wa-color-brand-10: #2d3748;
+  --wa-color-brand-20: #4a5568;
+  --wa-color-brand-30: #276749;
+  --wa-color-brand-40: #38a169;
+  --wa-color-brand-50: #48bb78;
+  --wa-color-brand-60: #68d391;
+  --wa-color-brand-70: #9ae6b4;
+  --wa-color-brand-80: #c6f6d5;
+  --wa-color-brand-90: #f0fff4;
+  --wa-color-brand-95: #f7fafc;
+
+  /* Legacy tokens used by portal / older pages */
+  --color-bg: #f7fafc;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f7fafc;
+  --color-border: #e2e8f0;
+  --color-border-strong: #cbd5e0;
+  --color-text: #2d3748;
+  --color-text-muted: #718096;
+  --color-text-subtle: #a0aec0;
+  --color-nav-bg: #2d3748;
+  --color-nav-text: #ffffff;
+  --color-primary: #4299e1;
+  --color-success: #48bb78;
+  --color-danger: #e53e3e;
+  --color-warning: #ed8936;
+  --color-hover: #edf2f7;
+  --color-overlay: rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #1a202c;
+  --color-surface: #2d3748;
+  --color-surface-muted: #1a202c;
+  --color-border: #4a5568;
+  --color-border-strong: #718096;
+  --color-text: #e2e8f0;
+  --color-text-muted: #a0aec0;
+  --color-text-subtle: #718096;
+  --color-nav-bg: #171923;
+  --color-nav-text: #e2e8f0;
+  --color-hover: #2d3748;
+}
+
+body {
+  margin: 0;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+}
+
+main {
+  text-align: left;
+  padding: 0;
+  margin: 0 auto;
+}
+
+h1 {
+  text-transform: none;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  margin: 0;
+  max-width: none;
+}
+
+p {
+  max-width: none;
+  margin: 0;
+  line-height: 1.5;
+}
+
+a {
+  margin-right: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* App shell */
+.app-shell {
+  min-height: 100dvh;
+}
+
+.app-header {
+  background-color: var(--color-nav-bg);
+  color: var(--color-nav-text);
+  padding: var(--wa-space-s) var(--wa-space-l);
+  box-shadow: var(--wa-shadow-s);
+}
+
+.app-header .brand-link {
+  color: var(--color-nav-text);
+  font-weight: 700;
+}
+
+.app-header wa-button.nav-link::part(base),
+.app-header wa-button::part(base) {
+  color: var(--color-nav-text);
+}
+
+.page-content {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: var(--wa-space-l);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.page-content--narrow {
+  max-width: 540px;
+}
+
+.login-page {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--wa-space-l);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+.page-loading {
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.notif-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  width: 320px;
+  max-height: 360px;
+  overflow: auto;
+  z-index: 200;
+  padding: 0.75rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--wa-border-radius-m, 8px);
+  box-shadow: var(--wa-shadow-m, 0 4px 12px rgba(0, 0, 0, 0.15));
+}
+
+.notif-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.notif-item.unread {
+  background: var(--color-hover);
+  font-weight: 500;
+}
+
+.notif-item:hover {
+  background: var(--color-hover);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

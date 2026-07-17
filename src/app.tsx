@@ -4,8 +4,13 @@ import { Suspense, Show } from "solid-js";
 import AppShell from "./components/AppShell";
 import AppErrorBoundary from "./components/ErrorBoundary";
 import { ConfirmProvider } from "./components/wa/ConfirmProvider";
+import { initTheme } from "./lib/theme";
 import "./app.css";
 import "./styles/responsive.css";
+
+if (typeof document !== "undefined") {
+  initTheme();
+}
 
 function AppRoot(props: { children: unknown }) {
   const location = useLocation();
@@ -13,10 +18,19 @@ function AppRoot(props: { children: unknown }) {
 
   return (
     <ConfirmProvider>
-      <Show when={!isLogin()} fallback={<AppErrorBoundary><Suspense>{props.children}</Suspense></AppErrorBoundary>}>
-        <AppShell>
+      <Show
+        when={!isLogin()}
+        fallback={
           <AppErrorBoundary>
             <Suspense>{props.children}</Suspense>
+          </AppErrorBoundary>
+        }
+      >
+        <AppShell>
+          <AppErrorBoundary>
+            <Suspense fallback={<div class="page-loading">Loading...</div>}>
+              {props.children}
+            </Suspense>
           </AppErrorBoundary>
         </AppShell>
       </Show>

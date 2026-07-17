@@ -54,10 +54,11 @@ model Service {
   name              String   // Display name, e.g., "Childcare", "Piano Lesson"
   code              String   @unique // Code for backward compatibility, e.g., "CHILDCARE", "PIANO_LESSON"
   description       String?
-  defaultHourlyRate Float?   // Default hourly rate for this service
+  defaultHourlyRate Decimal? @db.Decimal(10, 2) // Default hourly rate for this service
   pricingType       String   @default("FLAT") // FLAT, PER_CHILD, etc.
   isActive          Boolean  @default(true)
   requiresChildren  Boolean  @default(false) // Whether this service requires children to be selected
+  deletedAt         DateTime? @db.Timestamptz(3)
   createdAt         DateTime @default(now()) @db.Timestamptz(3)
   updatedAt         DateTime @updatedAt @db.Timestamptz(3)
 
@@ -68,6 +69,7 @@ model Service {
 
   @@index([code])
   @@index([isActive])
+  @@index([deletedAt])
 }
 
 enum DayOfWeek {
@@ -116,9 +118,27 @@ model User {
   familyMember     FamilyMember?
   unavailabilities Unavailability[]
   reports          SessionReport[]
+  notifications    Notification[]
 
   @@index([email])
   @@index([isOwner])
+}
+
+model Notification {
+  id            String   @id @default(uuid())
+  userId        String
+  type          String   // INCIDENT_SEVERE, INCIDENT_FOLLOWUP, DAILY_DIGEST, GENERAL
+  title         String
+  body          String
+  read          Boolean  @default(false)
+  familyId      String?
+  careSessionId String?
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
 }
 
 // Family represents a client family
@@ -136,6 +156,7 @@ model Family {
   emergencyContact String?
   emergencyPhone   String?
   notes            String?
+  deletedAt        DateTime? @db.Timestamptz(3)
   createdAt        DateTime @default(now()) @db.Timestamptz(3)
   updatedAt        DateTime @updatedAt @db.Timestamptz(3)
 
@@ -151,6 +172,7 @@ model Family {
 
   @@index([familyName])
   @@index([email])
+  @@index([deletedAt])
 }
 
 // Many-to-many relationship between Family and Service
@@ -158,6 +180,7 @@ model FamilyService {
   id        String   @id @default(uuid())
   familyId  String
   serviceId String
+  deletedAt DateTime? @db.Timestamptz(3)
   createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   family  Family  @relation(fields: [familyId], references: [id], onDelete: Cascade)
@@ -166,6 +189,7 @@ model FamilyService {
   @@unique([familyId, serviceId])
   @@index([familyId])
   @@index([serviceId])
+  @@index([deletedAt])
 }
 
 // Additional family members/contacts with pickup authorization
@@ -179,6 +203,7 @@ model FamilyMember {
   canPickup    Boolean            @default(false)
   allergies    String?
   notes        String?
+  deletedAt    DateTime?          @db.Timestamptz(3)
   createdAt    DateTime           @default(now()) @db.Timestamptz(3)
   updatedAt    DateTime           @updatedAt @db.Timestamptz(3)
 
@@ -192,6 +217,7 @@ model FamilyMember {
 
   @@index([familyId])
   @@index([canPickup])
+  @@index([deletedAt])
 }
 
 // Recurring schedules (templates for sessions) - supports multiple services
@@ -202,11 +228,12 @@ model CareSchedule {
   daysOfWeek  DayOfWeek[] // Which days this schedule applies
   startTime   String // Time in HH:mm format (e.g., "06:00")
   endTime     String // Time in HH:mm format (e.g., "14:30")
-  hourlyRate  Float? // Override service default rate if needed
+  hourlyRate  Decimal? @db.Decimal(10, 2) // Override service default rate if needed
   isActive    Boolean           @default(true)
   startDate   DateTime          @db.Timestamptz(3) // When this schedule starts
   endDate     DateTime?         @db.Timestamptz(3) // Optional end date
   notes       String?
+  deletedAt   DateTime?         @db.Timestamptz(3)
   createdAt   DateTime          @default(now()) @db.Timestamptz(3)
   updatedAt   DateTime          @updatedAt @db.Timestamptz(3)
 
@@ -223,6 +250,7 @@ model CareSchedule {
   @@index([familyId])
   @@index([isActive])
   @@index([serviceId])
+  @@index([deletedAt])
 }
 
 // Unavailability periods - when the nanny/owner is not available
@@ -235,6 +263,7 @@ model Unavailability {
   endTime   String? // Time in HH:mm format (only if allDay is false)
   reason    String? // vacation, personal, holiday, etc.
   notes     String?
+  deletedAt DateTime? @db.Timestamptz(3)
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
@@ -245,6 +274,7 @@ model Unavailability {
   @@index([startDate])
   @@index([endDate])
   @@index([userId])
+  @@index([deletedAt])
 }
 
 // Children being cared for
@@ -261,6 +291,7 @@ model Child {
   schoolGrade   String?
   schoolTeacher String?
   notes         String?
+  deletedAt     DateTime? @db.Timestamptz(3)
   createdAt     DateTime @default(now()) @db.Timestamptz(3)
   updatedAt     DateTime @updatedAt @db.Timestamptz(3)
 
@@ -273,6 +304,7 @@ model Child {
 
   @@index([familyId])
   @@index([lastName, firstName])
+  @@index([deletedAt])
 }
 
 // Sessions/appointments - supports multiple service types (childcare, piano lessons, etc.)
@@ -284,9 +316,10 @@ model CareSession {
   actualStart    DateTime?     @db.Timestamptz(3)
   actualEnd      DateTime?     @db.Timestamptz(3)
   status         SessionStatus @default(SCHEDULED)
-  hourlyRate     Float? // Rate for this session (overrides service default if set)
+  hourlyRate     Decimal? @db.Decimal(10, 2) // Rate for this session (overrides service default if set)
   notes          String?
   isConfirmed    Boolean       @default(false) // Whether this session is confirmed
+  deletedAt      DateTime?     @db.Timestamptz(3)
 
   // Drop-off and pick-up tracking (primarily for childcare)
   dropOffTime DateTime? @db.Timestamptz(3)
@@ -328,15 +361,17 @@ model CareSession {
   @@index([scheduleId])
   @@index([isConfirmed])
   @@index([serviceId])
+  @@index([deletedAt])
 }
 
 // Expenses incurred during a care session (lunch, trips, supplies, etc.)
 model SessionExpense {
   id          String   @id @default(uuid())
   description String   // e.g., "Lunch at McDonald's", "Zoo admission", "Art supplies"
-  amount      Float    // Cost of the expense
+  amount      Decimal  @db.Decimal(10, 2) // Cost of the expense
   category    String?  // Optional category: FOOD, ACTIVITY, SUPPLIES, TRANSPORTATION, OTHER
   notes       String?  // Additional details
+  deletedAt   DateTime? @db.Timestamptz(3)
   createdAt   DateTime @default(now()) @db.Timestamptz(3)
   updatedAt   DateTime @updatedAt @db.Timestamptz(3)
 
@@ -346,16 +381,18 @@ model SessionExpense {
 
   @@index([sessionId])
   @@index([category])
+  @@index([deletedAt])
 }
 
 // Standalone expenses not linked to a specific session (general business expenses)
 model Expense {
   id          String   @id @default(uuid())
   description String   // e.g., "Art supplies", "Gas for car", "Monthly subscription"
-  amount      Float    // Cost of the expense
+  amount      Decimal  @db.Decimal(10, 2) // Cost of the expense
   category    String?  // Optional category: FOOD, ACTIVITY, SUPPLIES, TRANSPORTATION, OTHER, BUSINESS
   expenseDate DateTime @default(now()) @db.Timestamptz(3) // Date the expense occurred
   notes       String?  // Additional details
+  deletedAt   DateTime? @db.Timestamptz(3)
   createdAt   DateTime @default(now()) @db.Timestamptz(3)
   updatedAt   DateTime @updatedAt @db.Timestamptz(3)
 
@@ -366,6 +403,7 @@ model Expense {
   @@index([familyId])
   @@index([category])
   @@index([expenseDate])
+  @@index([deletedAt])
 }
 
 // Session reports - incidents, activities, meals, etc during care
@@ -378,6 +416,7 @@ model SessionReport {
   timestamp      DateTime       @default(now()) @db.Timestamptz(3)
   actionTaken    String? // What was done in response (for incidents)
   followUpNeeded Boolean        @default(false)
+  deletedAt      DateTime?      @db.Timestamptz(3)
   createdAt      DateTime       @default(now()) @db.Timestamptz(3)
   updatedAt      DateTime       @updatedAt @db.Timestamptz(3)
 
@@ -397,12 +436,13 @@ model SessionReport {
   @@index([type])
   @@index([severity])
   @@index([timestamp])
+  @@index([deletedAt])
 }
 
 // Payment tracking for tax purposes
 model Payment {
   id            String        @id @default(uuid())
-  amount        Float
+  amount        Decimal       @db.Decimal(10, 2)
   status        PaymentStatus @default(PENDING)
   dueDate       DateTime?     @db.Timestamptz(3)
   paidDate      DateTime?     @db.Timestamptz(3)
@@ -410,12 +450,13 @@ model Payment {
   method        String? // cash, check, venmo, etc.
   notes         String?
   taxYear       Int?
+  deletedAt     DateTime?     @db.Timestamptz(3)
   createdAt     DateTime      @default(now()) @db.Timestamptz(3)
   updatedAt     DateTime      @updatedAt @db.Timestamptz(3)
 
   // Relations
   familyId      String?
-  family        Family?      @relation(fields: [familyId], references: [id], onDelete: SetNull)
+  family        Family?      @relation(fields: [familyId], references: [id], onDelete: Restrict)
   careSessionId String?
   careSession   CareSession? @relation(fields: [careSessionId], references: [id], onDelete: SetNull)
 
@@ -424,6 +465,7 @@ model Payment {
   @@index([taxYear])
   @@index([dueDate])
   @@index([paidDate])
+  @@index([deletedAt])
 }
 
 // Application settings (key-value store)
@@ -447,6 +489,7 @@ model Document {
   mimeType    String?
   description String?
   category    String? // contract, medical, emergency_contact, tax_document, etc.
+  deletedAt   DateTime? @db.Timestamptz(3)
   createdAt   DateTime @default(now()) @db.Timestamptz(3)
   updatedAt   DateTime @updatedAt @db.Timestamptz(3)
 
@@ -456,4 +499,5 @@ model Document {
 
   @@index([familyId])
   @@index([category])
+  @@index([deletedAt])
 }

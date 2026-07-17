@@ -1,6 +1,14 @@
+packages:
+  - .
 onlyBuiltDependencies:
   - '@parcel/watcher'
   - '@prisma/client'
   - '@prisma/engines'
   - esbuild
   - prisma
+  - sharp
+overrides:
+  workbox-build: ^7.4.1
+peerDependencyRules:
+  allowedVersions:
+    magicast: 0.5.1

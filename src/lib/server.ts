@@ -1,6 +1,17 @@
-import { useSession } from "vinxi/http";
+import { useSession, clearSession, setCookie } from "vinxi/http";
+import { getRequestEvent } from "solid-js/web";
 import { db } from "./db";
-import { hashPassword, isHashedPassword, verifyPassword } from "./password";
+import { hashPassword, needsRehash, verifyPassword } from "./password";
+import { ROLE_COOKIE, roleCookieValue } from "./role-cookie";
+
+const sessionSecret = process.env.SESSION_SECRET;
+if (!sessionSecret) {
+  throw new Error("SESSION_SECRET environment variable is required");
+}
+
+export const SESSION_CONFIG = {
+  password: sessionSecret,
+};
 
 export function validateUsername(username: unknown) {
   if (typeof username !== "string" || username.length < 3) {
@@ -20,31 +31,31 @@ export function validatePassword(password: unknown) {
   }
 }
 
-function getSessionSecret(): string {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret) {
-    throw new Error("SESSION_SECRET environment variable is required");
+export async function login(usernameOrEmail: string, password: string) {
+  const loginId = usernameOrEmail.trim();
+  let user = await db.user.findUnique({ where: { username: loginId } });
+  if (!user && loginId.includes("@")) {
+    user = await db.user.findUnique({ where: { email: loginId } });
   }
-  return secret;
-}
-
-export async function login(username: string, password: string) {
-  const user = await db.user.findUnique({ where: { username } });
-  if (!user || !(await verifyPassword(password, user.password))) {
-    throw new Error("Invalid login");
-  }
-
-  if (!isHashedPassword(user.password)) {
+  if (!user || !verifyPassword(password, user.password)) throw new Error("Invalid login");
+  if (needsRehash(user.password)) {
     await db.user.update({
       where: { id: user.id },
-      data: { password: await hashPassword(password) },
+      data: { password: hashPassword(password) },
     });
   }
-
   return user;
 }
 
-export async function logout() {
+export async function logout(event?: unknown) {
+  const target =
+    (event as Parameters<typeof clearSession>[0] | undefined) ??
+    getRequestEvent()?.nativeEvent;
+  if (target) {
+    await clearSession(target, SESSION_CONFIG);
+    setCookie(target, ROLE_COOKIE, "", { path: "/", maxAge: 0 });
+    return;
+  }
   const session = await getSession();
   await session.update((d) => {
     d.userId = undefined;
@@ -52,36 +63,27 @@ export async function logout() {
 }
 
 export async function register(username: string, email: string, password: string) {
-  const userCount = await db.user.count();
-  const allowRegistration =
-    process.env.ALLOW_REGISTRATION === "true" || userCount === 0;
-
-  if (!allowRegistration) {
-    throw new Error("Registration is disabled");
-  }
-
   const existingUser = await db.user.findUnique({ where: { username } });
   if (existingUser) throw new Error("Username already exists");
 
   const existingEmail = await db.user.findUnique({ where: { email } });
   if (existingEmail) throw new Error("Email already exists");
 
-  const hashed = await hashPassword(password);
+  const isFirstUser = (await db.user.count()) === 0;
 
   return db.user.create({
     data: {
       username,
       email,
-      password: hashed,
-      isOwner: userCount === 0,
+      password: hashPassword(password),
+      isOwner: isFirstUser,
     },
   });
 }
 
-export function getSession() {
-  return useSession({
-    password: getSessionSecret(),
-  });
+export async function getSession(event?: unknown) {
+  if (event) {
+    return await useSession(event as Parameters<typeof useSession>[0], SESSION_CONFIG);
+  }
+  return await useSession(SESSION_CONFIG);
 }
-
-export { hashPassword, verifyPassword };

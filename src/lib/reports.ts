@@ -1,7 +1,17 @@
 import { query } from "@solidjs/router";
-import { db } from "./db";
+import { db, dbIncludingDeleted } from "./db";
+import { requireOwner, assertFamilyExists } from "./auth";
 import { formatParentNames } from "./families";
-import { requireOwner } from "./auth";
+import {
+  calculateSessionCost,
+  calculateHours,
+  sumMoney,
+  addMoney,
+  subtractMoney,
+  moneyToString,
+  compareMoney,
+  serializeMoneyDeep,
+} from "./money";
 
 export interface YearEndFamilyReport {
   familyId: string;
@@ -31,24 +41,24 @@ export interface YearEndFamilyReport {
       lastName: string;
     }>;
     hours: number;
-    hourlyRate: number | null;
-    sessionAmount: number;
-    expenses: number;
-    totalAmount: number;
+    hourlyRate: string | null;
+    sessionAmount: string;
+    expenses: string;
+    totalAmount: string;
     status: string;
   }>;
   standaloneExpenses: Array<{
-    amount: number;
+    amount: string;
     description: string;
     category: string | null;
     expenseDate: Date;
   }>;
   totalHours: number;
   totalSessions: number;
-  totalAmount: number;
-  totalPaid: number;
-  totalOutstanding: number;
-  totalStandaloneExpenses: number;
+  totalAmount: string;
+  totalPaid: string;
+  totalOutstanding: string;
+  totalStandaloneExpenses: string;
 }
 
 // Get year-end report for a specific family
@@ -62,7 +72,7 @@ export const getYearEndFamilyReport = query(async (familyId: string, year: numbe
 export const getAllFamiliesForReports = query(async () => {
   "use server";
   await requireOwner();
-  const families = await db.family.findMany({
+  const families = await dbIncludingDeleted.family.findMany({
     select: {
       id: true,
       familyName: true,
@@ -88,11 +98,10 @@ export const getAllFamiliesForReports = query(async () => {
 
 // Helper function to generate a report (not a query, used internally)
 async function generateYearEndReport(familyId: string, year: number): Promise<YearEndFamilyReport> {
-  const startDate = new Date(year, 0, 1); // January 1st
-  const endDate = new Date(year, 11, 31, 23, 59, 59, 999); // December 31st
+  const startDate = new Date(year, 0, 1);
+  const endDate = new Date(year, 11, 31, 23, 59, 59, 999);
 
-  // Get family details
-  const family = await db.family.findUnique({
+  const family = await dbIncludingDeleted.family.findUnique({
     where: { id: familyId },
     include: {
       children: {
@@ -124,7 +133,7 @@ async function generateYearEndReport(familyId: string, year: number): Promise<Ye
   }
 
   // Get all sessions for the year
-  const sessions = await db.careSession.findMany({
+  const sessions = await dbIncludingDeleted.careSession.findMany({
     where: {
       familyId,
       scheduledStart: {
@@ -169,28 +178,21 @@ async function generateYearEndReport(familyId: string, year: number): Promise<Ye
     },
   });
 
-  // Calculate totals
   let totalHours = 0;
-  let totalAmount = 0;
-  let totalPaid = 0;
+  let totalAmount = sumMoney([]);
+  let totalPaid = sumMoney([]);
 
   const sessionReports = sessions.map((session) => {
-    const startTime = new Date(session.scheduledStart).getTime();
-    const endTime = new Date(session.scheduledEnd).getTime();
-    const hours = (endTime - startTime) / (1000 * 60 * 60);
-    
-    const hourlyRate = session.hourlyRate || 0;
-    const sessionAmount = hours * hourlyRate;
-    
-    const expenses = session.expenses.reduce((sum, exp) => sum + exp.amount, 0);
-    const sessionTotal = sessionAmount + expenses;
-    
+    const hours = calculateHours(session.scheduledStart, session.scheduledEnd);
+    const sessionAmount = calculateSessionCost(hours, session.hourlyRate);
+    const expenses = sumMoney(session.expenses.map((exp) => exp.amount));
+    const sessionTotal = addMoney(sessionAmount, expenses);
+
     totalHours += hours;
-    totalAmount += sessionTotal;
-    
-    // Calculate paid amount for this session
-    const sessionPaid = session.payments.reduce((sum, pay) => sum + pay.amount, 0);
-    totalPaid += sessionPaid;
+    totalAmount = addMoney(totalAmount, sessionTotal);
+
+    const sessionPaid = sumMoney(session.payments.map((pay) => pay.amount));
+    totalPaid = addMoney(totalPaid, sessionPaid);
 
     return {
       id: session.id,
@@ -200,16 +202,15 @@ async function generateYearEndReport(familyId: string, year: number): Promise<Ye
       serviceName: session.service.name,
       children: session.children,
       hours,
-      hourlyRate: session.hourlyRate,
-      sessionAmount,
-      expenses,
-      totalAmount: sessionTotal,
+      hourlyRate: session.hourlyRate != null ? moneyToString(session.hourlyRate) : null,
+      sessionAmount: moneyToString(sessionAmount),
+      expenses: moneyToString(expenses),
+      totalAmount: moneyToString(sessionTotal),
       status: session.status,
     };
   });
 
-  // Get all payments for the year
-  const allPayments = await db.payment.findMany({
+  const allPayments = await dbIncludingDeleted.payment.findMany({
     where: {
       familyId,
       paidDate: {
@@ -223,11 +224,12 @@ async function generateYearEndReport(familyId: string, year: number): Promise<Ye
     },
   });
 
-  const totalPaidFromPayments = allPayments.reduce((sum, pay) => sum + pay.amount, 0);
-  totalPaid = Math.max(totalPaid, totalPaidFromPayments);
-  
-  // Get standalone expenses for this family in the year
-  const standaloneExpenses = await db.expense.findMany({
+  const totalPaidFromPayments = sumMoney(allPayments.map((pay) => pay.amount));
+  if (compareMoney(totalPaidFromPayments, totalPaid) > 0) {
+    totalPaid = totalPaidFromPayments;
+  }
+
+  const standaloneExpenses = await dbIncludingDeleted.expense.findMany({
     where: {
       familyId: family.id,
       expenseDate: {
@@ -243,10 +245,10 @@ async function generateYearEndReport(familyId: string, year: number): Promise<Ye
     },
   });
   
-  const totalStandaloneExpenses = standaloneExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-  const totalOutstanding = totalAmount - totalPaid;
+  const totalStandaloneExpenses = sumMoney(standaloneExpenses.map((exp) => exp.amount));
+  const totalOutstanding = subtractMoney(totalAmount, totalPaid);
 
-  return {
+  return serializeMoneyDeep({
     familyId: family.id,
     familyName: family.familyName,
     parentName: formatParentNames(
@@ -265,18 +267,18 @@ async function generateYearEndReport(familyId: string, year: number): Promise<Ye
     standaloneExpenses,
     totalHours,
     totalSessions: sessions.length,
-    totalAmount,
-    totalPaid,
-    totalOutstanding,
-    totalStandaloneExpenses,
-  } as YearEndFamilyReport;
+    totalAmount: moneyToString(totalAmount),
+    totalPaid: moneyToString(totalPaid),
+    totalOutstanding: moneyToString(totalOutstanding),
+    totalStandaloneExpenses: moneyToString(totalStandaloneExpenses),
+  }) as YearEndFamilyReport;
 }
 
 // Get year-end report for all families
 export const getAllYearEndReports = query(async (year: number) => {
   "use server";
   await requireOwner();
-  const families = await db.family.findMany({
+  const families = await dbIncludingDeleted.family.findMany({
     select: {
       id: true,
     },
@@ -296,22 +298,22 @@ export interface IncomeReport {
   period: string; // e.g., "2024" or "2024-01"
   startDate: Date;
   endDate: Date;
-  grossIncome: number;
-  totalExpenses: number;
-  netIncome: number;
+  grossIncome: string;
+  totalExpenses: string;
+  netIncome: string;
   paymentCount: number;
   expenseCount: number;
   byFamily: Array<{
     familyId: string;
     familyName: string;
-    amount: number;
+    amount: string;
     paymentCount: number;
   }>;
   byMonth: Array<{
-    month: string; // "YYYY-MM"
-    grossIncome: number;
-    expenses: number;
-    netIncome: number;
+    month: string;
+    grossIncome: string;
+    expenses: string;
+    netIncome: string;
   }>;
 }
 
@@ -337,7 +339,7 @@ export const getIncomeReport = query(async (year: number, month?: number) => {
   }
 
   // Get all paid payments in the period
-  const payments = await db.payment.findMany({
+  const payments = await dbIncludingDeleted.payment.findMany({
     where: {
       status: "PAID",
       paidDate: {
@@ -356,10 +358,9 @@ export const getIncomeReport = query(async (year: number, month?: number) => {
   });
 
   // Calculate gross income
-  const grossIncome = payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const grossIncome = sumMoney(payments.map((payment) => payment.amount));
 
-  // Get all expenses in the period (from sessions that occurred in this period)
-  const sessions = await db.careSession.findMany({
+  const sessions = await dbIncludingDeleted.careSession.findMany({
     where: {
       scheduledStart: {
         gte: startDate,
@@ -374,7 +375,7 @@ export const getIncomeReport = query(async (year: number, month?: number) => {
 
   const sessionIds = sessions.map((s) => s.id);
 
-  const expenses = await db.sessionExpense.findMany({
+  const expenses = await dbIncludingDeleted.sessionExpense.findMany({
     where: {
       sessionId: {
         in: sessionIds,
@@ -382,19 +383,21 @@ export const getIncomeReport = query(async (year: number, month?: number) => {
     },
   });
 
-  const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-  const netIncome = grossIncome - totalExpenses;
+  const totalExpenses = sumMoney(expenses.map((exp) => exp.amount));
+  const netIncome = subtractMoney(grossIncome, totalExpenses);
 
-  // Group by family
-  const familyMap = new Map<string, { familyName: string; amount: number; paymentCount: number }>();
+  const familyMap = new Map<
+    string,
+    { familyName: string; amount: ReturnType<typeof sumMoney>; paymentCount: number }
+  >();
   payments.forEach((payment) => {
     if (payment.familyId && payment.family) {
       const existing = familyMap.get(payment.familyId) || {
         familyName: payment.family.familyName,
-        amount: 0,
+        amount: sumMoney([]),
         paymentCount: 0,
       };
-      existing.amount += payment.amount;
+      existing.amount = addMoney(existing.amount, payment.amount);
       existing.paymentCount += 1;
       familyMap.set(payment.familyId, existing);
     }
@@ -403,38 +406,40 @@ export const getIncomeReport = query(async (year: number, month?: number) => {
   const byFamily = Array.from(familyMap.entries()).map(([familyId, data]) => ({
     familyId,
     familyName: data.familyName,
-    amount: data.amount,
+    amount: moneyToString(data.amount),
     paymentCount: data.paymentCount,
   }));
 
-  // Group by month
-  const monthMap = new Map<string, { grossIncome: number; expenses: number }>();
+  const monthMap = new Map<
+    string,
+    { grossIncome: ReturnType<typeof sumMoney>; expenses: ReturnType<typeof sumMoney> }
+  >();
   
   // Initialize all months in the period
   if (month !== undefined && month !== null) {
     // Single month
-    monthMap.set(period, { grossIncome: 0, expenses: 0 });
+    monthMap.set(period, { grossIncome: sumMoney([]), expenses: sumMoney([]) });
   } else {
-    // All months in the year
     for (let m = 1; m <= 12; m++) {
-      monthMap.set(`${year}-${String(m).padStart(2, "0")}`, { grossIncome: 0, expenses: 0 });
+      monthMap.set(`${year}-${String(m).padStart(2, "0")}`, {
+        grossIncome: sumMoney([]),
+        expenses: sumMoney([]),
+      });
     }
   }
 
-  // Add payments to months
   payments.forEach((payment) => {
     if (payment.paidDate) {
       const paymentDate = new Date(payment.paidDate);
       const monthKey = `${paymentDate.getFullYear()}-${String(paymentDate.getMonth() + 1).padStart(2, "0")}`;
       const existing = monthMap.get(monthKey);
       if (existing) {
-        existing.grossIncome += payment.amount;
+        existing.grossIncome = addMoney(existing.grossIncome, payment.amount);
         monthMap.set(monthKey, existing);
       }
     }
   });
 
-  // Add expenses to months
   expenses.forEach((expense) => {
     const session = sessions.find((s) => s.id === expense.sessionId);
     if (session && session.scheduledStart) {
@@ -442,7 +447,7 @@ export const getIncomeReport = query(async (year: number, month?: number) => {
       const monthKey = `${sessionDate.getFullYear()}-${String(sessionDate.getMonth() + 1).padStart(2, "0")}`;
       const existing = monthMap.get(monthKey);
       if (existing) {
-        existing.expenses += expense.amount;
+        existing.expenses = addMoney(existing.expenses, expense.amount);
         monthMap.set(monthKey, existing);
       }
     }
@@ -451,9 +456,9 @@ export const getIncomeReport = query(async (year: number, month?: number) => {
   const byMonth = Array.from(monthMap.entries())
     .map(([month, data]) => ({
       month,
-      grossIncome: data.grossIncome,
-      expenses: data.expenses,
-      netIncome: data.grossIncome - data.expenses,
+      grossIncome: moneyToString(data.grossIncome),
+      expenses: moneyToString(data.expenses),
+      netIncome: moneyToString(subtractMoney(data.grossIncome, data.expenses)),
     }))
     .sort((a, b) => a.month.localeCompare(b.month));
 
@@ -461,13 +466,223 @@ export const getIncomeReport = query(async (year: number, month?: number) => {
     period,
     startDate,
     endDate,
-    grossIncome,
-    totalExpenses,
-    netIncome,
+    grossIncome: moneyToString(grossIncome),
+    totalExpenses: moneyToString(totalExpenses),
+    netIncome: moneyToString(netIncome),
     paymentCount: payments.length,
     expenseCount: expenses.length,
-    byFamily: byFamily.sort((a, b) => b.amount - a.amount),
+    byFamily: byFamily.sort((a, b) => compareMoney(b.amount, a.amount)),
     byMonth,
   } as IncomeReport;
 });
+
+export interface ExpenseCategorySummary {
+  category: string;
+  amount: string;
+  count: number;
+}
+
+export interface AnnualTaxSummary {
+  year: number;
+  grossIncome: string;
+  totalExpenses: string;
+  netIncome: string;
+  paymentCount: number;
+  byCategory: ExpenseCategorySummary[];
+}
+
+async function getExpenseCategoriesForYear(year: number, familyId?: string): Promise<ExpenseCategorySummary[]> {
+  const startDate = new Date(year, 0, 1);
+  const endDate = new Date(year, 11, 31, 23, 59, 59, 999);
+
+  const standalone = await dbIncludingDeleted.expense.findMany({
+    where: {
+      expenseDate: { gte: startDate, lte: endDate },
+      ...(familyId ? { familyId } : {}),
+    },
+    select: { amount: true, category: true },
+  });
+
+  const sessions = await dbIncludingDeleted.careSession.findMany({
+    where: {
+      scheduledStart: { gte: startDate, lte: endDate },
+      ...(familyId ? { familyId } : {}),
+    },
+    select: { id: true },
+  });
+
+  const sessionExpenses = await dbIncludingDeleted.sessionExpense.findMany({
+    where: { sessionId: { in: sessions.map((s) => s.id) } },
+    select: { amount: true, category: true },
+  });
+
+  const categoryMap = new Map<string, { total: ReturnType<typeof sumMoney>; count: number }>();
+
+  for (const expense of [...standalone, ...sessionExpenses]) {
+    const category = expense.category || "UNCATEGORIZED";
+    const existing = categoryMap.get(category) ?? { total: sumMoney([]), count: 0 };
+    categoryMap.set(category, {
+      total: addMoney(existing.total, expense.amount),
+      count: existing.count + 1,
+    });
+  }
+
+  return Array.from(categoryMap.entries())
+    .map(([category, data]) => ({
+      category,
+      amount: moneyToString(data.total),
+      count: data.count,
+    }))
+    .sort((a, b) => compareMoney(b.amount, a.amount));
+}
+
+export const getAnnualTaxSummary = query(async (year: number, familyId?: string) => {
+  "use server";
+  await requireOwner();
+  if (familyId) {
+    await assertFamilyExists(familyId);
+  }
+
+  const startDate = new Date(year, 0, 1);
+  const endDate = new Date(year, 11, 31, 23, 59, 59, 999);
+
+  const payments = await dbIncludingDeleted.payment.findMany({
+    where: {
+      status: "PAID",
+      OR: [
+        { taxYear: year },
+        { paidDate: { gte: startDate, lte: endDate } },
+      ],
+      ...(familyId ? { familyId } : {}),
+    },
+    select: { amount: true },
+  });
+
+  const grossIncome = sumMoney(payments.map((p) => p.amount));
+  const byCategory = await getExpenseCategoriesForYear(year, familyId);
+  const totalExpenses = sumMoney(byCategory.map((c) => c.amount));
+
+  return {
+    year,
+    grossIncome: moneyToString(grossIncome),
+    totalExpenses: moneyToString(totalExpenses),
+    netIncome: moneyToString(subtractMoney(grossIncome, totalExpenses)),
+    paymentCount: payments.length,
+    byCategory,
+  } satisfies AnnualTaxSummary;
+}, "annual-tax-summary");
+
+function csvEscape(value: string | number | null | undefined): string {
+  const str = value == null ? "" : String(value);
+  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+function buildYearEndCsv(report: YearEndFamilyReport, taxSummary: AnnualTaxSummary): string {
+  const rows: string[] = [];
+  rows.push(`Year-End Report ${taxSummary.year},${csvEscape(report.familyName)}`);
+  rows.push(`Parent,${csvEscape(report.parentName)}`);
+  rows.push(`Email,${csvEscape(report.email)}`);
+  rows.push("");
+  rows.push("Annual Summary (cash basis - payments received)");
+  rows.push(`Gross Income,${csvEscape(taxSummary.grossIncome)}`);
+  rows.push(`Total Expenses,${csvEscape(taxSummary.totalExpenses)}`);
+  rows.push(`Net Income,${csvEscape(taxSummary.netIncome)}`);
+  rows.push("");
+  rows.push("Expenses by Category");
+  rows.push("Category,Amount,Count");
+  taxSummary.byCategory.forEach((row) => {
+    rows.push(`${csvEscape(row.category)},${csvEscape(row.amount)},${row.count}`);
+  });
+  rows.push("");
+  rows.push("Sessions");
+  rows.push("Date,Service,Hours,Rate,Session Amount,Expenses,Total,Status");
+  report.sessions.forEach((session) => {
+    rows.push(
+      [
+        csvEscape(new Date(session.date).toLocaleDateString()),
+        csvEscape(session.serviceName),
+        session.hours.toFixed(2),
+        csvEscape(session.hourlyRate ?? ""),
+        csvEscape(session.sessionAmount),
+        csvEscape(session.expenses),
+        csvEscape(session.totalAmount),
+        csvEscape(session.status),
+      ].join(","),
+    );
+  });
+  rows.push("");
+  rows.push(`Total Hours,${report.totalHours.toFixed(2)}`);
+  rows.push(`Total Sessions,${report.totalSessions}`);
+  rows.push(`Total Amount,${csvEscape(report.totalAmount)}`);
+  rows.push(`Total Paid,${csvEscape(report.totalPaid)}`);
+  rows.push(`Outstanding,${csvEscape(report.totalOutstanding)}`);
+  return rows.join("\n");
+}
+
+export const exportYearEndCsv = query(async (year: number, familyId?: string) => {
+  "use server";
+  await requireOwner();
+
+  if (familyId) {
+    const report = await generateYearEndReport(familyId, year);
+    const taxSummary = await getExpenseCategoriesForYear(year, familyId).then(async (byCategory) => {
+      const payments = await dbIncludingDeleted.payment.findMany({
+        where: {
+          status: "PAID",
+          familyId,
+          OR: [
+            { taxYear: year },
+            {
+              paidDate: {
+                gte: new Date(year, 0, 1),
+                lte: new Date(year, 11, 31, 23, 59, 59, 999),
+              },
+            },
+          ],
+        },
+        select: { amount: true },
+      });
+      const grossIncome = sumMoney(payments.map((p) => p.amount));
+      const totalExpenses = sumMoney(byCategory.map((c) => c.amount));
+      return {
+        year,
+        grossIncome: moneyToString(grossIncome),
+        totalExpenses: moneyToString(totalExpenses),
+        netIncome: moneyToString(subtractMoney(grossIncome, totalExpenses)),
+        paymentCount: payments.length,
+        byCategory,
+      } satisfies AnnualTaxSummary;
+    });
+
+    return {
+      filename: `year-end-${year}-${report.familyName.replace(/\s+/g, "-").toLowerCase()}.csv`,
+      content: buildYearEndCsv(report, taxSummary),
+    };
+  }
+
+  const families = await dbIncludingDeleted.family.findMany({ select: { id: true } });
+  const sections: string[] = [];
+  for (const family of families) {
+    const report = await generateYearEndReport(family.id, year);
+    const taxSummary = {
+      year,
+      grossIncome: report.totalPaid,
+      totalExpenses: moneyToString(
+        addMoney(report.totalStandaloneExpenses, sumMoney(report.sessions.map((s) => s.expenses))),
+      ),
+      netIncome: moneyToString(subtractMoney(report.totalPaid, report.totalAmount)),
+      paymentCount: 0,
+      byCategory: await getExpenseCategoriesForYear(year, family.id),
+    } satisfies AnnualTaxSummary;
+    sections.push(buildYearEndCsv(report, taxSummary));
+    sections.push("");
+  }
+  return {
+    filename: `year-end-${year}-all-families.csv`,
+    content: sections.join("\n"),
+  };
+}, "export-year-end-csv");
 

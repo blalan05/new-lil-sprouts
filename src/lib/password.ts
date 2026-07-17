@@ -1,29 +1,36 @@
-import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
-import { promisify } from "node:util";
+import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 
-const scryptAsync = promisify(scrypt);
+const SCRYPT_PREFIX = "scrypt$";
+const KEY_LEN = 64;
 
-export async function hashPassword(password: string): Promise<string> {
-  const salt = randomBytes(16).toString("hex");
-  const derived = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${salt}:${derived.toString("hex")}`;
+function parseStoredHash(stored: string): { salt: Buffer; hash: Buffer } | null {
+  if (!stored.startsWith(SCRYPT_PREFIX)) return null;
+  // Format: scrypt$<salt-hex>$<hash-hex>
+  const parts = stored.split("$");
+  if (parts.length !== 3 || parts[0] !== "scrypt") return null;
+  const salt = Buffer.from(parts[1], "hex");
+  const hash = Buffer.from(parts[2], "hex");
+  if (salt.length === 0 || hash.length === 0) return null;
+  return { salt, hash };
 }
 
-export async function verifyPassword(password: string, stored: string): Promise<boolean> {
-  if (!stored.includes(":")) {
-    return password === stored;
+export function hashPassword(plain: string): string {
+  const salt = randomBytes(16);
+  const hash = scryptSync(plain, salt, KEY_LEN);
+  return `${SCRYPT_PREFIX}${salt.toString("hex")}$${hash.toString("hex")}`;
+}
+
+export function verifyPassword(plain: string, stored: string): boolean {
+  const parsed = parseStoredHash(stored);
+  if (parsed) {
+    const derived = scryptSync(plain, parsed.salt, parsed.hash.length);
+    if (derived.length !== parsed.hash.length) return false;
+    return timingSafeEqual(derived, parsed.hash);
   }
-
-  const [salt, hash] = stored.split(":");
-  if (!salt || !hash) return false;
-
-  const derived = (await scryptAsync(password, salt, 64)) as Buffer;
-  const hashBuf = Buffer.from(hash, "hex");
-
-  if (derived.length !== hashBuf.length) return false;
-  return timingSafeEqual(derived, hashBuf);
+  // Legacy plaintext password — compared for transparent migration on login
+  return stored === plain;
 }
 
-export function isHashedPassword(stored: string): boolean {
-  return stored.includes(":");
+export function needsRehash(stored: string): boolean {
+  return !stored.startsWith(SCRYPT_PREFIX);
 }
