@@ -215,10 +215,10 @@ export default function FamilyDetailPage() {
         {/* Family Information */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "1.5rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "margin-bottom": "2rem",
           }}
         >
@@ -226,7 +226,7 @@ export default function FamilyDetailPage() {
             style={{
               "font-size": "1.25rem",
               "margin-bottom": "1rem",
-              color: "#2d3748",
+              color: "var(--color-text)",
             }}
           >
             Family Information
@@ -239,7 +239,7 @@ export default function FamilyDetailPage() {
             }}
           >
             <div>
-              <strong style={{ color: "#4a5568" }}>Parents:</strong>
+              <strong style={{ color: "var(--color-text)" }}>Parents:</strong>
               <p style={{ margin: "0.25rem 0 0 0" }}>
                 {family() &&
                   formatParentNames(
@@ -250,12 +250,12 @@ export default function FamilyDetailPage() {
               </p>
             </div>
             <div>
-              <strong style={{ color: "#4a5568" }}>Email:</strong>
+              <strong style={{ color: "var(--color-text)" }}>Email:</strong>
               <p style={{ margin: "0.25rem 0 0 0" }}>{family()?.email}</p>
             </div>
             <Show when={family()?.phone}>
               <div>
-                <strong style={{ color: "#4a5568" }}>Phone:</strong>
+                <strong style={{ color: "var(--color-text)" }}>Phone:</strong>
                 <p style={{ margin: "0.25rem 0 0 0" }}>{family()?.phone}</p>
               </div>
             </Show>
@@ -263,7 +263,7 @@ export default function FamilyDetailPage() {
 
           <Show when={family()?.address}>
             <div style={{ "margin-top": "1rem" }}>
-              <strong style={{ color: "#4a5568" }}>Address:</strong>
+              <strong style={{ color: "var(--color-text)" }}>Address:</strong>
               <p style={{ margin: "0.25rem 0 0 0" }}>
                 {family()?.address}
                 {family()?.city && `, ${family()?.city}`}
@@ -275,7 +275,7 @@ export default function FamilyDetailPage() {
 
           <Show when={family()?.emergencyContact || family()?.emergencyPhone}>
             <div style={{ "margin-top": "1rem" }}>
-              <strong style={{ color: "#4a5568" }}>Emergency Contact:</strong>
+              <strong style={{ color: "var(--color-text)" }}>Emergency Contact:</strong>
               <p style={{ margin: "0.25rem 0 0 0" }}>
                 {family()?.emergencyContact}
                 {family()?.emergencyPhone && ` - ${family()?.emergencyPhone}`}
@@ -285,8 +285,8 @@ export default function FamilyDetailPage() {
 
           <Show when={family()?.notes}>
             <div style={{ "margin-top": "1rem" }}>
-              <strong style={{ color: "#4a5568" }}>Notes:</strong>
-              <p style={{ margin: "0.25rem 0 0 0", color: "#718096" }}>{family()?.notes}</p>
+              <strong style={{ color: "var(--color-text)" }}>Notes:</strong>
+              <p style={{ margin: "0.25rem 0 0 0", color: "var(--color-text-muted)" }}>{family()?.notes}</p>
             </div>
           </Show>
         </div>
@@ -294,10 +294,10 @@ export default function FamilyDetailPage() {
         {/* Children */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "1.5rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "margin-bottom": "2rem",
           }}
         >
@@ -309,7 +309,7 @@ export default function FamilyDetailPage() {
               "margin-bottom": "1rem",
             }}
           >
-            <h2 style={{ "font-size": "1.25rem", color: "#2d3748" }}>
+            <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)" }}>
               Children ({family()?.children?.length || 0})
             </h2>
             <A
@@ -331,7 +331,7 @@ export default function FamilyDetailPage() {
           <Show
             when={family()?.children?.length}
             fallback={
-              <p style={{ color: "#718096", "text-align": "center", padding: "2rem" }}>
+              <p style={{ color: "var(--color-text-muted)", "text-align": "center", padding: "2rem" }}>
                 No children added yet. Add children to track their care sessions and information.
               </p>
             }
@@ -342,9 +342,9 @@ export default function FamilyDetailPage() {
                   <div
                     style={{
                       padding: "1rem",
-                      border: "1px solid #e2e8f0",
+                      border: "1px solid var(--color-border)",
                       "border-radius": "4px",
-                      "background-color": "#f7fafc",
+                      "background-color": "var(--color-surface-muted)",
                     }}
                   >
                     <div style={{ display: "flex", "justify-content": "space-between" }}>
@@ -357,7 +357,7 @@ export default function FamilyDetailPage() {
                             "margin-bottom": "0.5rem",
                           }}
                         >
-                          <h3 style={{ color: "#2d3748", margin: "0" }}>
+                          <h3 style={{ color: "var(--color-text)", margin: "0" }}>
                             {child.firstName} {child.lastName}
                           </h3>
                           <Show when={child.allergies}>
@@ -365,7 +365,7 @@ export default function FamilyDetailPage() {
                               style={{
                                 padding: "0.25rem 0.5rem",
                                 "border-radius": "4px",
-                                "background-color": "#fed7d7",
+                                "background-color": "var(--wa-color-danger-fill-normal)",
                                 color: "#c53030",
                                 "font-size": "0.75rem",
                                 "font-weight": "600",
@@ -385,8 +385,8 @@ export default function FamilyDetailPage() {
                           }}
                         >
                           <div>
-                            <strong style={{ color: "#4a5568" }}>Age:</strong>
-                            <span style={{ color: "#718096" }}>
+                            <strong style={{ color: "var(--color-text)" }}>Age:</strong>
+                            <span style={{ color: "var(--color-text-muted)" }}>
                               {" "}
                               {new Date().getFullYear() -
                                 new Date(child.dateOfBirth).getFullYear()}{" "}
@@ -395,8 +395,8 @@ export default function FamilyDetailPage() {
                           </div>
                           <Show when={child.gender}>
                             <div>
-                              <strong style={{ color: "#4a5568" }}>Gender:</strong>
-                              <span style={{ color: "#718096" }}>
+                              <strong style={{ color: "var(--color-text)" }}>Gender:</strong>
+                              <span style={{ color: "var(--color-text-muted)" }}>
                                 {" "}
                                 {child.gender
                                   ?.replace(/_/g, " ")
@@ -407,14 +407,14 @@ export default function FamilyDetailPage() {
                           </Show>
                           <Show when={child.schoolName}>
                             <div>
-                              <strong style={{ color: "#4a5568" }}>School:</strong>
-                              <span style={{ color: "#718096" }}> {child.schoolName}</span>
+                              <strong style={{ color: "var(--color-text)" }}>School:</strong>
+                              <span style={{ color: "var(--color-text-muted)" }}> {child.schoolName}</span>
                             </div>
                           </Show>
                           <Show when={child.schoolGrade}>
                             <div>
-                              <strong style={{ color: "#4a5568" }}>Grade:</strong>
-                              <span style={{ color: "#718096" }}> {child.schoolGrade}</span>
+                              <strong style={{ color: "var(--color-text)" }}>Grade:</strong>
+                              <span style={{ color: "var(--color-text-muted)" }}> {child.schoolGrade}</span>
                             </div>
                           </Show>
                         </div>
@@ -454,9 +454,9 @@ export default function FamilyDetailPage() {
                           href={`/families/${params.id}/children/${child.id}/edit`}
                           style={{
                             padding: "0.5rem 1rem",
-                            "background-color": "#edf2f7",
-                            color: "#2d3748",
-                            border: "1px solid #cbd5e0",
+                            "background-color": "var(--color-hover)",
+                            color: "var(--color-text)",
+                            border: "1px solid var(--color-border-strong)",
                             "border-radius": "4px",
                             "text-decoration": "none",
                             "font-size": "0.875rem",
@@ -477,10 +477,10 @@ export default function FamilyDetailPage() {
         {/* Care Sessions */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "1.5rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "margin-bottom": "2rem",
           }}
         >
@@ -492,7 +492,7 @@ export default function FamilyDetailPage() {
               "margin-bottom": "1rem",
             }}
           >
-            <h2 style={{ "font-size": "1.25rem", color: "#2d3748" }}>
+            <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)" }}>
               Upcoming Sessions ({family()?.careSessions?.length || 0})
             </h2>
             <button
@@ -516,7 +516,7 @@ export default function FamilyDetailPage() {
             when={family()?.careSessions?.length}
             fallback={
               <div style={{ "text-align": "center", padding: "2rem" }}>
-                <p style={{ color: "#718096", "margin-bottom": "1rem" }}>
+                <p style={{ color: "var(--color-text-muted)", "margin-bottom": "1rem" }}>
                   No care sessions scheduled yet. Create one-time or recurring sessions.
                 </p>
                 <button
@@ -539,13 +539,13 @@ export default function FamilyDetailPage() {
           >
             <div style={{ "overflow-x": "auto" }}>
               <table style={{ width: "100%", "border-collapse": "collapse" }}>
-                <thead style={{ "background-color": "#f7fafc" }}>
+                <thead style={{ "background-color": "var(--color-surface-muted)" }}>
                   <tr>
                     <th
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
-                        "border-bottom": "1px solid #e2e8f0",
+                        "border-bottom": "1px solid var(--color-border)",
                       }}
                     >
                       Date/Time
@@ -554,7 +554,7 @@ export default function FamilyDetailPage() {
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
-                        "border-bottom": "1px solid #e2e8f0",
+                        "border-bottom": "1px solid var(--color-border)",
                       }}
                     >
                       Children
@@ -563,7 +563,7 @@ export default function FamilyDetailPage() {
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
-                        "border-bottom": "1px solid #e2e8f0",
+                        "border-bottom": "1px solid var(--color-border)",
                       }}
                     >
                       Status
@@ -572,7 +572,7 @@ export default function FamilyDetailPage() {
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
-                        "border-bottom": "1px solid #e2e8f0",
+                        "border-bottom": "1px solid var(--color-border)",
                       }}
                     >
                       Confirmed
@@ -581,7 +581,7 @@ export default function FamilyDetailPage() {
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
-                        "border-bottom": "1px solid #e2e8f0",
+                        "border-bottom": "1px solid var(--color-border)",
                       }}
                     >
                       Actions
@@ -591,7 +591,7 @@ export default function FamilyDetailPage() {
                 <tbody>
                   <For each={family()?.careSessions}>
                     {(session) => (
-                        <tr style={{ "border-bottom": "1px solid #e2e8f0" }}>
+                        <tr style={{ "border-bottom": "1px solid var(--color-border)" }}>
                           <td style={{ padding: "0.75rem" }}>
                             {formatDateTime(session.scheduledStart)}
                           </td>
@@ -658,10 +658,10 @@ export default function FamilyDetailPage() {
         {/* Recurring Schedules */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "1.5rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "margin-bottom": "2rem",
           }}
         >
@@ -673,7 +673,7 @@ export default function FamilyDetailPage() {
               "margin-bottom": "1rem",
             }}
           >
-            <h2 style={{ "font-size": "1.25rem", color: "#2d3748" }}>
+            <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)" }}>
               Recurring Schedules ({schedules()?.length || 0})
             </h2>
             <button
@@ -696,7 +696,7 @@ export default function FamilyDetailPage() {
           <Show
             when={schedules()?.length}
             fallback={
-              <p style={{ color: "#718096", "text-align": "center", padding: "2rem" }}>
+              <p style={{ color: "var(--color-text-muted)", "text-align": "center", padding: "2rem" }}>
                 No recurring schedules created yet. Create schedules to automatically generate
                 sessions.
               </p>
@@ -708,9 +708,9 @@ export default function FamilyDetailPage() {
                   <div
                     style={{
                       padding: "1rem",
-                      border: "1px solid #e2e8f0",
+                      border: "1px solid var(--color-border)",
                       "border-radius": "4px",
-                      "background-color": "#f7fafc",
+                      "background-color": "var(--color-surface-muted)",
                     }}
                   >
                     <div
@@ -729,12 +729,12 @@ export default function FamilyDetailPage() {
                             "margin-bottom": "0.5rem",
                           }}
                         >
-                          <h3 style={{ color: "#2d3748", margin: 0 }}>{schedule.name}</h3>
+                          <h3 style={{ color: "var(--color-text)", margin: 0 }}>{schedule.name}</h3>
                           <span
                             style={{
                               padding: "0.25rem 0.5rem",
                               "border-radius": "4px",
-                              "background-color": schedule.isActive ? "#c6f6d5" : "#fed7d7",
+                              "background-color": schedule.isActive ? "#c6f6d5" : "var(--wa-color-danger-fill-normal)",
                               color: schedule.isActive ? "#276749" : "#c53030",
                               "font-size": "0.75rem",
                               "font-weight": "600",
@@ -743,7 +743,7 @@ export default function FamilyDetailPage() {
                             {schedule.isActive ? "Active" : "Inactive"}
                           </span>
                         </div>
-                        <div style={{ color: "#718096", "font-size": "0.875rem" }}>
+                        <div style={{ color: "var(--color-text-muted)", "font-size": "0.875rem" }}>
                           <div>
                             <strong>Service:</strong> {schedule.service.name}
                           </div>
@@ -836,10 +836,10 @@ export default function FamilyDetailPage() {
         {/* Family Members */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "1.5rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "margin-bottom": "2rem",
           }}
         >
@@ -851,7 +851,7 @@ export default function FamilyDetailPage() {
               "margin-bottom": "1rem",
             }}
           >
-            <h2 style={{ "font-size": "1.25rem", color: "#2d3748" }}>
+            <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)" }}>
               Family Members & Contacts ({familyMembers()?.length || 0})
             </h2>
             <A
@@ -873,7 +873,7 @@ export default function FamilyDetailPage() {
           <Show
             when={familyMembers()?.length}
             fallback={
-              <p style={{ color: "#718096", "text-align": "center", padding: "2rem" }}>
+              <p style={{ color: "var(--color-text-muted)", "text-align": "center", padding: "2rem" }}>
                 No additional family members added yet. Add grandparents, babysitters, or other
                 authorized contacts.
               </p>
@@ -885,9 +885,9 @@ export default function FamilyDetailPage() {
                   <div
                     style={{
                       padding: "1rem",
-                      border: "1px solid #e2e8f0",
+                      border: "1px solid var(--color-border)",
                       "border-radius": "4px",
-                      "background-color": "#f7fafc",
+                      "background-color": "var(--color-surface-muted)",
                     }}
                   >
                     <div
@@ -906,7 +906,7 @@ export default function FamilyDetailPage() {
                             "margin-bottom": "0.5rem",
                           }}
                         >
-                          <h3 style={{ color: "#2d3748", margin: 0 }}>
+                          <h3 style={{ color: "var(--color-text)", margin: 0 }}>
                             {member.firstName} {member.lastName}
                           </h3>
                           <span
@@ -940,7 +940,7 @@ export default function FamilyDetailPage() {
                               style={{
                                 padding: "0.25rem 0.5rem",
                                 "border-radius": "4px",
-                                "background-color": "#bee3f8",
+                                "background-color": "var(--wa-color-brand-fill-normal)",
                                 color: "#2c5282",
                                 "font-size": "0.75rem",
                                 "font-weight": "600",
@@ -960,12 +960,12 @@ export default function FamilyDetailPage() {
                         >
                           <Show when={member.email}>
                             <div>
-                              <strong style={{ color: "#4a5568" }}>Email:</strong> {member.email}
+                              <strong style={{ color: "var(--color-text)" }}>Email:</strong> {member.email}
                             </div>
                           </Show>
                           <Show when={member.phone}>
                             <div>
-                              <strong style={{ color: "#4a5568" }}>Phone:</strong> {member.phone}
+                              <strong style={{ color: "var(--color-text)" }}>Phone:</strong> {member.phone}
                             </div>
                           </Show>
                         </div>
@@ -974,7 +974,7 @@ export default function FamilyDetailPage() {
                             style={{
                               "margin-top": "0.5rem",
                               "font-size": "0.875rem",
-                              color: "#718096",
+                              color: "var(--color-text-muted)",
                             }}
                           >
                             {member.notes}
@@ -993,9 +993,9 @@ export default function FamilyDetailPage() {
                           href={`/families/${params.id}/members/${member.id}/edit`}
                           style={{
                             padding: "0.5rem 1rem",
-                            "background-color": "#edf2f7",
-                            color: "#2d3748",
-                            border: "1px solid #cbd5e0",
+                            "background-color": "var(--color-hover)",
+                            color: "var(--color-text)",
+                            border: "1px solid var(--color-border-strong)",
                             "border-radius": "4px",
                             "text-decoration": "none",
                             "font-size": "0.875rem",
@@ -1066,10 +1066,10 @@ export default function FamilyDetailPage() {
         {/* Children */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "1.5rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "margin-bottom": "2rem",
           }}
         >
@@ -1081,7 +1081,7 @@ export default function FamilyDetailPage() {
               "margin-bottom": "1rem",
             }}
           >
-            <h2 style={{ "font-size": "1.25rem", color: "#2d3748" }}>
+            <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)" }}>
               Children ({family()?.children?.length || 0})
             </h2>
             <A
@@ -1103,7 +1103,7 @@ export default function FamilyDetailPage() {
           <Show
             when={family()?.children?.length}
             fallback={
-              <p style={{ color: "#718096", "text-align": "center", padding: "2rem" }}>
+              <p style={{ color: "var(--color-text-muted)", "text-align": "center", padding: "2rem" }}>
                 No children added yet. Click "Add Child" to get started.
               </p>
             }
@@ -1114,17 +1114,17 @@ export default function FamilyDetailPage() {
                   <div
                     style={{
                       padding: "1rem",
-                      border: "1px solid #e2e8f0",
+                      border: "1px solid var(--color-border)",
                       "border-radius": "4px",
-                      "background-color": "#f7fafc",
+                      "background-color": "var(--color-surface-muted)",
                     }}
                   >
                     <div style={{ display: "flex", "justify-content": "space-between" }}>
                       <div>
-                        <h3 style={{ "margin-bottom": "0.5rem", color: "#2d3748" }}>
+                        <h3 style={{ "margin-bottom": "0.5rem", color: "var(--color-text)" }}>
                           {child.firstName} {child.lastName}
                         </h3>
-                        <p style={{ "font-size": "0.875rem", color: "#718096" }}>
+                        <p style={{ "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                           Born: {formatDate(child.dateOfBirth)}
                         </p>
                         <Show when={child.allergies}>
@@ -1135,13 +1135,13 @@ export default function FamilyDetailPage() {
                         </Show>
                         <Show when={child.medications}>
                           <p style={{ "margin-top": "0.25rem", "font-size": "0.875rem" }}>
-                            <strong style={{ color: "#4a5568" }}>Medications:</strong>{" "}
+                            <strong style={{ color: "var(--color-text)" }}>Medications:</strong>{" "}
                             {child.medications}
                           </p>
                         </Show>
                         <Show when={child.specialNeeds}>
                           <p style={{ "margin-top": "0.25rem", "font-size": "0.875rem" }}>
-                            <strong style={{ color: "#4a5568" }}>Special Needs:</strong>{" "}
+                            <strong style={{ color: "var(--color-text)" }}>Special Needs:</strong>{" "}
                             {child.specialNeeds}
                           </p>
                         </Show>
@@ -1150,9 +1150,9 @@ export default function FamilyDetailPage() {
                         href={`/families/${params.id}/children/${child.id}/edit`}
                         style={{
                           padding: "0.5rem 1rem",
-                          "background-color": "#edf2f7",
-                          color: "#2d3748",
-                          border: "1px solid #cbd5e0",
+                          "background-color": "var(--color-hover)",
+                          color: "var(--color-text)",
+                          border: "1px solid var(--color-border-strong)",
                           "border-radius": "4px",
                           "text-decoration": "none",
                           "font-size": "0.875rem",
@@ -1172,10 +1172,10 @@ export default function FamilyDetailPage() {
         {/* Recent Care Sessions */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "1.5rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "margin-bottom": "2rem",
           }}
         >
@@ -1187,7 +1187,7 @@ export default function FamilyDetailPage() {
               "margin-bottom": "1rem",
             }}
           >
-            <h2 style={{ "font-size": "1.25rem", color: "#2d3748" }}>Recent Care Sessions</h2>
+            <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)" }}>Recent Care Sessions</h2>
             <A
               href={`/families/${params.id}/schedules/new`}
               style={{
@@ -1207,7 +1207,7 @@ export default function FamilyDetailPage() {
           <Show
             when={family()?.careSessions?.length}
             fallback={
-              <p style={{ color: "#718096", "text-align": "center", padding: "2rem" }}>
+              <p style={{ color: "var(--color-text-muted)", "text-align": "center", padding: "2rem" }}>
                 No care sessions scheduled yet.
               </p>
             }
@@ -1215,12 +1215,12 @@ export default function FamilyDetailPage() {
             <div style={{ "overflow-x": "auto" }}>
               <table style={{ width: "100%", "border-collapse": "collapse" }}>
                 <thead>
-                  <tr style={{ "background-color": "#f7fafc" }}>
+                  <tr style={{ "background-color": "var(--color-surface-muted)" }}>
                     <th
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
-                        "border-bottom": "2px solid #e2e8f0",
+                        "border-bottom": "2px solid var(--color-border)",
                       }}
                     >
                       Date & Time
@@ -1229,7 +1229,7 @@ export default function FamilyDetailPage() {
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
-                        "border-bottom": "2px solid #e2e8f0",
+                        "border-bottom": "2px solid var(--color-border)",
                       }}
                     >
                       Caregiver
@@ -1238,7 +1238,7 @@ export default function FamilyDetailPage() {
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
-                        "border-bottom": "2px solid #e2e8f0",
+                        "border-bottom": "2px solid var(--color-border)",
                       }}
                     >
                       Children
@@ -1247,7 +1247,7 @@ export default function FamilyDetailPage() {
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
-                        "border-bottom": "2px solid #e2e8f0",
+                        "border-bottom": "2px solid var(--color-border)",
                       }}
                     >
                       Status
@@ -1257,7 +1257,7 @@ export default function FamilyDetailPage() {
                 <tbody>
                   <For each={family()?.careSessions}>
                     {(session) => (
-                        <tr style={{ "border-bottom": "1px solid #e2e8f0" }}>
+                        <tr style={{ "border-bottom": "1px solid var(--color-border)" }}>
                           <td style={{ padding: "0.75rem" }}>
                             {formatDateTime(session.scheduledStart)}
                           </td>
@@ -1282,10 +1282,10 @@ export default function FamilyDetailPage() {
         {/* Recent Payments */}
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "1.5rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
           }}
         >
           <div
@@ -1296,7 +1296,7 @@ export default function FamilyDetailPage() {
               "margin-bottom": "1rem",
             }}
           >
-            <h2 style={{ "font-size": "1.25rem", color: "#2d3748" }}>Recent Payments</h2>
+            <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)" }}>Recent Payments</h2>
             <A
               href={`/payments?familyId=${params.id}&record=1`}
               style={{
@@ -1316,7 +1316,7 @@ export default function FamilyDetailPage() {
           <Show
             when={family()?.payments?.length}
             fallback={
-              <p style={{ color: "#718096", "text-align": "center", padding: "2rem" }}>
+              <p style={{ color: "var(--color-text-muted)", "text-align": "center", padding: "2rem" }}>
                 No payment records yet.
               </p>
             }
@@ -1324,12 +1324,12 @@ export default function FamilyDetailPage() {
             <div style={{ "overflow-x": "auto" }}>
               <table style={{ width: "100%", "border-collapse": "collapse" }}>
                 <thead>
-                  <tr style={{ "background-color": "#f7fafc" }}>
+                  <tr style={{ "background-color": "var(--color-surface-muted)" }}>
                     <th
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
-                        "border-bottom": "2px solid #e2e8f0",
+                        "border-bottom": "2px solid var(--color-border)",
                       }}
                     >
                       Date
@@ -1338,7 +1338,7 @@ export default function FamilyDetailPage() {
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
-                        "border-bottom": "2px solid #e2e8f0",
+                        "border-bottom": "2px solid var(--color-border)",
                       }}
                     >
                       Amount
@@ -1347,7 +1347,7 @@ export default function FamilyDetailPage() {
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
-                        "border-bottom": "2px solid #e2e8f0",
+                        "border-bottom": "2px solid var(--color-border)",
                       }}
                     >
                       Type
@@ -1356,7 +1356,7 @@ export default function FamilyDetailPage() {
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
-                        "border-bottom": "2px solid #e2e8f0",
+                        "border-bottom": "2px solid var(--color-border)",
                       }}
                     >
                       Status
@@ -1365,7 +1365,7 @@ export default function FamilyDetailPage() {
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
-                        "border-bottom": "2px solid #e2e8f0",
+                        "border-bottom": "2px solid var(--color-border)",
                       }}
                     >
                       Invoice #
@@ -1375,7 +1375,7 @@ export default function FamilyDetailPage() {
                 <tbody>
                   <For each={family()?.payments}>
                     {(payment) => (
-                        <tr style={{ "border-bottom": "1px solid #e2e8f0" }}>
+                        <tr style={{ "border-bottom": "1px solid var(--color-border)" }}>
                           <td style={{ padding: "0.75rem" }}>{formatDate(payment.createdAt)}</td>
                           <td style={{ padding: "0.75rem", "font-weight": "600" }}>
                             {formatMoneyDisplay(payment.amount)}
@@ -1403,7 +1403,7 @@ export default function FamilyDetailPage() {
         title="Create App Access"
         onClose={() => setShowInviteModal(null)}
       >
-            <p style={{ "margin-bottom": "1.5rem", color: "#718096", "font-size": "0.875rem" }}>
+            <p style={{ "margin-bottom": "1.5rem", color: "var(--color-text-muted)", "font-size": "0.875rem" }}>
               Create login credentials for this family member. No email is sent — you will need to
               share the username and password with them directly.
             </p>
@@ -1416,7 +1416,7 @@ export default function FamilyDetailPage() {
                     display: "block",
                     "margin-bottom": "0.5rem",
                     "font-weight": "600",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                   }}
                 >
                   Username *
@@ -1430,7 +1430,7 @@ export default function FamilyDetailPage() {
                   style={{
                     width: "100%",
                     padding: "0.75rem",
-                    border: "1px solid #cbd5e0",
+                    border: "1px solid var(--color-border-strong)",
                     "border-radius": "4px",
                     "font-size": "1rem",
                   }}
@@ -1443,7 +1443,7 @@ export default function FamilyDetailPage() {
                     display: "block",
                     "margin-bottom": "0.5rem",
                     "font-weight": "600",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                   }}
                 >
                   Temporary Password *
@@ -1457,12 +1457,12 @@ export default function FamilyDetailPage() {
                   style={{
                     width: "100%",
                     padding: "0.75rem",
-                    border: "1px solid #cbd5e0",
+                    border: "1px solid var(--color-border-strong)",
                     "border-radius": "4px",
                     "font-size": "1rem",
                   }}
                 />
-                <p style={{ "margin-top": "0.5rem", "font-size": "0.75rem", color: "#718096" }}>
+                <p style={{ "margin-top": "0.5rem", "font-size": "0.75rem", color: "var(--color-text-muted)" }}>
                   Share this password with the family member in person, by text, or email. They
                   should change it after first login.
                 </p>
@@ -1473,9 +1473,9 @@ export default function FamilyDetailPage() {
                   onClick={() => setShowInviteModal(null)}
                   style={{
                     padding: "0.75rem 1.5rem",
-                    "background-color": "#edf2f7",
-                    color: "#2d3748",
-                    border: "1px solid #cbd5e0",
+                    "background-color": "var(--color-hover)",
+                    color: "var(--color-text)",
+                    border: "1px solid var(--color-border-strong)",
                     "border-radius": "4px",
                     cursor: "pointer",
                     "font-weight": "600",
@@ -1512,27 +1512,27 @@ export default function FamilyDetailPage() {
               <div>
                 <div style={{ display: "grid", gap: "1rem", "margin-bottom": "1.5rem" }}>
                   <div>
-                    <strong style={{ color: "#4a5568" }}>Service:</strong>
+                    <strong style={{ color: "var(--color-text)" }}>Service:</strong>
                     <p style={{ margin: "0.25rem 0 0 0" }}>{selectedSchedule()?.service.name}</p>
                   </div>
                   <div>
-                    <strong style={{ color: "#4a5568" }}>Pattern:</strong>
+                    <strong style={{ color: "var(--color-text)" }}>Pattern:</strong>
                     <p style={{ margin: "0.25rem 0 0 0" }}>{selectedSchedule()?.recurrence}</p>
                   </div>
                   <div>
-                    <strong style={{ color: "#4a5568" }}>Days of Week:</strong>
+                    <strong style={{ color: "var(--color-text)" }}>Days of Week:</strong>
                     <p style={{ margin: "0.25rem 0 0 0" }}>
                       {selectedSchedule()?.daysOfWeek.join(", ")}
                     </p>
                   </div>
                   <div>
-                    <strong style={{ color: "#4a5568" }}>Time:</strong>
+                    <strong style={{ color: "var(--color-text)" }}>Time:</strong>
                     <p style={{ margin: "0.25rem 0 0 0" }}>
                       {selectedSchedule()?.startTime} - {selectedSchedule()?.endTime}
                     </p>
                   </div>
                   <div>
-                    <strong style={{ color: "#4a5568" }}>Hourly Rate:</strong>
+                    <strong style={{ color: "var(--color-text)" }}>Hourly Rate:</strong>
                     <p style={{ margin: "0.25rem 0 0 0" }}>
                       {selectedSchedule()?.hourlyRate
                         ? `$${selectedSchedule()?.hourlyRate}`
@@ -1540,7 +1540,7 @@ export default function FamilyDetailPage() {
                     </p>
                   </div>
                   <div>
-                    <strong style={{ color: "#4a5568" }}>Children:</strong>
+                    <strong style={{ color: "var(--color-text)" }}>Children:</strong>
                     <p style={{ margin: "0.25rem 0 0 0" }}>
                       {selectedSchedule()
                         ?.children.map((c: any) => `${c.firstName} ${c.lastName}`)
@@ -1548,7 +1548,7 @@ export default function FamilyDetailPage() {
                     </p>
                   </div>
                   <div>
-                    <strong style={{ color: "#4a5568" }}>Start Date:</strong>
+                    <strong style={{ color: "var(--color-text)" }}>Start Date:</strong>
                     <p style={{ margin: "0.25rem 0 0 0" }}>
                       {selectedSchedule()?.startDate &&
                         formatDateLocal(selectedSchedule()!.startDate)}
@@ -1556,7 +1556,7 @@ export default function FamilyDetailPage() {
                   </div>
                   <Show when={selectedSchedule()?.endDate}>
                     <div>
-                      <strong style={{ color: "#4a5568" }}>End Date:</strong>
+                      <strong style={{ color: "var(--color-text)" }}>End Date:</strong>
                       <p style={{ margin: "0.25rem 0 0 0" }}>
                         {selectedSchedule()?.endDate &&
                           formatDateLocal(selectedSchedule()!.endDate!)}
@@ -1564,21 +1564,21 @@ export default function FamilyDetailPage() {
                     </div>
                   </Show>
                   <div>
-                    <strong style={{ color: "#4a5568" }}>Status:</strong>
+                    <strong style={{ color: "var(--color-text)" }}>Status:</strong>
                     <p style={{ margin: "0.25rem 0 0 0" }}>
                       {selectedSchedule()?.isActive ? "Active" : "Inactive"}
                     </p>
                   </div>
                   <div>
-                    <strong style={{ color: "#4a5568" }}>Sessions Generated:</strong>
+                    <strong style={{ color: "var(--color-text)" }}>Sessions Generated:</strong>
                     <p style={{ margin: "0.25rem 0 0 0" }}>
                       {selectedSchedule()?._count.careSessions}
                     </p>
                   </div>
                   <Show when={selectedSchedule()?.notes}>
                     <div>
-                      <strong style={{ color: "#4a5568" }}>Notes:</strong>
-                      <p style={{ margin: "0.25rem 0 0 0", color: "#718096" }}>
+                      <strong style={{ color: "var(--color-text)" }}>Notes:</strong>
+                      <p style={{ margin: "0.25rem 0 0 0", color: "var(--color-text-muted)" }}>
                         {selectedSchedule()?.notes}
                       </p>
                     </div>
@@ -1617,8 +1617,8 @@ export default function FamilyDetailPage() {
                       onClick={closeScheduleDialog}
                       style={{
                         padding: "0.5rem 1rem",
-                        "background-color": "#e2e8f0",
-                        color: "#2d3748",
+                        "background-color": "var(--color-border)",
+                        color: "var(--color-text)",
                         border: "none",
                         "border-radius": "4px",
                         cursor: "pointer",
@@ -1661,7 +1661,7 @@ export default function FamilyDetailPage() {
                           display: "block",
                           "margin-bottom": "0.5rem",
                           "font-weight": "500",
-                          color: "#2d3748",
+                          color: "var(--color-text)",
                         }}
                       >
                         Schedule Name *
@@ -1675,7 +1675,7 @@ export default function FamilyDetailPage() {
                         style={{
                           width: "100%",
                           padding: "0.5rem",
-                          border: "1px solid #cbd5e0",
+                          border: "1px solid var(--color-border-strong)",
                           "border-radius": "4px",
                         }}
                       />
@@ -1687,7 +1687,7 @@ export default function FamilyDetailPage() {
                           display: "block",
                           "margin-bottom": "0.5rem",
                           "font-weight": "500",
-                          color: "#2d3748",
+                          color: "var(--color-text)",
                         }}
                       >
                         Service *
@@ -1699,7 +1699,7 @@ export default function FamilyDetailPage() {
                         style={{
                           width: "100%",
                           padding: "0.5rem",
-                          border: "1px solid #cbd5e0",
+                          border: "1px solid var(--color-border-strong)",
                           "border-radius": "4px",
                         }}
                       >
@@ -1716,7 +1716,7 @@ export default function FamilyDetailPage() {
                           display: "block",
                           "margin-bottom": "0.5rem",
                           "font-weight": "500",
-                          color: "#2d3748",
+                          color: "var(--color-text)",
                         }}
                       >
                         Recurrence Pattern *
@@ -1728,7 +1728,7 @@ export default function FamilyDetailPage() {
                         style={{
                           width: "100%",
                           padding: "0.5rem",
-                          border: "1px solid #cbd5e0",
+                          border: "1px solid var(--color-border-strong)",
                           "border-radius": "4px",
                         }}
                       >
@@ -1745,7 +1745,7 @@ export default function FamilyDetailPage() {
                           display: "block",
                           "margin-bottom": "0.5rem",
                           "font-weight": "500",
-                          color: "#2d3748",
+                          color: "var(--color-text)",
                         }}
                       >
                         Days of Week *
@@ -1794,7 +1794,7 @@ export default function FamilyDetailPage() {
                             display: "block",
                             "margin-bottom": "0.5rem",
                             "font-weight": "500",
-                            color: "#2d3748",
+                            color: "var(--color-text)",
                           }}
                         >
                           Start Time *
@@ -1807,7 +1807,7 @@ export default function FamilyDetailPage() {
                           style={{
                             width: "100%",
                             padding: "0.5rem",
-                            border: "1px solid #cbd5e0",
+                            border: "1px solid var(--color-border-strong)",
                             "border-radius": "4px",
                           }}
                         />
@@ -1818,7 +1818,7 @@ export default function FamilyDetailPage() {
                             display: "block",
                             "margin-bottom": "0.5rem",
                             "font-weight": "500",
-                            color: "#2d3748",
+                            color: "var(--color-text)",
                           }}
                         >
                           End Time *
@@ -1831,7 +1831,7 @@ export default function FamilyDetailPage() {
                           style={{
                             width: "100%",
                             padding: "0.5rem",
-                            border: "1px solid #cbd5e0",
+                            border: "1px solid var(--color-border-strong)",
                             "border-radius": "4px",
                           }}
                         />
@@ -1844,7 +1844,7 @@ export default function FamilyDetailPage() {
                           display: "block",
                           "margin-bottom": "0.5rem",
                           "font-weight": "500",
-                          color: "#2d3748",
+                          color: "var(--color-text)",
                         }}
                       >
                         Hourly Rate (optional)
@@ -1859,7 +1859,7 @@ export default function FamilyDetailPage() {
                         style={{
                           width: "100%",
                           padding: "0.5rem",
-                          border: "1px solid #cbd5e0",
+                          border: "1px solid var(--color-border-strong)",
                           "border-radius": "4px",
                         }}
                       />
@@ -1871,7 +1871,7 @@ export default function FamilyDetailPage() {
                           display: "block",
                           "margin-bottom": "0.5rem",
                           "font-weight": "500",
-                          color: "#2d3748",
+                          color: "var(--color-text)",
                         }}
                       >
                         Children
@@ -1908,7 +1908,7 @@ export default function FamilyDetailPage() {
                             display: "block",
                             "margin-bottom": "0.5rem",
                             "font-weight": "500",
-                            color: "#2d3748",
+                            color: "var(--color-text)",
                           }}
                         >
                           Start Date *
@@ -1925,7 +1925,7 @@ export default function FamilyDetailPage() {
                           style={{
                             width: "100%",
                             padding: "0.5rem",
-                            border: "1px solid #cbd5e0",
+                            border: "1px solid var(--color-border-strong)",
                             "border-radius": "4px",
                           }}
                         />
@@ -1936,7 +1936,7 @@ export default function FamilyDetailPage() {
                             display: "block",
                             "margin-bottom": "0.5rem",
                             "font-weight": "500",
-                            color: "#2d3748",
+                            color: "var(--color-text)",
                           }}
                         >
                           End Date (optional)
@@ -1952,7 +1952,7 @@ export default function FamilyDetailPage() {
                           style={{
                             width: "100%",
                             padding: "0.5rem",
-                            border: "1px solid #cbd5e0",
+                            border: "1px solid var(--color-border-strong)",
                             "border-radius": "4px",
                           }}
                         />
@@ -1967,7 +1967,7 @@ export default function FamilyDetailPage() {
                           value="true"
                           checked={selectedSchedule()?.isActive ?? true}
                         />
-                        <span style={{ "font-weight": "500", color: "#2d3748" }}>Active</span>
+                        <span style={{ "font-weight": "500", color: "var(--color-text)" }}>Active</span>
                       </label>
                     </div>
 
@@ -1977,7 +1977,7 @@ export default function FamilyDetailPage() {
                           display: "block",
                           "margin-bottom": "0.5rem",
                           "font-weight": "500",
-                          color: "#2d3748",
+                          color: "var(--color-text)",
                         }}
                       >
                         Notes
@@ -1990,7 +1990,7 @@ export default function FamilyDetailPage() {
                         style={{
                           width: "100%",
                           padding: "0.5rem",
-                          border: "1px solid #cbd5e0",
+                          border: "1px solid var(--color-border-strong)",
                           "border-radius": "4px",
                           "font-family": "inherit",
                         }}
@@ -2011,8 +2011,8 @@ export default function FamilyDetailPage() {
                       onClick={closeScheduleDialog}
                       style={{
                         padding: "0.5rem 1rem",
-                        "background-color": "#e2e8f0",
-                        color: "#2d3748",
+                        "background-color": "var(--color-border)",
+                        color: "var(--color-text)",
                         border: "none",
                         "border-radius": "4px",
                         cursor: "pointer",
@@ -2059,7 +2059,7 @@ export default function FamilyDetailPage() {
         title="Generate Sessions"
         onClose={closeGenerateDialog}
       >
-            <p style={{ color: "#718096", "margin-bottom": "1.5rem" }}>
+            <p style={{ color: "var(--color-text-muted)", "margin-bottom": "1.5rem" }}>
               Generate care sessions from this schedule for a specific date range.
             </p>
 
@@ -2093,7 +2093,7 @@ export default function FamilyDetailPage() {
                       display: "block",
                       "margin-bottom": "0.5rem",
                       "font-weight": "500",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                     }}
                   >
                     Start Date *
@@ -2105,7 +2105,7 @@ export default function FamilyDetailPage() {
                     style={{
                       width: "100%",
                       padding: "0.5rem",
-                      border: "1px solid #cbd5e0",
+                      border: "1px solid var(--color-border-strong)",
                       "border-radius": "4px",
                     }}
                   />
@@ -2117,7 +2117,7 @@ export default function FamilyDetailPage() {
                       display: "block",
                       "margin-bottom": "0.5rem",
                       "font-weight": "500",
-                      color: "#2d3748",
+                      color: "var(--color-text)",
                     }}
                   >
                     End Date *
@@ -2129,7 +2129,7 @@ export default function FamilyDetailPage() {
                     style={{
                       width: "100%",
                       padding: "0.5rem",
-                      border: "1px solid #cbd5e0",
+                      border: "1px solid var(--color-border-strong)",
                       "border-radius": "4px",
                     }}
                   />
@@ -2149,8 +2149,8 @@ export default function FamilyDetailPage() {
                   onClick={closeGenerateDialog}
                   style={{
                     padding: "0.5rem 1rem",
-                    "background-color": "#e2e8f0",
-                    color: "#2d3748",
+                    "background-color": "var(--color-border)",
+                    color: "var(--color-text)",
                     border: "none",
                     "border-radius": "4px",
                     cursor: "pointer",

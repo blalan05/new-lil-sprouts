@@ -25,7 +25,7 @@ export default createHandler(() => (
           {themeBootScript as unknown as any}
           
           {/* PWA Meta Tags */}
-          <meta name="theme-color" content="#2d3748" />
+          <meta name="theme-color" content="var(--color-text)" />
           <meta name="description" content="Childcare management system for families and caregivers" />
           <meta name="mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-capable" content="yes" />

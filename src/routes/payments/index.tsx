@@ -250,7 +250,7 @@ export default function PaymentsPage() {
         <Show
           when={allPayments()}
           fallback={
-            <div style={{ "text-align": "center", padding: "3rem", color: "#718096" }}>
+            <div style={{ "text-align": "center", padding: "3rem", color: "var(--color-text-muted)" }}>
               Loading payments...
             </div>
           }
@@ -258,20 +258,20 @@ export default function PaymentsPage() {
           <Show
             when={filteredAndSortedPayments().length > 0}
             fallback={
-              <div style={{ "text-align": "center", padding: "2rem", color: "#718096" }}>
+              <div style={{ "text-align": "center", padding: "2rem", color: "var(--color-text-muted)" }}>
                 No payments found for {selectedYear()}.
               </div>
             }
           >
             <div style={{ overflow: "auto" }} class="table-responsive">
               <table style={{ width: "100%", "border-collapse": "collapse" }}>
-                <thead style={{ "background-color": "#f7fafc" }}>
+                <thead style={{ "background-color": "var(--color-surface-muted)" }}>
                   <tr>
                     <th
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
-                        "border-bottom": "2px solid #e2e8f0",
+                        "border-bottom": "2px solid var(--color-border)",
                         cursor: "pointer",
                         "user-select": "none",
                       }}
@@ -283,7 +283,7 @@ export default function PaymentsPage() {
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
-                        "border-bottom": "2px solid #e2e8f0",
+                        "border-bottom": "2px solid var(--color-border)",
                         cursor: "pointer",
                         "user-select": "none",
                       }}
@@ -295,7 +295,7 @@ export default function PaymentsPage() {
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
-                        "border-bottom": "2px solid #e2e8f0",
+                        "border-bottom": "2px solid var(--color-border)",
                       }}
                     >
                       Invoice #
@@ -304,7 +304,7 @@ export default function PaymentsPage() {
                       style={{
                         padding: "0.75rem",
                         "text-align": "right",
-                        "border-bottom": "2px solid #e2e8f0",
+                        "border-bottom": "2px solid var(--color-border)",
                         cursor: "pointer",
                         "user-select": "none",
                       }}
@@ -316,7 +316,7 @@ export default function PaymentsPage() {
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
-                        "border-bottom": "2px solid #e2e8f0",
+                        "border-bottom": "2px solid var(--color-border)",
                         cursor: "pointer",
                         "user-select": "none",
                       }}
@@ -328,7 +328,7 @@ export default function PaymentsPage() {
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
-                        "border-bottom": "2px solid #e2e8f0",
+                        "border-bottom": "2px solid var(--color-border)",
                         cursor: "pointer",
                         "user-select": "none",
                       }}
@@ -344,11 +344,11 @@ export default function PaymentsPage() {
                       return (
                         <tr
                           style={{
-                            "border-bottom": "1px solid #e2e8f0",
+                            "border-bottom": "1px solid var(--color-border)",
                             transition: "background-color 0.2s",
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = "#f7fafc";
+                            e.currentTarget.style.backgroundColor = "var(--color-surface-muted)";
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.backgroundColor = "transparent";
@@ -360,7 +360,7 @@ export default function PaymentsPage() {
                           <td style={{ padding: "0.75rem" }}>
                             {payment.family?.familyName || "N/A"}
                           </td>
-                          <td style={{ padding: "0.75rem", "font-size": "0.875rem", color: "#718096" }}>
+                          <td style={{ padding: "0.75rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                             {payment.invoiceNumber || "-"}
                           </td>
                           <td style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600" }}>
@@ -377,7 +377,7 @@ export default function PaymentsPage() {
                     }}
                   </For>
                 </tbody>
-                <tfoot style={{ "background-color": "#f7fafc", "border-top": "2px solid #e2e8f0" }}>
+                <tfoot style={{ "background-color": "var(--color-surface-muted)", "border-top": "2px solid var(--color-border)" }}>
                   <tr>
                     <td
                       colSpan={3}
@@ -451,9 +451,9 @@ export default function PaymentsPage() {
                 style={{
                   padding: "1rem",
                   "text-align": "center",
-                  "background-color": "#f7fafc",
+                  "background-color": "var(--color-surface-muted)",
                   "border-radius": "4px",
-                  color: "#718096",
+                  color: "var(--color-text-muted)",
                   "margin-bottom": "1rem",
                 }}
               >
@@ -473,7 +473,7 @@ export default function PaymentsPage() {
                 <label
                   style={{
                     "font-weight": "600",
-                    color: "#2d3748",
+                    color: "var(--color-text)",
                   }}
                 >
                   Select Unpaid Sessions *
@@ -491,19 +491,19 @@ export default function PaymentsPage() {
                   style={{
                     "max-height": "400px",
                     overflow: "auto",
-                    border: "1px solid #e2e8f0",
+                    border: "1px solid var(--color-border)",
                     "border-radius": "4px",
                   }}
                   class="table-responsive"
                 >
                   <table style={{ width: "100%", "border-collapse": "collapse" }}>
-                    <thead style={{ "background-color": "#f7fafc", position: "sticky", top: 0 }}>
+                    <thead style={{ "background-color": "var(--color-surface-muted)", position: "sticky", top: 0 }}>
                       <tr>
                         <th
                           style={{
                             padding: "0.75rem",
                             "text-align": "left",
-                            "border-bottom": "1px solid #e2e8f0",
+                            "border-bottom": "1px solid var(--color-border)",
                             width: "40px",
                           }}
                         >
@@ -525,7 +525,7 @@ export default function PaymentsPage() {
                           style={{
                             padding: "0.75rem",
                             "text-align": "left",
-                            "border-bottom": "1px solid #e2e8f0",
+                            "border-bottom": "1px solid var(--color-border)",
                           }}
                         >
                           Date & Time
@@ -534,7 +534,7 @@ export default function PaymentsPage() {
                           style={{
                             padding: "0.75rem",
                             "text-align": "left",
-                            "border-bottom": "1px solid #e2e8f0",
+                            "border-bottom": "1px solid var(--color-border)",
                           }}
                         >
                           Children
@@ -543,7 +543,7 @@ export default function PaymentsPage() {
                           style={{
                             padding: "0.75rem",
                             "text-align": "right",
-                            "border-bottom": "1px solid #e2e8f0",
+                            "border-bottom": "1px solid var(--color-border)",
                           }}
                         >
                           Duration
@@ -552,7 +552,7 @@ export default function PaymentsPage() {
                           style={{
                             padding: "0.75rem",
                             "text-align": "right",
-                            "border-bottom": "1px solid #e2e8f0",
+                            "border-bottom": "1px solid var(--color-border)",
                           }}
                         >
                           Rate
@@ -561,7 +561,7 @@ export default function PaymentsPage() {
                           style={{
                             padding: "0.75rem",
                             "text-align": "right",
-                            "border-bottom": "1px solid #e2e8f0",
+                            "border-bottom": "1px solid var(--color-border)",
                           }}
                         >
                           Amount
@@ -587,7 +587,7 @@ export default function PaymentsPage() {
                           return (
                             <tr
                               style={{
-                                "border-bottom": "1px solid #e2e8f0",
+                                "border-bottom": "1px solid var(--color-border)",
                                 "background-color": isSelected ? "#f0fff4" : "transparent",
                               }}
                             >
@@ -609,10 +609,10 @@ export default function PaymentsPage() {
                                 <div style={{ "font-weight": "500" }}>
                                   {formatDate(session.scheduledStart)}
                                 </div>
-                                <div style={{ "font-size": "0.875rem", color: "#718096" }}>
+                                <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                                   {formatTime(session.scheduledStart)} - {formatTime(session.scheduledEnd)}
                                 </div>
-                                <div style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.25rem" }}>
+                                <div style={{ "font-size": "0.75rem", color: "var(--color-text-subtle)", "margin-top": "0.25rem" }}>
                                   {session.service?.name || ""}
                                 </div>
                               </td>
@@ -646,12 +646,12 @@ export default function PaymentsPage() {
           <div
             style={{
               padding: "1.5rem",
-              "background-color": "#f7fafc",
+              "background-color": "var(--color-surface-muted)",
               "border-radius": "4px",
               "margin-bottom": "1rem",
             }}
           >
-            <h3 style={{ color: "#2d3748", "font-size": "1rem", "margin-bottom": "0.5rem" }}>
+            <h3 style={{ color: "var(--color-text)", "font-size": "1rem", "margin-bottom": "0.5rem" }}>
               Payment Summary
             </h3>
 
@@ -696,7 +696,7 @@ export default function PaymentsPage() {
             <div
               style={{
                 padding: "0.75rem",
-                "background-color": "#fff",
+                "background-color": "var(--color-surface)",
                 "border-radius": "4px",
                 border: "2px solid #48bb78",
               }}
@@ -708,7 +708,7 @@ export default function PaymentsPage() {
                   "align-items": "center",
                   "font-size": "1.25rem",
                   "font-weight": "700",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 <span>Total Amount:</span>
@@ -723,7 +723,7 @@ export default function PaymentsPage() {
           <div
             style={{
               padding: "0.75rem",
-              "background-color": "#fff5f5",
+              "background-color": "var(--wa-color-danger-fill-quiet)",
               border: "1px solid #feb2b2",
               "border-radius": "4px",
               color: "#c53030",

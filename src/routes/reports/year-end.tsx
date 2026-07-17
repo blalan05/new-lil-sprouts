@@ -171,7 +171,7 @@ export default function YearEndReports() {
               margin-bottom: 1.5rem;
             }
             h2 {
-              color: #4a5568;
+              color: #2d3748;
               margin-top: 2rem;
               margin-bottom: 1rem;
               font-size: 1.25rem;
@@ -357,10 +357,10 @@ export default function YearEndReports() {
       {/* Controls */}
       <div
         style={{
-          "background-color": "#fff",
+          "background-color": "var(--color-surface)",
           padding: "1.5rem",
           "border-radius": "8px",
-          border: "1px solid #e2e8f0",
+          border: "1px solid var(--color-border)",
           "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
           "margin-bottom": "2rem",
         }}
@@ -372,7 +372,7 @@ export default function YearEndReports() {
                 display: "block",
                 "margin-bottom": "0.5rem",
                 "font-weight": "600",
-                color: "#2d3748",
+                color: "var(--color-text)",
               }}
             >
               Year
@@ -383,7 +383,7 @@ export default function YearEndReports() {
               style={{
                 width: "100%",
                 padding: "0.75rem",
-                border: "1px solid #cbd5e0",
+                border: "1px solid var(--color-border-strong)",
                 "border-radius": "4px",
                 "font-size": "1rem",
               }}
@@ -400,7 +400,7 @@ export default function YearEndReports() {
                 display: "block",
                 "margin-bottom": "0.5rem",
                 "font-weight": "600",
-                color: "#2d3748",
+                color: "var(--color-text)",
               }}
             >
               View Mode
@@ -416,7 +416,7 @@ export default function YearEndReports() {
               style={{
                 width: "100%",
                 padding: "0.75rem",
-                border: "1px solid #cbd5e0",
+                border: "1px solid var(--color-border-strong)",
                 "border-radius": "4px",
                 "font-size": "1rem",
               }}
@@ -433,7 +433,7 @@ export default function YearEndReports() {
                   display: "block",
                   "margin-bottom": "0.5rem",
                   "font-weight": "600",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 Family
@@ -444,7 +444,7 @@ export default function YearEndReports() {
                 style={{
                   width: "100%",
                   padding: "0.75rem",
-                  border: "1px solid #cbd5e0",
+                  border: "1px solid var(--color-border-strong)",
                   "border-radius": "4px",
                   "font-size": "1rem",
                 }}
@@ -472,15 +472,15 @@ export default function YearEndReports() {
         {(report) => (
           <div
             style={{
-              "background-color": "#fff",
+              "background-color": "var(--color-surface)",
               padding: "2rem",
               "border-radius": "8px",
-              border: "1px solid #e2e8f0",
+              border: "1px solid var(--color-border)",
               "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
             }}
           >
             <div style={{ display: "flex", "justify-content": "space-between", "align-items": "center", "margin-bottom": "2rem", "flex-wrap": "wrap", gap: "1rem" }}>
-              <h2 style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
+              <h2 style={{ "font-size": "1.5rem", "font-weight": "700", color: "var(--color-text)" }}>
                 {report().familyName} - {selectedYear()} Report
               </h2>
               <div style={{ display: "flex", gap: "0.5rem", "flex-wrap": "wrap" }}>
@@ -488,7 +488,7 @@ export default function YearEndReports() {
                   onClick={() => printReport(report())}
                   style={{
                     padding: "0.75rem 1.5rem",
-                    "background-color": "#2d3748",
+                    "background-color": "var(--color-text)",
                     color: "#fff",
                     border: "none",
                     "border-radius": "4px",
@@ -500,7 +500,7 @@ export default function YearEndReports() {
                     e.currentTarget.style.backgroundColor = "#1a202c";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "#2d3748";
+                    e.currentTarget.style.backgroundColor = "var(--color-text)";
                   }}
                 >
                   📄 Print/PDF
@@ -531,28 +531,28 @@ export default function YearEndReports() {
 
             {/* Family Info */}
             <div style={{ "margin-bottom": "2rem" }}>
-              <h3 style={{ "font-size": "1.25rem", "font-weight": "600", color: "#4a5568", "margin-bottom": "1rem" }}>
+              <h3 style={{ "font-size": "1.25rem", "font-weight": "600", color: "var(--color-text)", "margin-bottom": "1rem" }}>
                 Family Information
               </h3>
               <div style={{ display: "grid", "grid-template-columns": "repeat(auto-fit, minmax(250px, 1fr))", gap: "1rem" }}>
                 <div>
-                  <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.25rem" }}>Family Name</div>
-                  <div style={{ "font-weight": "600", color: "#2d3748" }}>{report().familyName}</div>
+                  <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)", "margin-bottom": "0.25rem" }}>Family Name</div>
+                  <div style={{ "font-weight": "600", color: "var(--color-text)" }}>{report().familyName}</div>
                 </div>
                 <div>
-                  <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.25rem" }}>Parent/Guardian</div>
-                  <div style={{ "font-weight": "600", color: "#2d3748" }}>{report().parentName}</div>
+                  <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)", "margin-bottom": "0.25rem" }}>Parent/Guardian</div>
+                  <div style={{ "font-weight": "600", color: "var(--color-text)" }}>{report().parentName}</div>
                 </div>
                 {report().email && (
                   <div>
-                    <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.25rem" }}>Email</div>
-                    <div style={{ "font-weight": "600", color: "#2d3748" }}>{report().email}</div>
+                    <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)", "margin-bottom": "0.25rem" }}>Email</div>
+                    <div style={{ "font-weight": "600", color: "var(--color-text)" }}>{report().email}</div>
                   </div>
                 )}
                 {report().phone && (
                   <div>
-                    <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.25rem" }}>Phone</div>
-                    <div style={{ "font-weight": "600", color: "#2d3748" }}>{report().phone}</div>
+                    <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)", "margin-bottom": "0.25rem" }}>Phone</div>
+                    <div style={{ "font-weight": "600", color: "var(--color-text)" }}>{report().phone}</div>
                   </div>
                 )}
               </div>
@@ -560,7 +560,7 @@ export default function YearEndReports() {
 
             {/* Children */}
             <div style={{ "margin-bottom": "2rem" }}>
-              <h3 style={{ "font-size": "1.25rem", "font-weight": "600", color: "#4a5568", "margin-bottom": "1rem" }}>
+              <h3 style={{ "font-size": "1.25rem", "font-weight": "600", color: "var(--color-text)", "margin-bottom": "1rem" }}>
                 Children
               </h3>
               <div style={{ display: "flex", "flex-wrap": "wrap", gap: "1rem" }}>
@@ -572,15 +572,15 @@ export default function YearEndReports() {
                       <div
                         style={{
                           padding: "1rem",
-                          "background-color": "#f7fafc",
+                          "background-color": "var(--color-surface-muted)",
                           "border-radius": "4px",
-                          border: "1px solid #e2e8f0",
+                          border: "1px solid var(--color-border)",
                         }}
                       >
-                        <div style={{ "font-weight": "600", color: "#2d3748" }}>
+                        <div style={{ "font-weight": "600", color: "var(--color-text)" }}>
                           {child.firstName} {child.lastName}
                         </div>
-                        <div style={{ "font-size": "0.875rem", color: "#718096" }}>
+                        <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                           Age {age} as of {selectedYear()}
                         </div>
                       </div>
@@ -592,7 +592,7 @@ export default function YearEndReports() {
 
             {/* Sessions Table */}
             <div style={{ "margin-bottom": "2rem" }}>
-              <h3 style={{ "font-size": "1.25rem", "font-weight": "600", color: "#4a5568", "margin-bottom": "1rem" }}>
+              <h3 style={{ "font-size": "1.25rem", "font-weight": "600", color: "var(--color-text)", "margin-bottom": "1rem" }}>
                 Sessions ({report().totalSessions})
               </h3>
               <div style={{ overflow: "auto" }}>
@@ -603,29 +603,29 @@ export default function YearEndReports() {
                   }}
                 >
                   <thead>
-                    <tr style={{ "background-color": "#f7fafc" }}>
-                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", border: "1px solid #e2e8f0" }}>
+                    <tr style={{ "background-color": "var(--color-surface-muted)" }}>
+                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "var(--color-text)", border: "1px solid var(--color-border)" }}>
                         Date
                       </th>
-                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", border: "1px solid #e2e8f0" }}>
+                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "var(--color-text)", border: "1px solid var(--color-border)" }}>
                         Service
                       </th>
-                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", border: "1px solid #e2e8f0" }}>
+                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "var(--color-text)", border: "1px solid var(--color-border)" }}>
                         Children
                       </th>
-                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", border: "1px solid #e2e8f0" }}>
+                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "var(--color-text)", border: "1px solid var(--color-border)" }}>
                         Time
                       </th>
-                      <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "#2d3748", border: "1px solid #e2e8f0" }}>
+                      <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "var(--color-text)", border: "1px solid var(--color-border)" }}>
                         Hours
                       </th>
-                      <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "#2d3748", border: "1px solid #e2e8f0" }}>
+                      <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "var(--color-text)", border: "1px solid var(--color-border)" }}>
                         Rate
                       </th>
-                      <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "#2d3748", border: "1px solid #e2e8f0" }}>
+                      <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "var(--color-text)", border: "1px solid var(--color-border)" }}>
                         Amount
                       </th>
-                      <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "#2d3748", border: "1px solid #e2e8f0" }}>
+                      <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "var(--color-text)", border: "1px solid var(--color-border)" }}>
                         Total
                       </th>
                     </tr>
@@ -634,24 +634,24 @@ export default function YearEndReports() {
                     <For each={report().sessions}>
                       {(session) => (
                         <tr>
-                          <td style={{ padding: "0.75rem", border: "1px solid #e2e8f0" }}>{formatDate(session.date)}</td>
-                          <td style={{ padding: "0.75rem", border: "1px solid #e2e8f0" }}>{session.serviceName}</td>
-                          <td style={{ padding: "0.75rem", border: "1px solid #e2e8f0" }}>
+                          <td style={{ padding: "0.75rem", border: "1px solid var(--color-border)" }}>{formatDate(session.date)}</td>
+                          <td style={{ padding: "0.75rem", border: "1px solid var(--color-border)" }}>{session.serviceName}</td>
+                          <td style={{ padding: "0.75rem", border: "1px solid var(--color-border)" }}>
                             {session.children.map((c) => `${c.firstName} ${c.lastName}`).join(", ") || "N/A"}
                           </td>
-                          <td style={{ padding: "0.75rem", border: "1px solid #e2e8f0" }}>
+                          <td style={{ padding: "0.75rem", border: "1px solid var(--color-border)" }}>
                             {formatTime(session.startTime)} - {formatTime(session.endTime)}
                           </td>
-                          <td style={{ padding: "0.75rem", border: "1px solid #e2e8f0", "text-align": "right" }}>
+                          <td style={{ padding: "0.75rem", border: "1px solid var(--color-border)", "text-align": "right" }}>
                             {hoursDisplay(session.hours, 2)}
                           </td>
-                          <td style={{ padding: "0.75rem", border: "1px solid #e2e8f0", "text-align": "right" }}>
+                          <td style={{ padding: "0.75rem", border: "1px solid var(--color-border)", "text-align": "right" }}>
                             {session.hourlyRate ? formatCurrency(session.hourlyRate) : "N/A"}
                           </td>
-                          <td style={{ padding: "0.75rem", border: "1px solid #e2e8f0", "text-align": "right" }}>
+                          <td style={{ padding: "0.75rem", border: "1px solid var(--color-border)", "text-align": "right" }}>
                             {formatCurrency(session.sessionAmount)}
                           </td>
-                          <td style={{ padding: "0.75rem", border: "1px solid #e2e8f0", "text-align": "right", "font-weight": "600" }}>
+                          <td style={{ padding: "0.75rem", border: "1px solid var(--color-border)", "text-align": "right", "font-weight": "600" }}>
                             {formatCurrency(session.totalAmount)}
                           </td>
                         </tr>
@@ -666,40 +666,40 @@ export default function YearEndReports() {
             <div
               style={{
                 padding: "1.5rem",
-                "background-color": "#f7fafc",
+                "background-color": "var(--color-surface-muted)",
                 "border-radius": "8px",
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
               }}
             >
-              <h3 style={{ "font-size": "1.25rem", "font-weight": "600", color: "#4a5568", "margin-bottom": "1rem" }}>
+              <h3 style={{ "font-size": "1.25rem", "font-weight": "600", color: "var(--color-text)", "margin-bottom": "1rem" }}>
                 Summary
               </h3>
               <div style={{ display: "grid", "grid-template-columns": "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
                 <div>
-                  <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.25rem" }}>Total Sessions</div>
-                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>{report().totalSessions}</div>
+                  <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)", "margin-bottom": "0.25rem" }}>Total Sessions</div>
+                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "var(--color-text)" }}>{report().totalSessions}</div>
                 </div>
                 <div>
-                  <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.25rem" }}>Total Hours</div>
-                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
+                  <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)", "margin-bottom": "0.25rem" }}>Total Hours</div>
+                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "var(--color-text)" }}>
                     {hoursDisplay(report().totalHours, 2)} hrs
                   </div>
                 </div>
                 <div>
-                  <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.25rem" }}>Total Amount</div>
-                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
+                  <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)", "margin-bottom": "0.25rem" }}>Total Amount</div>
+                  <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "var(--color-text)" }}>
                     {formatCurrency(report().totalAmount)}
                   </div>
                 </div>
                 <div>
-                  <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.25rem" }}>Total Paid</div>
+                  <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)", "margin-bottom": "0.25rem" }}>Total Paid</div>
                   <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#38a169" }}>
                     {formatCurrency(report().totalPaid)}
                   </div>
                 </div>
                 {report().totalOutstanding > 0 && (
                   <div>
-                    <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.25rem" }}>Outstanding</div>
+                    <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)", "margin-bottom": "0.25rem" }}>Outstanding</div>
                     <div style={{ "font-size": "1.5rem", "font-weight": "700", color: "#e53e3e" }}>
                       {formatCurrency(report().totalOutstanding)}
                     </div>
@@ -711,30 +711,30 @@ export default function YearEndReports() {
             {/* Standalone Expenses Section */}
             <Show when={report().standaloneExpenses && report().standaloneExpenses.length > 0}>
               <div style={{ "margin-bottom": "2rem" }}>
-                <h3 style={{ "font-size": "1.25rem", "font-weight": "600", color: "#4a5568", "margin-bottom": "1rem" }}>
+                <h3 style={{ "font-size": "1.25rem", "font-weight": "600", color: "var(--color-text)", "margin-bottom": "1rem" }}>
                   Standalone Expenses ({report().standaloneExpenses.length})
                 </h3>
                 <div
                   style={{
-                    "background-color": "#fff",
+                    "background-color": "var(--color-surface)",
                     "border-radius": "8px",
-                    border: "1px solid #e2e8f0",
+                    border: "1px solid var(--color-border)",
                     overflow: "hidden",
                   }}
                 >
                   <table style={{ width: "100%", "border-collapse": "collapse" }}>
                     <thead>
-                      <tr style={{ "background-color": "#f7fafc", "border-bottom": "2px solid #e2e8f0" }}>
-                        <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748" }}>
+                      <tr style={{ "background-color": "var(--color-surface-muted)", "border-bottom": "2px solid var(--color-border)" }}>
+                        <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "var(--color-text)" }}>
                           Date
                         </th>
-                        <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748" }}>
+                        <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "var(--color-text)" }}>
                           Description
                         </th>
-                        <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748" }}>
+                        <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "var(--color-text)" }}>
                           Category
                         </th>
-                        <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "#2d3748" }}>
+                        <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "var(--color-text)" }}>
                           Amount
                         </th>
                       </tr>
@@ -742,7 +742,7 @@ export default function YearEndReports() {
                     <tbody>
                       <For each={report().standaloneExpenses}>
                         {(expense) => (
-                          <tr style={{ "border-bottom": "1px solid #e2e8f0" }}>
+                          <tr style={{ "border-bottom": "1px solid var(--color-border)" }}>
                             <td style={{ padding: "0.75rem" }}>{formatDate(expense.expenseDate)}</td>
                             <td style={{ padding: "0.75rem" }}>{expense.description}</td>
                             <td style={{ padding: "0.75rem" }}>
@@ -766,7 +766,7 @@ export default function YearEndReports() {
                           </tr>
                         )}
                       </For>
-                      <tr style={{ "background-color": "#f7fafc", "font-weight": "700" }}>
+                      <tr style={{ "background-color": "var(--color-surface-muted)", "font-weight": "700" }}>
                         <td colSpan={3} style={{ padding: "0.75rem", "text-align": "right" }}>
                           Total Standalone Expenses:
                         </td>
@@ -787,32 +787,32 @@ export default function YearEndReports() {
       <Show when={viewMode() === "all" && allReports()}>
         {(reports) => (
           <div style={{ display: "flex", "flex-direction": "column", gap: "1.5rem" }}>
-            <h2 style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
+            <h2 style={{ "font-size": "1.5rem", "font-weight": "700", color: "var(--color-text)" }}>
               All Families - {selectedYear()} Reports
             </h2>
             <For each={reports()}>
               {(report) => (
                 <div
                   style={{
-                    "background-color": "#fff",
+                    "background-color": "var(--color-surface)",
                     padding: "1.5rem",
                     "border-radius": "8px",
-                    border: "1px solid #e2e8f0",
+                    border: "1px solid var(--color-border)",
                     "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
                   }}
                 >
                   <div style={{ display: "flex", "justify-content": "space-between", "align-items": "center", "margin-bottom": "1rem", "flex-wrap": "wrap", gap: "1rem" }}>
                     <div>
-                      <h3 style={{ "font-size": "1.25rem", "font-weight": "600", color: "#2d3748", "margin-bottom": "0.25rem" }}>
+                      <h3 style={{ "font-size": "1.25rem", "font-weight": "600", color: "var(--color-text)", "margin-bottom": "0.25rem" }}>
                         {report.familyName}
                       </h3>
-                      <div style={{ "font-size": "0.875rem", color: "#718096" }}>{report.parentName}</div>
+                      <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)" }}>{report.parentName}</div>
                     </div>
                     <A
                       href={`/reports/year-end?family=${report.familyId}&year=${selectedYear()}`}
                       style={{
                         padding: "0.5rem 1rem",
-                        "background-color": "#2d3748",
+                        "background-color": "var(--color-text)",
                         color: "#fff",
                         "text-decoration": "none",
                         "border-radius": "4px",
@@ -823,7 +823,7 @@ export default function YearEndReports() {
                         e.currentTarget.style.backgroundColor = "#1a202c";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "#2d3748";
+                        e.currentTarget.style.backgroundColor = "var(--color-text)";
                       }}
                     >
                       View Full Report
@@ -831,24 +831,24 @@ export default function YearEndReports() {
                   </div>
                   <div style={{ display: "grid", "grid-template-columns": "repeat(auto-fit, minmax(150px, 1fr))", gap: "1rem" }}>
                     <div>
-                      <div style={{ "font-size": "0.875rem", color: "#718096" }}>Sessions</div>
-                      <div style={{ "font-weight": "600", color: "#2d3748" }}>{report.totalSessions}</div>
+                      <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)" }}>Sessions</div>
+                      <div style={{ "font-weight": "600", color: "var(--color-text)" }}>{report.totalSessions}</div>
                     </div>
                     <div>
-                      <div style={{ "font-size": "0.875rem", color: "#718096" }}>Hours</div>
-                      <div style={{ "font-weight": "600", color: "#2d3748" }}>{hoursDisplay(report.totalHours, 2)}</div>
+                      <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)" }}>Hours</div>
+                      <div style={{ "font-weight": "600", color: "var(--color-text)" }}>{hoursDisplay(report.totalHours, 2)}</div>
                     </div>
                     <div>
-                      <div style={{ "font-size": "0.875rem", color: "#718096" }}>Total Amount</div>
-                      <div style={{ "font-weight": "600", color: "#2d3748" }}>{formatCurrency(report.totalAmount)}</div>
+                      <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)" }}>Total Amount</div>
+                      <div style={{ "font-weight": "600", color: "var(--color-text)" }}>{formatCurrency(report.totalAmount)}</div>
                     </div>
                     <div>
-                      <div style={{ "font-size": "0.875rem", color: "#718096" }}>Paid</div>
+                      <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)" }}>Paid</div>
                       <div style={{ "font-weight": "600", color: "#38a169" }}>{formatCurrency(report.totalPaid)}</div>
                     </div>
                     {report.totalOutstanding > 0 && (
                       <div>
-                        <div style={{ "font-size": "0.875rem", color: "#718096" }}>Outstanding</div>
+                        <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)" }}>Outstanding</div>
                         <div style={{ "font-weight": "600", color: "#e53e3e" }}>{formatCurrency(report.totalOutstanding)}</div>
                       </div>
                     )}
@@ -864,17 +864,17 @@ export default function YearEndReports() {
       <Show when={viewMode() === "single" && !selectedFamilyId()}>
         <div
           style={{
-            "background-color": "#fff",
+            "background-color": "var(--color-surface)",
             padding: "3rem",
             "border-radius": "8px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "text-align": "center",
           }}
         >
-          <div style={{ "font-size": "1.25rem", "font-weight": "600", color: "#2d3748", "margin-bottom": "0.5rem" }}>
+          <div style={{ "font-size": "1.25rem", "font-weight": "600", color: "var(--color-text)", "margin-bottom": "0.5rem" }}>
             Select a family to view their year-end report
           </div>
-          <div style={{ color: "#718096" }}>Choose a family from the dropdown above to generate their report for {selectedYear()}.</div>
+          <div style={{ color: "var(--color-text-muted)" }}>Choose a family from the dropdown above to generate their report for {selectedYear()}.</div>
         </div>
       </Show>
     </PageContent>

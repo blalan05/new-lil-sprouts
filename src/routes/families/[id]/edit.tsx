@@ -63,22 +63,22 @@ export default function EditFamily() {
 
             <fieldset
               style={{
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--color-border)",
                 "border-radius": "4px",
                 padding: "1.5rem",
                 "margin-bottom": "1.5rem",
               }}
             >
-              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+              <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
                 Services
               </legend>
-              <p style={{ "margin-bottom": "1rem", "font-size": "0.875rem", color: "#718096" }}>
+              <p style={{ "margin-bottom": "1rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                 Select which services this family uses. This will default when creating new schedules.
               </p>
               <Show
                 when={services()}
                 fallback={
-                  <div style={{ padding: "1rem", color: "#718096" }}>Loading services...</div>
+                  <div style={{ padding: "1rem", color: "var(--color-text-muted)" }}>Loading services...</div>
                 }
               >
                 <div style={{ display: "flex", "flex-direction": "column", gap: "0.75rem" }}>
@@ -99,7 +99,7 @@ export default function EditFamily() {
                             transition: "background-color 0.2s",
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = "#f7fafc";
+                            e.currentTarget.style.backgroundColor = "var(--color-surface-muted)";
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.backgroundColor = "transparent";
@@ -117,7 +117,7 @@ export default function EditFamily() {
                             }}
                           />
                           <div style={{ flex: "1" }}>
-                            <span style={{ "font-weight": "500", color: "#2d3748" }}>
+                            <span style={{ "font-weight": "500", color: "var(--color-text)" }}>
                               {service.name}
                             </span>
                             {service.defaultHourlyRate && (
@@ -125,7 +125,7 @@ export default function EditFamily() {
                                 style={{
                                   "margin-left": "0.5rem",
                                   "font-size": "0.875rem",
-                                  color: "#718096",
+                                  color: "var(--color-text-muted)",
                                 }}
                               >
                                 (${service.defaultHourlyRate}/hr

@@ -328,7 +328,7 @@ export default function SchedulePage() {
           <Show
             when={upcomingUnavailabilities()?.length}
             fallback={
-              <p style={{ color: "#718096", "text-align": "center", padding: "2rem" }}>
+              <p style={{ color: "var(--color-text-muted)", "text-align": "center", padding: "2rem" }}>
                 No upcoming unavailable times. Click "+ Add New" to block out time.
               </p>
             }
@@ -339,7 +339,7 @@ export default function SchedulePage() {
                   <div
                     style={{
                       padding: "1rem",
-                      "background-color": "#fff5f5",
+                      "background-color": "var(--wa-color-danger-fill-quiet)",
                       border: "1px solid #feb2b2",
                       "border-radius": "4px",
                       display: "flex",
@@ -356,14 +356,14 @@ export default function SchedulePage() {
                           "margin-bottom": "0.5rem",
                         }}
                       >
-                        <h3 style={{ color: "#2d3748", margin: 0, "font-size": "1rem" }}>
+                        <h3 style={{ color: "var(--color-text)", margin: 0, "font-size": "1rem" }}>
                           {unavailability.reason || "Time Off"}
                         </h3>
                         <span
                           style={{
                             padding: "0.25rem 0.5rem",
                             "border-radius": "9999px",
-                            "background-color": "#fed7d7",
+                            "background-color": "var(--wa-color-danger-fill-normal)",
                             color: "#c53030",
                             "font-size": "0.75rem",
                             "font-weight": "600",
@@ -374,8 +374,8 @@ export default function SchedulePage() {
                       </div>
                       <div style={{ display: "flex", gap: "2rem", "font-size": "0.875rem" }}>
                         <div>
-                          <span style={{ color: "#718096" }}>From: </span>
-                          <span style={{ color: "#2d3748", "font-weight": "500" }}>
+                          <span style={{ color: "var(--color-text-muted)" }}>From: </span>
+                          <span style={{ color: "var(--color-text)", "font-weight": "500" }}>
                             {formatDate(unavailability.startDate)}
                             {!unavailability.allDay &&
                               unavailability.startTime &&
@@ -383,8 +383,8 @@ export default function SchedulePage() {
                           </span>
                         </div>
                         <div>
-                          <span style={{ color: "#718096" }}>To: </span>
-                          <span style={{ color: "#2d3748", "font-weight": "500" }}>
+                          <span style={{ color: "var(--color-text-muted)" }}>To: </span>
+                          <span style={{ color: "var(--color-text)", "font-weight": "500" }}>
                             {formatDate(unavailability.endDate)}
                             {!unavailability.allDay &&
                               unavailability.endTime &&
@@ -395,7 +395,7 @@ export default function SchedulePage() {
                       <Show when={unavailability.notes}>
                         <p
                           style={{
-                            color: "#718096",
+                            color: "var(--color-text-muted)",
                             "font-size": "0.875rem",
                             margin: "0.5rem 0 0 0",
                           }}
@@ -564,7 +564,7 @@ export default function SchedulePage() {
                           display: "block",
                           "margin-bottom": "0.5rem",
                           "font-weight": "600",
-                          color: "#2d3748",
+                          color: "var(--color-text)",
                         }}
                       >
                         {(() => {
@@ -588,7 +588,7 @@ export default function SchedulePage() {
                                 transition: "background-color 0.2s",
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = "#f7fafc";
+                                e.currentTarget.style.backgroundColor = "var(--color-surface-muted)";
                               }}
                               onMouseLeave={(e) => {
                                 e.currentTarget.style.backgroundColor = "transparent";
@@ -763,8 +763,8 @@ function ListView(props: {
       <div
         style={{
           padding: "1.5rem",
-          "border-bottom": "1px solid #e2e8f0",
-          "background-color": "#f7fafc",
+          "border-bottom": "1px solid var(--color-border)",
+          "background-color": "var(--color-surface-muted)",
         }}
       >
         <div
@@ -813,7 +813,7 @@ function ListView(props: {
             </wa-button>
           </div>
         </div>
-        <div style={{ color: "#718096", "font-size": "0.875rem" }}>
+        <div style={{ color: "var(--color-text-muted)", "font-size": "0.875rem" }}>
           Showing {sortedSessions().length} session{sortedSessions().length !== 1 ? "s" : ""}
           {props.searchTerm && ` matching "${props.searchTerm}"`}
         </div>
@@ -824,7 +824,7 @@ function ListView(props: {
         <Show
           when={sortedSessions().length > 0}
           fallback={
-            <div style={{ padding: "3rem", "text-align": "center", color: "#718096" }}>
+            <div style={{ padding: "3rem", "text-align": "center", color: "var(--color-text-muted)" }}>
               No sessions found.
             </div>
           }
@@ -842,14 +842,14 @@ function ListView(props: {
                     style={{
                       display: "block",
                       padding: "1rem 1.5rem",
-                      "border-bottom": "1px solid #e2e8f0",
+                      "border-bottom": "1px solid var(--color-border)",
                       "text-decoration": "none",
                       color: "inherit",
                       transition: "background-color 0.2s",
                       opacity: isPast ? 0.7 : 1,
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f7fafc";
+                      e.currentTarget.style.backgroundColor = "var(--color-surface-muted)";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.backgroundColor = "transparent";
@@ -875,7 +875,7 @@ function ListView(props: {
                         <div
                           style={{
                             "font-weight": "600",
-                            color: "#2d3748",
+                            color: "var(--color-text)",
                             "font-size": "1.125rem",
                           }}
                         >
@@ -883,7 +883,7 @@ function ListView(props: {
                         </div>
                         <div
                           style={{
-                            color: "#718096",
+                            color: "var(--color-text-muted)",
                             "font-size": "0.875rem",
                             "margin-top": "0.25rem",
                           }}
@@ -894,26 +894,26 @@ function ListView(props: {
                         </div>
                       </div>
                       <div style={{ "min-width": "150px" }}>
-                        <div style={{ "font-weight": "600", color: "#2d3748" }}>
+                        <div style={{ "font-weight": "600", color: "var(--color-text)" }}>
                           {formatDate(session.scheduledStart)}
                         </div>
                         <div
                           style={{
-                            color: "#718096",
+                            color: "var(--color-text-muted)",
                             "font-size": "0.875rem",
                             "margin-top": "0.25rem",
                           }}
                         >
                           <ClientTime date={session.scheduledStart} /> - <ClientTime date={session.scheduledEnd} />
                         </div>
-                        <div style={{ color: "#718096", "font-size": "0.875rem" }}>
+                        <div style={{ color: "var(--color-text-muted)", "font-size": "0.875rem" }}>
                           {formatDuration(startTime, endTime)}
                         </div>
                       </div>
                       <Show when={session.hourlyRate}>
                         <div style={{ "min-width": "100px", "text-align": "right" }}>
-                          <div style={{ color: "#718096", "font-size": "0.875rem" }}>Rate</div>
-                          <div style={{ "font-weight": "600", color: "#2d3748" }}>
+                          <div style={{ color: "var(--color-text-muted)", "font-size": "0.875rem" }}>Rate</div>
+                          <div style={{ "font-weight": "600", color: "var(--color-text)" }}>
                             ${session.hourlyRate}/hr
                           </div>
                         </div>
@@ -989,9 +989,9 @@ function MonthView(props: {
     <div
       class="calendar-grid"
       style={{
-        "background-color": "#fff",
+        "background-color": "var(--color-surface)",
         "border-radius": "8px",
-        border: "1px solid #e2e8f0",
+        border: "1px solid var(--color-border)",
         overflow: "hidden",
       }}
     >
@@ -1000,8 +1000,8 @@ function MonthView(props: {
         style={{
           display: "grid",
           "grid-template-columns": "repeat(7, 1fr)",
-          "background-color": "#f7fafc",
-          borderBottom: "2px solid #e2e8f0",
+          "background-color": "var(--color-surface-muted)",
+          borderBottom: "2px solid var(--color-border)",
         }}
       >
         <For each={["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]}>
@@ -1011,7 +1011,7 @@ function MonthView(props: {
                 padding: "0.75rem",
                 "text-align": "center",
                 "font-weight": "600",
-                color: "#4a5568",
+                color: "var(--color-text)",
               }}
             >
               {day}
@@ -1032,26 +1032,26 @@ function MonthView(props: {
                 onClick={() => props.onDateClick?.(day)}
                 style={{
                   minHeight: "120px",
-                  border: "1px solid #e2e8f0",
+                  border: "1px solid var(--color-border)",
                   padding: "0.5rem",
-                  "background-color": isCurrentMonthDay ? "#fff" : "#f7fafc",
+                  "background-color": isCurrentMonthDay ? "var(--color-surface)" : "var(--color-surface-muted)",
                   position: "relative",
                   cursor: props.onDateClick ? "pointer" : "default",
                   transition: "background-color 0.2s",
                 }}
                 onMouseEnter={(e) => {
                   if (isCurrentMonthDay && props.onDateClick) {
-                    e.currentTarget.style.backgroundColor = "#f7fafc";
+                    e.currentTarget.style.backgroundColor = "var(--color-surface-muted)";
                   }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = isCurrentMonthDay ? "#fff" : "#f7fafc";
+                  e.currentTarget.style.backgroundColor = isCurrentMonthDay ? "var(--color-surface)" : "var(--color-surface-muted)";
                 }}
               >
                 <div
                   style={{
                     "font-weight": isTodayDay ? "700" : "400",
-                    color: isCurrentMonthDay ? "#2d3748" : "#a0aec0",
+                    color: isCurrentMonthDay ? "var(--color-text)" : "var(--color-text-subtle)",
                     "margin-bottom": "0.25rem",
                     "font-size": isTodayDay ? "1rem" : "0.875rem",
                   }}
@@ -1064,7 +1064,7 @@ function MonthView(props: {
                       <div
                         style={{
                           padding: "0.25rem 0.5rem",
-                          "background-color": "#fed7d7",
+                          "background-color": "var(--wa-color-danger-fill-normal)",
                           color: "#c53030",
                           "border-radius": "4px",
                           "font-size": "0.75rem",
@@ -1079,11 +1079,11 @@ function MonthView(props: {
                   <For each={daySessions.slice(0, 3)}>
                     {(session) => {
                       const statusColors = {
-                        SCHEDULED: { bg: "#bee3f8", color: "#2c5282" },
+                        SCHEDULED: { bg: "var(--wa-color-brand-fill-normal)", color: "#2c5282" },
                         IN_PROGRESS: { bg: "#feebc8", color: "#7c2d12" },
                         COMPLETED: { bg: "#c6f6d5", color: "#276749" },
-                        CANCELLED: { bg: "#fed7d7", color: "#c53030" },
-                      }[session.status] || { bg: "#e2e8f0", color: "#2d3748" };
+                        CANCELLED: { bg: "var(--wa-color-danger-fill-normal)", color: "#c53030" },
+                      }[session.status] || { bg: "var(--color-border)", color: "var(--color-text)" };
 
                       const isConfirmed = session.isConfirmed;
                       const isRecurring = !!session.scheduleId;
@@ -1118,7 +1118,7 @@ function MonthView(props: {
                     <div
                       style={{
                         "font-size": "0.75rem",
-                        color: "#718096",
+                        color: "var(--color-text-muted)",
                         padding: "0.25rem",
                       }}
                     >
@@ -1183,15 +1183,15 @@ function WeekView(props: { currentDate: Date; sessions: any[]; unavailabilities:
     <div
       class="calendar-grid"
       style={{
-        "background-color": "#fff",
+        "background-color": "var(--color-surface)",
         "border-radius": "8px",
-        border: "1px solid #e2e8f0",
+        border: "1px solid var(--color-border)",
         overflow: "auto",
       }}
     >
       <div class="calendar-grid-inner calendar-week-grid" style={{ display: "grid", "grid-template-columns": "80px repeat(7, 1fr)" }}>
         {/* Header row */}
-        <div style={{ padding: "1rem", "font-weight": "600", color: "#4a5568" }}>Time</div>
+        <div style={{ padding: "1rem", "font-weight": "600", color: "var(--color-text)" }}>Time</div>
         <For each={days}>
           {(day) => (
             <div
@@ -1199,8 +1199,8 @@ function WeekView(props: { currentDate: Date; sessions: any[]; unavailabilities:
                 padding: "1rem",
                 "text-align": "center",
                 "font-weight": "600",
-                color: "#2d3748",
-                borderLeft: "1px solid #e2e8f0",
+                color: "var(--color-text)",
+                borderLeft: "1px solid var(--color-border)",
               }}
             >
               <div>{day.toLocaleDateString("en-US", { weekday: "short" })}</div>
@@ -1217,8 +1217,8 @@ function WeekView(props: { currentDate: Date; sessions: any[]; unavailabilities:
                 style={{
                   padding: "0.5rem",
                   "font-size": "0.875rem",
-                  color: "#718096",
-                  borderTop: "1px solid #e2e8f0",
+                  color: "var(--color-text-muted)",
+                  borderTop: "1px solid var(--color-border)",
                 }}
               >
                 {formatTime(hour)}
@@ -1232,8 +1232,8 @@ function WeekView(props: { currentDate: Date; sessions: any[]; unavailabilities:
                     <div
                       style={{
                         minHeight: "60px",
-                        borderTop: "1px solid #e2e8f0",
-                        borderLeft: "1px solid #e2e8f0",
+                        borderTop: "1px solid var(--color-border)",
+                        borderLeft: "1px solid var(--color-border)",
                         padding: "0.25rem",
                         position: "relative",
                       }}
@@ -1252,7 +1252,7 @@ function WeekView(props: { currentDate: Date; sessions: any[]; unavailabilities:
                                   left: 0,
                                   right: 0,
                                   bottom: 0,
-                                  "background-color": "#fed7d7",
+                                  "background-color": "var(--wa-color-danger-fill-normal)",
                                   opacity: 0.3,
                                   "z-index": 1,
                                 }}
@@ -1264,11 +1264,11 @@ function WeekView(props: { currentDate: Date; sessions: any[]; unavailabilities:
                       <For each={daySessions}>
                         {(session) => {
                           const statusColors = {
-                            SCHEDULED: { bg: "#bee3f8", color: "#2c5282" },
+                            SCHEDULED: { bg: "var(--wa-color-brand-fill-normal)", color: "#2c5282" },
                             IN_PROGRESS: { bg: "#feebc8", color: "#7c2d12" },
                             COMPLETED: { bg: "#c6f6d5", color: "#276749" },
-                            CANCELLED: { bg: "#fed7d7", color: "#c53030" },
-                          }[session.status] || { bg: "#e2e8f0", color: "#2d3748" };
+                            CANCELLED: { bg: "var(--wa-color-danger-fill-normal)", color: "#c53030" },
+                          }[session.status] || { bg: "var(--color-border)", color: "var(--color-text)" };
 
                           const isConfirmed = session.isConfirmed;
                           const isRecurring = !!session.scheduleId;
@@ -1360,9 +1360,9 @@ function DayView(props: { currentDate: Date; sessions: any[]; unavailabilities: 
   return (
     <div
       style={{
-        "background-color": "#fff",
+        "background-color": "var(--color-surface)",
         "border-radius": "8px",
-        border: "1px solid #e2e8f0",
+        border: "1px solid var(--color-border)",
         overflow: "auto",
       }}
     >
@@ -1371,8 +1371,8 @@ function DayView(props: { currentDate: Date; sessions: any[]; unavailabilities: 
           style={{
             padding: "1rem",
             "font-weight": "600",
-            color: "#4a5568",
-            borderBottom: "2px solid #e2e8f0",
+            color: "var(--color-text)",
+            borderBottom: "2px solid var(--color-border)",
           }}
         >
           Time
@@ -1381,8 +1381,8 @@ function DayView(props: { currentDate: Date; sessions: any[]; unavailabilities: 
           style={{
             padding: "1rem",
             "font-weight": "600",
-            color: "#2d3748",
-            borderBottom: "2px solid #e2e8f0",
+            color: "var(--color-text)",
+            borderBottom: "2px solid var(--color-border)",
             "text-align": "center",
           }}
         >
@@ -1405,8 +1405,8 @@ function DayView(props: { currentDate: Date; sessions: any[]; unavailabilities: 
                   style={{
                     padding: "0.5rem",
                     "font-size": "0.875rem",
-                    color: "#718096",
-                    borderTop: "1px solid #e2e8f0",
+                    color: "var(--color-text-muted)",
+                    borderTop: "1px solid var(--color-border)",
                     "min-height": "60px",
                   }}
                 >
@@ -1415,7 +1415,7 @@ function DayView(props: { currentDate: Date; sessions: any[]; unavailabilities: 
                 <div
                   style={{
                     padding: "0.5rem",
-                    borderTop: "1px solid #e2e8f0",
+                    borderTop: "1px solid var(--color-border)",
                     "min-height": "60px",
                     position: "relative",
                   }}
@@ -1429,7 +1429,7 @@ function DayView(props: { currentDate: Date; sessions: any[]; unavailabilities: 
                           left: 0,
                           right: 0,
                           bottom: 0,
-                          "background-color": "#fed7d7",
+                          "background-color": "var(--wa-color-danger-fill-normal)",
                           opacity: 0.3,
                           "z-index": 1,
                         }}
@@ -1440,11 +1440,11 @@ function DayView(props: { currentDate: Date; sessions: any[]; unavailabilities: 
                   <For each={intervalSessions}>
                     {(session) => {
                       const statusColors = {
-                        SCHEDULED: { bg: "#bee3f8", color: "#2c5282" },
+                        SCHEDULED: { bg: "var(--wa-color-brand-fill-normal)", color: "#2c5282" },
                         IN_PROGRESS: { bg: "#feebc8", color: "#7c2d12" },
                         COMPLETED: { bg: "#c6f6d5", color: "#276749" },
-                        CANCELLED: { bg: "#fed7d7", color: "#c53030" },
-                      }[session.status] || { bg: "#e2e8f0", color: "#2d3748" };
+                        CANCELLED: { bg: "var(--wa-color-danger-fill-normal)", color: "#c53030" },
+                      }[session.status] || { bg: "var(--color-border)", color: "var(--color-text)" };
 
                       const isConfirmed = session.isConfirmed;
                       const isRecurring = !!session.scheduleId;

@@ -40,7 +40,7 @@
   color-scheme: dark;
   --color-bg: #1a202c;
   --color-surface: #2d3748;
-  --color-surface-muted: #1a202c;
+  --color-surface-muted: #252d3a;
   --color-border: #4a5568;
   --color-border-strong: #718096;
   --color-text: #e2e8f0;
@@ -48,13 +48,32 @@
   --color-text-subtle: #718096;
   --color-nav-bg: #171923;
   --color-nav-text: #e2e8f0;
-  --color-hover: #2d3748;
+  --color-hover: #3d4a5c;
 }
 
 body {
   margin: 0;
   color: var(--wa-color-text-normal, var(--color-text));
   background-color: var(--wa-color-surface-lowered, var(--color-bg));
+}
+
+/* Native controls inherit theme tokens (many forms still use plain inputs) */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]),
+select,
+textarea {
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border-color: var(--color-border-strong);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+option {
+  background-color: var(--color-surface);
+  color: var(--color-text);
 }
 
 main {

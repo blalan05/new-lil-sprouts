@@ -146,7 +146,7 @@ export default function CalendarReport() {
                   display: "block",
                   "margin-bottom": "0.25rem",
                   "font-size": "0.875rem",
-                  color: "#4a5568",
+                  color: "var(--color-text)",
                   "font-weight": "500",
                 }}
               >
@@ -157,7 +157,7 @@ export default function CalendarReport() {
                 onChange={(e) => setSelectedMonth(parseInt(e.currentTarget.value))}
                 style={{
                   padding: "0.5rem",
-                  border: "1px solid #cbd5e0",
+                  border: "1px solid var(--color-border-strong)",
                   "border-radius": "4px",
                   "font-size": "0.875rem",
                 }}
@@ -175,7 +175,7 @@ export default function CalendarReport() {
                   display: "block",
                   "margin-bottom": "0.25rem",
                   "font-size": "0.875rem",
-                  color: "#4a5568",
+                  color: "var(--color-text)",
                   "font-weight": "500",
                 }}
               >
@@ -186,7 +186,7 @@ export default function CalendarReport() {
                 onChange={(e) => setSelectedYear(parseInt(e.currentTarget.value))}
                 style={{
                   padding: "0.5rem",
-                  border: "1px solid #cbd5e0",
+                  border: "1px solid var(--color-border-strong)",
                   "border-radius": "4px",
                   "font-size": "0.875rem",
                 }}
@@ -206,7 +206,7 @@ export default function CalendarReport() {
           style={{
             "font-size": "1.75rem",
             "font-weight": "700",
-            color: "#2d3748",
+            color: "var(--color-text)",
             margin: "0 0 0.5rem 0",
           }}
           class="print-title no-print"
@@ -214,12 +214,12 @@ export default function CalendarReport() {
           Care Sessions Calendar
         </h1>
         <div
-          style={{ "font-size": "1.125rem", color: "#4a5568", "margin-bottom": "0.5rem" }}
+          style={{ "font-size": "1.125rem", color: "var(--color-text)", "margin-bottom": "0.5rem" }}
           class="print-month"
         >
           {monthName()}
         </div>
-        <div style={{ "font-size": "0.875rem", color: "#718096" }} class="print-summary">
+        <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)" }} class="print-summary">
           Total Sessions: {totalSessions()} | Total Hours: {totalHours()}h
         </div>
       </div>
@@ -227,9 +227,9 @@ export default function CalendarReport() {
       {/* Calendar */}
       <div
         style={{
-          "background-color": "#fff",
+          "background-color": "var(--color-surface)",
           "border-radius": "8px",
-          border: "1px solid #e2e8f0",
+          border: "1px solid var(--color-border)",
           overflow: "hidden",
         }}
         class="calendar-container"
@@ -239,8 +239,8 @@ export default function CalendarReport() {
           style={{
             display: "grid",
             "grid-template-columns": "repeat(7, 1fr)",
-            "background-color": "#f7fafc",
-            borderBottom: "2px solid #e2e8f0",
+            "background-color": "var(--color-surface-muted)",
+            borderBottom: "2px solid var(--color-border)",
           }}
           class="calendar-day-headers"
         >
@@ -251,7 +251,7 @@ export default function CalendarReport() {
                   padding: "0.75rem",
                   "text-align": "center",
                   "font-weight": "600",
-                  color: "#4a5568",
+                  color: "var(--color-text)",
                   "font-size": "0.875rem",
                 }}
                 class="calendar-day-header"
@@ -266,7 +266,7 @@ export default function CalendarReport() {
         <Show
           when={sessions() !== undefined}
           fallback={
-            <div style={{ padding: "2rem", "text-align": "center", color: "#718096" }}>
+            <div style={{ padding: "2rem", "text-align": "center", color: "var(--color-text-muted)" }}>
               Loading sessions...
             </div>
           }
@@ -293,9 +293,9 @@ export default function CalendarReport() {
                   <div
                     style={{
                       minHeight: "120px",
-                      border: "1px solid #e2e8f0",
+                      border: "1px solid var(--color-border)",
                       padding: "0.5rem",
-                      "background-color": isCurrentMonthDay ? "#fff" : "#f7fafc",
+                      "background-color": isCurrentMonthDay ? "var(--color-surface)" : "var(--color-surface-muted)",
                       position: "relative",
                     }}
                     class="calendar-day-cell"
@@ -303,7 +303,7 @@ export default function CalendarReport() {
                     <div
                       style={{
                         "font-weight": isToday ? "700" : "400",
-                        color: isCurrentMonthDay ? "#2d3748" : "#a0aec0",
+                        color: isCurrentMonthDay ? "var(--color-text)" : "var(--color-text-subtle)",
                         "margin-bottom": "0.25rem",
                         "font-size": isToday ? "1rem" : "0.875rem",
                       }}
@@ -321,7 +321,7 @@ export default function CalendarReport() {
                           <div
                             style={{
                               "font-size": "0.75rem",
-                              color: "#a0aec0",
+                              color: "var(--color-text-subtle)",
                               "font-style": "italic",
                             }}
                             class="no-sessions-text"
@@ -340,7 +340,7 @@ export default function CalendarReport() {
                               <div
                                 style={{
                                   padding: "0.25rem 0.375rem",
-                                  "background-color": "#bee3f8",
+                                  "background-color": "var(--wa-color-brand-fill-normal)",
                                   color: "#2c5282",
                                   "border-radius": "4px",
                                   "font-size": "0.7rem",
@@ -364,7 +364,7 @@ export default function CalendarReport() {
                                   <div
                                     style={{
                                       "font-size": "0.65rem",
-                                      color: "#4a5568",
+                                      color: "var(--color-text)",
                                       "margin-bottom": "0.125rem",
                                     }}
                                     class="session-children"

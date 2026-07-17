@@ -65,7 +65,7 @@ export default function IncomeReport() {
               margin-bottom: 1.5rem;
             }
             h2 {
-              color: #4a5568;
+              color: #2d3748;
               margin-top: 2rem;
               margin-bottom: 1rem;
               font-size: 1.25rem;
@@ -274,10 +274,10 @@ export default function IncomeReport() {
       {/* Controls */}
       <div
         style={{
-          "background-color": "#fff",
+          "background-color": "var(--color-surface)",
           padding: "1.5rem",
           "border-radius": "8px",
-          border: "1px solid #e2e8f0",
+          border: "1px solid var(--color-border)",
           "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
           "margin-bottom": "2rem",
         }}
@@ -289,7 +289,7 @@ export default function IncomeReport() {
                 display: "block",
                 "margin-bottom": "0.5rem",
                 "font-weight": "600",
-                color: "#2d3748",
+                color: "var(--color-text)",
               }}
             >
               View Period
@@ -305,7 +305,7 @@ export default function IncomeReport() {
               style={{
                 width: "100%",
                 padding: "0.75rem",
-                border: "1px solid #cbd5e0",
+                border: "1px solid var(--color-border-strong)",
                 "border-radius": "4px",
                 "font-size": "1rem",
               }}
@@ -321,7 +321,7 @@ export default function IncomeReport() {
                 display: "block",
                 "margin-bottom": "0.5rem",
                 "font-weight": "600",
-                color: "#2d3748",
+                color: "var(--color-text)",
               }}
             >
               Year
@@ -332,7 +332,7 @@ export default function IncomeReport() {
               style={{
                 width: "100%",
                 padding: "0.75rem",
-                border: "1px solid #cbd5e0",
+                border: "1px solid var(--color-border-strong)",
                 "border-radius": "4px",
                 "font-size": "1rem",
               }}
@@ -350,7 +350,7 @@ export default function IncomeReport() {
                   display: "block",
                   "margin-bottom": "0.5rem",
                   "font-weight": "600",
-                  color: "#2d3748",
+                  color: "var(--color-text)",
                 }}
               >
                 Month
@@ -361,7 +361,7 @@ export default function IncomeReport() {
                 style={{
                   width: "100%",
                   padding: "0.75rem",
-                  border: "1px solid #cbd5e0",
+                  border: "1px solid var(--color-border-strong)",
                   "border-radius": "4px",
                   "font-size": "1rem",
                 }}
@@ -384,15 +384,15 @@ export default function IncomeReport() {
         {(report) => (
           <div
             style={{
-              "background-color": "#fff",
+              "background-color": "var(--color-surface)",
               padding: "2rem",
               "border-radius": "8px",
-              border: "1px solid #e2e8f0",
+              border: "1px solid var(--color-border)",
               "box-shadow": "0 1px 3px rgba(0,0,0,0.1)",
             }}
           >
             <div style={{ display: "flex", "justify-content": "space-between", "align-items": "center", "margin-bottom": "2rem", "flex-wrap": "wrap", gap: "1rem" }}>
-              <h2 style={{ "font-size": "1.5rem", "font-weight": "700", color: "#2d3748" }}>
+              <h2 style={{ "font-size": "1.5rem", "font-weight": "700", color: "var(--color-text)" }}>
                 Income Report - {report().period}
               </h2>
               <div style={{ display: "flex", gap: "0.5rem", "flex-wrap": "wrap" }}>
@@ -400,7 +400,7 @@ export default function IncomeReport() {
                   onClick={() => printReport(report())}
                   style={{
                     padding: "0.75rem 1.5rem",
-                    "background-color": "#2d3748",
+                    "background-color": "var(--color-text)",
                     color: "#fff",
                     border: "none",
                     "border-radius": "4px",
@@ -412,7 +412,7 @@ export default function IncomeReport() {
                     e.currentTarget.style.backgroundColor = "#1a202c";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "#2d3748";
+                    e.currentTarget.style.backgroundColor = "var(--color-text)";
                   }}
                 >
                   📄 Print/PDF
@@ -459,7 +459,7 @@ export default function IncomeReport() {
                   "text-align": "center",
                 }}
               >
-                <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.5rem" }}>Gross Income</div>
+                <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)", "margin-bottom": "0.5rem" }}>Gross Income</div>
                 <div style={{ "font-size": "2rem", "font-weight": "700", color: "#38a169" }}>
                   {formatCurrency(report().grossIncome)}
                 </div>
@@ -467,13 +467,13 @@ export default function IncomeReport() {
               <div
                 style={{
                   padding: "1.5rem",
-                  "background-color": "#fff5f5",
+                  "background-color": "var(--wa-color-danger-fill-quiet)",
                   "border-radius": "8px",
                   border: "1px solid #fc8181",
                   "text-align": "center",
                 }}
               >
-                <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.5rem" }}>Total Expenses</div>
+                <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)", "margin-bottom": "0.5rem" }}>Total Expenses</div>
                 <div style={{ "font-size": "2rem", "font-weight": "700", color: "#e53e3e" }}>
                   {formatCurrency(report().totalExpenses)}
                 </div>
@@ -481,46 +481,46 @@ export default function IncomeReport() {
               <div
                 style={{
                   padding: "1.5rem",
-                  "background-color": "#f7fafc",
+                  "background-color": "var(--color-surface-muted)",
                   "border-radius": "8px",
-                  border: "1px solid #2d3748",
+                  border: "1px solid var(--color-text)",
                   "text-align": "center",
                 }}
               >
-                <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.5rem" }}>Net Income</div>
-                <div style={{ "font-size": "2rem", "font-weight": "700", color: "#2d3748" }}>
+                <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)", "margin-bottom": "0.5rem" }}>Net Income</div>
+                <div style={{ "font-size": "2rem", "font-weight": "700", color: "var(--color-text)" }}>
                   {formatCurrency(report().netIncome)}
                 </div>
               </div>
               <div
                 style={{
                   padding: "1.5rem",
-                  "background-color": "#f7fafc",
+                  "background-color": "var(--color-surface-muted)",
                   "border-radius": "8px",
-                  border: "1px solid #e2e8f0",
+                  border: "1px solid var(--color-border)",
                   "text-align": "center",
                 }}
               >
-                <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.5rem" }}>Payments</div>
-                <div style={{ "font-size": "2rem", "font-weight": "700", color: "#2d3748" }}>{report().paymentCount}</div>
+                <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)", "margin-bottom": "0.5rem" }}>Payments</div>
+                <div style={{ "font-size": "2rem", "font-weight": "700", color: "var(--color-text)" }}>{report().paymentCount}</div>
               </div>
               <div
                 style={{
                   padding: "1.5rem",
-                  "background-color": "#f7fafc",
+                  "background-color": "var(--color-surface-muted)",
                   "border-radius": "8px",
-                  border: "1px solid #e2e8f0",
+                  border: "1px solid var(--color-border)",
                   "text-align": "center",
                 }}
               >
-                <div style={{ "font-size": "0.875rem", color: "#718096", "margin-bottom": "0.5rem" }}>Expense Items</div>
-                <div style={{ "font-size": "2rem", "font-weight": "700", color: "#2d3748" }}>{report().expenseCount}</div>
+                <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)", "margin-bottom": "0.5rem" }}>Expense Items</div>
+                <div style={{ "font-size": "2rem", "font-weight": "700", color: "var(--color-text)" }}>{report().expenseCount}</div>
               </div>
             </div>
 
             {/* By Family */}
             <div style={{ "margin-bottom": "2rem" }}>
-              <h3 style={{ "font-size": "1.25rem", "font-weight": "600", color: "#4a5568", "margin-bottom": "1rem" }}>
+              <h3 style={{ "font-size": "1.25rem", "font-weight": "600", color: "var(--color-text)", "margin-bottom": "1rem" }}>
                 Income by Family
               </h3>
               <div style={{ overflow: "auto" }}>
@@ -531,14 +531,14 @@ export default function IncomeReport() {
                   }}
                 >
                   <thead>
-                    <tr style={{ "background-color": "#f7fafc" }}>
-                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", border: "1px solid #e2e8f0" }}>
+                    <tr style={{ "background-color": "var(--color-surface-muted)" }}>
+                      <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "var(--color-text)", border: "1px solid var(--color-border)" }}>
                         Family
                       </th>
-                      <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "#2d3748", border: "1px solid #e2e8f0" }}>
+                      <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "var(--color-text)", border: "1px solid var(--color-border)" }}>
                         Payments
                       </th>
-                      <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "#2d3748", border: "1px solid #e2e8f0" }}>
+                      <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "var(--color-text)", border: "1px solid var(--color-border)" }}>
                         Amount
                       </th>
                     </tr>
@@ -547,11 +547,11 @@ export default function IncomeReport() {
                     <For each={report().byFamily}>
                       {(family) => (
                         <tr>
-                          <td style={{ padding: "0.75rem", border: "1px solid #e2e8f0" }}>{family.familyName}</td>
-                          <td style={{ padding: "0.75rem", border: "1px solid #e2e8f0", "text-align": "right" }}>
+                          <td style={{ padding: "0.75rem", border: "1px solid var(--color-border)" }}>{family.familyName}</td>
+                          <td style={{ padding: "0.75rem", border: "1px solid var(--color-border)", "text-align": "right" }}>
                             {family.paymentCount}
                           </td>
-                          <td style={{ padding: "0.75rem", border: "1px solid #e2e8f0", "text-align": "right", "font-weight": "600" }}>
+                          <td style={{ padding: "0.75rem", border: "1px solid var(--color-border)", "text-align": "right", "font-weight": "600" }}>
                             {formatCurrency(family.amount)}
                           </td>
                         </tr>
@@ -565,7 +565,7 @@ export default function IncomeReport() {
             {/* By Month */}
             <Show when={viewMode() === "year"}>
               <div>
-                <h3 style={{ "font-size": "1.25rem", "font-weight": "600", color: "#4a5568", "margin-bottom": "1rem" }}>
+                <h3 style={{ "font-size": "1.25rem", "font-weight": "600", color: "var(--color-text)", "margin-bottom": "1rem" }}>
                   Income by Month
                 </h3>
                 <div style={{ overflow: "auto" }}>
@@ -576,17 +576,17 @@ export default function IncomeReport() {
                     }}
                   >
                     <thead>
-                      <tr style={{ "background-color": "#f7fafc" }}>
-                        <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "#2d3748", border: "1px solid #e2e8f0" }}>
+                      <tr style={{ "background-color": "var(--color-surface-muted)" }}>
+                        <th style={{ padding: "0.75rem", "text-align": "left", "font-weight": "600", color: "var(--color-text)", border: "1px solid var(--color-border)" }}>
                           Month
                         </th>
-                        <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "#2d3748", border: "1px solid #e2e8f0" }}>
+                        <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "var(--color-text)", border: "1px solid var(--color-border)" }}>
                           Gross Income
                         </th>
-                        <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "#2d3748", border: "1px solid #e2e8f0" }}>
+                        <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "var(--color-text)", border: "1px solid var(--color-border)" }}>
                           Expenses
                         </th>
-                        <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "#2d3748", border: "1px solid #e2e8f0" }}>
+                        <th style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600", color: "var(--color-text)", border: "1px solid var(--color-border)" }}>
                           Net Income
                         </th>
                       </tr>
@@ -595,14 +595,14 @@ export default function IncomeReport() {
                       <For each={report().byMonth}>
                         {(month) => (
                           <tr>
-                            <td style={{ padding: "0.75rem", border: "1px solid #e2e8f0" }}>{formatMonth(month.month)}</td>
-                            <td style={{ padding: "0.75rem", border: "1px solid #e2e8f0", "text-align": "right" }}>
+                            <td style={{ padding: "0.75rem", border: "1px solid var(--color-border)" }}>{formatMonth(month.month)}</td>
+                            <td style={{ padding: "0.75rem", border: "1px solid var(--color-border)", "text-align": "right" }}>
                               {formatCurrency(month.grossIncome)}
                             </td>
-                            <td style={{ padding: "0.75rem", border: "1px solid #e2e8f0", "text-align": "right" }}>
+                            <td style={{ padding: "0.75rem", border: "1px solid var(--color-border)", "text-align": "right" }}>
                               {formatCurrency(month.expenses)}
                             </td>
-                            <td style={{ padding: "0.75rem", border: "1px solid #e2e8f0", "text-align": "right", "font-weight": "600" }}>
+                            <td style={{ padding: "0.75rem", border: "1px solid var(--color-border)", "text-align": "right", "font-weight": "600" }}>
                               {formatCurrency(month.netIncome)}
                             </td>
                           </tr>

@@ -52,9 +52,9 @@ export default function NewFamily() {
               gap: "0.5rem",
               cursor: "pointer",
               padding: "0.75rem",
-              border: "1px solid #e2e8f0",
+              border: "1px solid var(--color-border)",
               "border-radius": "4px",
-              "background-color": "#f7fafc",
+              "background-color": "var(--color-surface-muted)",
             }}
           >
             <input
@@ -67,7 +67,7 @@ export default function NewFamily() {
                 cursor: "pointer",
               }}
             />
-            <span style={{ "font-weight": "600", color: "#2d3748" }}>
+            <span style={{ "font-weight": "600", color: "var(--color-text)" }}>
               Add Spouse/Partner Information
             </span>
           </label>
@@ -76,14 +76,14 @@ export default function NewFamily() {
         <Show when={includeSpouse()}>
           <fieldset
             style={{
-              border: "1px solid #e2e8f0",
+              border: "1px solid var(--color-border)",
               "border-radius": "4px",
               padding: "1.5rem",
               "margin-bottom": "1.5rem",
-              "background-color": "#f7fafc",
+              "background-color": "var(--color-surface-muted)",
             }}
           >
-            <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+            <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
               Spouse/Partner Information
             </legend>
 
@@ -102,7 +102,7 @@ export default function NewFamily() {
                     display: "block",
                     "margin-bottom": "0.5rem",
                     "font-weight": "500",
-                    color: "#4a5568",
+                    color: "var(--color-text)",
                   }}
                 >
                   First Name
@@ -115,7 +115,7 @@ export default function NewFamily() {
                   style={{
                     width: "100%",
                     padding: "0.75rem",
-                    border: "1px solid #cbd5e0",
+                    border: "1px solid var(--color-border-strong)",
                     "border-radius": "4px",
                     "font-size": "1rem",
                   }}
@@ -128,7 +128,7 @@ export default function NewFamily() {
                     display: "block",
                     "margin-bottom": "0.5rem",
                     "font-weight": "500",
-                    color: "#4a5568",
+                    color: "var(--color-text)",
                   }}
                 >
                   Last Name
@@ -141,7 +141,7 @@ export default function NewFamily() {
                   style={{
                     width: "100%",
                     padding: "0.75rem",
-                    border: "1px solid #cbd5e0",
+                    border: "1px solid var(--color-border-strong)",
                     "border-radius": "4px",
                     "font-size": "1rem",
                   }}
@@ -163,7 +163,7 @@ export default function NewFamily() {
                     display: "block",
                     "margin-bottom": "0.5rem",
                     "font-weight": "500",
-                    color: "#4a5568",
+                    color: "var(--color-text)",
                   }}
                 >
                   Email
@@ -176,7 +176,7 @@ export default function NewFamily() {
                   style={{
                     width: "100%",
                     padding: "0.75rem",
-                    border: "1px solid #cbd5e0",
+                    border: "1px solid var(--color-border-strong)",
                     "border-radius": "4px",
                     "font-size": "1rem",
                   }}
@@ -189,7 +189,7 @@ export default function NewFamily() {
                     display: "block",
                     "margin-bottom": "0.5rem",
                     "font-weight": "500",
-                    color: "#4a5568",
+                    color: "var(--color-text)",
                   }}
                 >
                   Phone
@@ -202,14 +202,14 @@ export default function NewFamily() {
                   style={{
                     width: "100%",
                     padding: "0.75rem",
-                    border: "1px solid #cbd5e0",
+                    border: "1px solid var(--color-border-strong)",
                     "border-radius": "4px",
                     "font-size": "1rem",
                   }}
                 />
               </div>
             </div>
-            <p style={{ "margin-top": "0.75rem", "font-size": "0.875rem", color: "#718096" }}>
+            <p style={{ "margin-top": "0.75rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
               Spouse/partner will be added as a family member with pickup authorization enabled by default.
             </p>
           </fieldset>
@@ -224,9 +224,9 @@ export default function NewFamily() {
               gap: "0.5rem",
               cursor: "pointer",
               padding: "0.75rem",
-              border: "1px solid #e2e8f0",
+              border: "1px solid var(--color-border)",
               "border-radius": "4px",
-              "background-color": "#f7fafc",
+              "background-color": "var(--color-surface-muted)",
             }}
           >
             <input
@@ -244,7 +244,7 @@ export default function NewFamily() {
                 cursor: "pointer",
               }}
             />
-            <span style={{ "font-weight": "600", color: "#2d3748" }}>
+            <span style={{ "font-weight": "600", color: "var(--color-text)" }}>
               Add Children Information
             </span>
           </label>
@@ -253,14 +253,14 @@ export default function NewFamily() {
         <Show when={includeChildren()}>
           <fieldset
             style={{
-              border: "1px solid #e2e8f0",
+              border: "1px solid var(--color-border)",
               "border-radius": "4px",
               padding: "1.5rem",
               "margin-bottom": "1.5rem",
-              "background-color": "#f7fafc",
+              "background-color": "var(--color-surface-muted)",
             }}
           >
-            <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+            <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
               Children Information
             </legend>
 
@@ -269,10 +269,10 @@ export default function NewFamily() {
                 <div
                   style={{
                     padding: "1rem",
-                    border: "1px solid #e2e8f0",
+                    border: "1px solid var(--color-border)",
                     "border-radius": "4px",
                     "margin-bottom": "1rem",
-                    "background-color": "#fff",
+                    "background-color": "var(--color-surface)",
                   }}
                 >
                   <div
@@ -283,7 +283,7 @@ export default function NewFamily() {
                       "margin-bottom": "0.75rem",
                     }}
                   >
-                    <h3 style={{ color: "#2d3748", "font-size": "1rem", margin: 0 }}>
+                    <h3 style={{ color: "var(--color-text)", "font-size": "1rem", margin: 0 }}>
                       Child {index() + 1}
                     </h3>
                     <Show when={children().length > 1}>
@@ -294,7 +294,7 @@ export default function NewFamily() {
                         }}
                         style={{
                           padding: "0.25rem 0.75rem",
-                          "background-color": "#fed7d7",
+                          "background-color": "var(--wa-color-danger-fill-normal)",
                           color: "#c53030",
                           border: "none",
                           "border-radius": "4px",
@@ -322,7 +322,7 @@ export default function NewFamily() {
                           display: "block",
                           "margin-bottom": "0.5rem",
                           "font-weight": "500",
-                          color: "#4a5568",
+                          color: "var(--color-text)",
                         }}
                       >
                         First Name *
@@ -342,7 +342,7 @@ export default function NewFamily() {
                         style={{
                           width: "100%",
                           padding: "0.75rem",
-                          border: "1px solid #cbd5e0",
+                          border: "1px solid var(--color-border-strong)",
                           "border-radius": "4px",
                           "font-size": "1rem",
                         }}
@@ -355,7 +355,7 @@ export default function NewFamily() {
                           display: "block",
                           "margin-bottom": "0.5rem",
                           "font-weight": "500",
-                          color: "#4a5568",
+                          color: "var(--color-text)",
                         }}
                       >
                         Last Name *
@@ -375,7 +375,7 @@ export default function NewFamily() {
                         style={{
                           width: "100%",
                           padding: "0.75rem",
-                          border: "1px solid #cbd5e0",
+                          border: "1px solid var(--color-border-strong)",
                           "border-radius": "4px",
                           "font-size": "1rem",
                         }}
@@ -397,7 +397,7 @@ export default function NewFamily() {
                           display: "block",
                           "margin-bottom": "0.5rem",
                           "font-weight": "500",
-                          color: "#4a5568",
+                          color: "var(--color-text)",
                         }}
                       >
                         Date of Birth *
@@ -416,7 +416,7 @@ export default function NewFamily() {
                         style={{
                           width: "100%",
                           padding: "0.75rem",
-                          border: "1px solid #cbd5e0",
+                          border: "1px solid var(--color-border-strong)",
                           "border-radius": "4px",
                           "font-size": "1rem",
                         }}
@@ -429,7 +429,7 @@ export default function NewFamily() {
                           display: "block",
                           "margin-bottom": "0.5rem",
                           "font-weight": "500",
-                          color: "#4a5568",
+                          color: "var(--color-text)",
                         }}
                       >
                         Gender
@@ -446,7 +446,7 @@ export default function NewFamily() {
                         style={{
                           width: "100%",
                           padding: "0.75rem",
-                          border: "1px solid #cbd5e0",
+                          border: "1px solid var(--color-border-strong)",
                           "border-radius": "4px",
                           "font-size": "1rem",
                         }}
@@ -470,9 +470,9 @@ export default function NewFamily() {
               }}
               style={{
                 padding: "0.75rem 1.5rem",
-                "background-color": "#edf2f7",
-                color: "#2d3748",
-                border: "1px solid #cbd5e0",
+                "background-color": "var(--color-hover)",
+                color: "var(--color-text)",
+                border: "1px solid var(--color-border-strong)",
                 "border-radius": "4px",
                 cursor: "pointer",
                 "font-weight": "600",
@@ -481,7 +481,7 @@ export default function NewFamily() {
             >
               + Add Another Child
             </button>
-            <p style={{ "margin-top": "0.75rem", "font-size": "0.875rem", color: "#718096" }}>
+            <p style={{ "margin-top": "0.75rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
               You can add more children later or provide additional information (allergies, medications, etc.) after creating the family.
             </p>
           </fieldset>
@@ -489,22 +489,22 @@ export default function NewFamily() {
 
         <fieldset
           style={{
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-border)",
             "border-radius": "4px",
             padding: "1.5rem",
             "margin-bottom": "1.5rem",
           }}
         >
-          <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "#2d3748" }}>
+          <legend style={{ padding: "0 0.5rem", "font-weight": "600", color: "var(--color-text)" }}>
             Services
           </legend>
-          <p style={{ "margin-bottom": "1rem", "font-size": "0.875rem", color: "#718096" }}>
+          <p style={{ "margin-bottom": "1rem", "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
             Select which services this family will use. This will default when creating new schedules.
           </p>
           <Show
             when={services()}
             fallback={
-              <div style={{ padding: "1rem", color: "#718096" }}>Loading services...</div>
+              <div style={{ padding: "1rem", color: "var(--color-text-muted)" }}>Loading services...</div>
             }
           >
             <div style={{ display: "flex", "flex-direction": "column", gap: "0.75rem" }}>
@@ -524,7 +524,7 @@ export default function NewFamily() {
                         transition: "background-color 0.2s",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#f7fafc";
+                        e.currentTarget.style.backgroundColor = "var(--color-surface-muted)";
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = "transparent";
@@ -542,7 +542,7 @@ export default function NewFamily() {
                         }}
                       />
                       <div style={{ flex: "1" }}>
-                        <span style={{ "font-weight": "500", color: "#2d3748" }}>
+                        <span style={{ "font-weight": "500", color: "var(--color-text)" }}>
                           {service.name}
                         </span>
                         {service.defaultHourlyRate && (
@@ -550,7 +550,7 @@ export default function NewFamily() {
                             style={{
                               "margin-left": "0.5rem",
                               "font-size": "0.875rem",
-                              color: "#718096",
+                              color: "var(--color-text-muted)",
                             }}
                           >
                             (${service.defaultHourlyRate}/hr

@@ -270,7 +270,7 @@ export default function Home() {
                   "text-align": "center",
                   "font-size": "0.75rem",
                   "font-weight": "600",
-                  color: "#718096",
+                  color: "var(--color-text-muted)",
                 }}
               >
                 {day}
@@ -288,12 +288,11 @@ export default function Home() {
                   style={{
                     padding: "0.5rem",
                     "background-color": isTodayDay
-                      ? "#bee3f8"
+                      ? "var(--wa-color-brand-fill-normal)"
                       : isCurrentMonthDay
-                        ? "#fff"
-                        : "#f7fafc",
-                    color: isCurrentMonthDay ? "#2d3748" : "#a0aec0",
-                    border: isTodayDay ? "2px solid #4299e1" : "1px solid #e2e8f0",
+                        ? "var(--color-surface)" : "var(--color-surface-muted)",
+                    color: isCurrentMonthDay ? "var(--color-text)" : "var(--color-text-subtle)",
+                    border: isTodayDay ? "2px solid #4299e1" : "1px solid var(--color-border)",
                     "border-radius": "4px",
                     cursor: isOwner() ? "pointer" : "default",
                     "font-size": "0.75rem",
@@ -306,14 +305,14 @@ export default function Home() {
                   }}
                   onMouseEnter={(e) => {
                     if (isCurrentMonthDay) {
-                      e.currentTarget.style.backgroundColor = "#edf2f7";
-                      e.currentTarget.style.borderColor = "#cbd5e0";
+                      e.currentTarget.style.backgroundColor = "var(--color-hover)";
+                      e.currentTarget.style.borderColor = "var(--color-border-strong)";
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (isCurrentMonthDay) {
-                      e.currentTarget.style.backgroundColor = isTodayDay ? "#bee3f8" : "#fff";
-                      e.currentTarget.style.borderColor = isTodayDay ? "#4299e1" : "#e2e8f0";
+                      e.currentTarget.style.backgroundColor = isTodayDay ? "var(--wa-color-brand-fill-normal)" : "var(--color-surface)";
+                      e.currentTarget.style.borderColor = isTodayDay ? "#4299e1" : "var(--color-border)";
                     }
                   }}
                 >
@@ -341,7 +340,7 @@ export default function Home() {
             fallback={
               <p
                 style={{
-                  color: "#a0aec0",
+                  color: "var(--color-text-subtle)",
                   "font-size": "0.875rem",
                   "text-align": "center",
                   padding: "0.75rem",
@@ -358,39 +357,39 @@ export default function Home() {
                     href={`/families/${session.family.id}/sessions/${session.id}`}
                     style={{
                       padding: "0.5rem 0.75rem",
-                      "background-color": "#f7fafc",
+                      "background-color": "var(--color-surface-muted)",
                       "border-radius": "4px",
-                      border: "1px solid #e2e8f0",
+                      border: "1px solid var(--color-border)",
                       "text-decoration": "none",
                       color: "inherit",
                       transition: "all 0.2s",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#edf2f7";
-                      e.currentTarget.style.borderColor = "#cbd5e0";
+                      e.currentTarget.style.backgroundColor = "var(--color-hover)";
+                      e.currentTarget.style.borderColor = "var(--color-border-strong)";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f7fafc";
-                      e.currentTarget.style.borderColor = "#e2e8f0";
+                      e.currentTarget.style.backgroundColor = "var(--color-surface-muted)";
+                      e.currentTarget.style.borderColor = "var(--color-border)";
                     }}
                   >
                     <div
                       style={{
                         "font-weight": "600",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                         "margin-bottom": "0.125rem",
                         "font-size": "0.875rem",
                       }}
                     >
                       {session.family.familyName}
                     </div>
-                    <div style={{ "font-size": "0.8125rem", color: "#718096" }}>
+                    <div style={{ "font-size": "0.8125rem", color: "var(--color-text-muted)" }}>
                       {formatTimeLocal(session.scheduledStart)}{" "}
                       -{" "}
                       {formatTimeLocal(session.scheduledEnd)}
                     </div>
                     <div
-                      style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}
+                      style={{ "font-size": "0.75rem", color: "var(--color-text-subtle)", "margin-top": "0.125rem" }}
                     >
                       {session.service.name}
                       {session.children.length > 0 &&
@@ -416,7 +415,7 @@ export default function Home() {
             fallback={
               <p
                 style={{
-                  color: "#a0aec0",
+                  color: "var(--color-text-subtle)",
                   "font-size": "0.875rem",
                   "text-align": "center",
                   padding: "0.75rem",
@@ -433,39 +432,39 @@ export default function Home() {
                     href={`/families/${session.family.id}/sessions/${session.id}`}
                     style={{
                       padding: "0.5rem",
-                      "background-color": "#f7fafc",
+                      "background-color": "var(--color-surface-muted)",
                       "border-radius": "4px",
-                      border: "1px solid #e2e8f0",
+                      border: "1px solid var(--color-border)",
                       "text-decoration": "none",
                       color: "inherit",
                       transition: "all 0.2s",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#edf2f7";
-                      e.currentTarget.style.borderColor = "#cbd5e0";
+                      e.currentTarget.style.backgroundColor = "var(--color-hover)";
+                      e.currentTarget.style.borderColor = "var(--color-border-strong)";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f7fafc";
-                      e.currentTarget.style.borderColor = "#e2e8f0";
+                      e.currentTarget.style.backgroundColor = "var(--color-surface-muted)";
+                      e.currentTarget.style.borderColor = "var(--color-border)";
                     }}
                   >
                     <div
                       style={{
                         "font-weight": "600",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                         "margin-bottom": "0.125rem",
                         "font-size": "0.875rem",
                       }}
                     >
                       {session.family.familyName}
                     </div>
-                    <div style={{ "font-size": "0.8125rem", color: "#718096" }}>
+                    <div style={{ "font-size": "0.8125rem", color: "var(--color-text-muted)" }}>
                       {formatTimeLocal(session.scheduledStart)}{" "}
                       -{" "}
                       {formatTimeLocal(session.scheduledEnd)}
                     </div>
                     <div
-                      style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}
+                      style={{ "font-size": "0.75rem", color: "var(--color-text-subtle)", "margin-top": "0.125rem" }}
                     >
                       {session.service.name}
                       {session.children.length > 0 &&
@@ -491,7 +490,7 @@ export default function Home() {
             fallback={
               <p
                 style={{
-                  color: "#a0aec0",
+                  color: "var(--color-text-subtle)",
                   "font-size": "0.875rem",
                   "text-align": "center",
                   padding: "0.75rem",
@@ -508,39 +507,39 @@ export default function Home() {
                     href={`/families/${session.family.id}/sessions/${session.id}`}
                     style={{
                       padding: "0.5rem",
-                      "background-color": "#f7fafc",
+                      "background-color": "var(--color-surface-muted)",
                       "border-radius": "4px",
-                      border: "1px solid #e2e8f0",
+                      border: "1px solid var(--color-border)",
                       "text-decoration": "none",
                       color: "inherit",
                       transition: "all 0.2s",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#edf2f7";
-                      e.currentTarget.style.borderColor = "#cbd5e0";
+                      e.currentTarget.style.backgroundColor = "var(--color-hover)";
+                      e.currentTarget.style.borderColor = "var(--color-border-strong)";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f7fafc";
-                      e.currentTarget.style.borderColor = "#e2e8f0";
+                      e.currentTarget.style.backgroundColor = "var(--color-surface-muted)";
+                      e.currentTarget.style.borderColor = "var(--color-border)";
                     }}
                   >
                     <div
                       style={{
                         "font-weight": "600",
-                        color: "#2d3748",
+                        color: "var(--color-text)",
                         "margin-bottom": "0.125rem",
                         "font-size": "0.875rem",
                       }}
                     >
                       {session.family.familyName}
                     </div>
-                    <div style={{ "font-size": "0.8125rem", color: "#718096" }}>
+                    <div style={{ "font-size": "0.8125rem", color: "var(--color-text-muted)" }}>
                       {formatTimeLocal(session.scheduledStart)}{" "}
                       -{" "}
                       {formatTimeLocal(session.scheduledEnd)}
                     </div>
                     <div
-                      style={{ "font-size": "0.75rem", color: "#a0aec0", "margin-top": "0.125rem" }}
+                      style={{ "font-size": "0.75rem", color: "var(--color-text-subtle)", "margin-top": "0.125rem" }}
                     >
                       {session.service.name}
                       {session.children.length > 0 &&
@@ -716,7 +715,7 @@ export default function Home() {
           <Show
             when={!upcomingSessions.loading && upcomingSessions()}
             fallback={
-              <div style={{ "text-align": "center", padding: "1.5rem", color: "#718096" }}>
+              <div style={{ "text-align": "center", padding: "1.5rem", color: "var(--color-text-muted)" }}>
                 Loading...
               </div>
             }
@@ -724,7 +723,7 @@ export default function Home() {
             <Show
               when={upcomingSessions()?.length}
               fallback={
-                <div style={{ "text-align": "center", padding: "1.5rem", color: "#718096" }}>
+                <div style={{ "text-align": "center", padding: "1.5rem", color: "var(--color-text-muted)" }}>
                   No upcoming sessions scheduled
                 </div>
               }
@@ -744,8 +743,8 @@ export default function Home() {
                         href={`/families/${session.familyId}/sessions/${session.id}`}
                         style={{
                           padding: "0.75rem",
-                          "background-color": "#f7fafc",
-                          border: "1px solid #e2e8f0",
+                          "background-color": "var(--color-surface-muted)",
+                          border: "1px solid var(--color-border)",
                           "border-radius": "6px",
                           "text-decoration": "none",
                           color: "inherit",
@@ -753,12 +752,12 @@ export default function Home() {
                           transition: "all 0.2s",
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#edf2f7";
-                          e.currentTarget.style.borderColor = "#cbd5e0";
+                          e.currentTarget.style.backgroundColor = "var(--color-hover)";
+                          e.currentTarget.style.borderColor = "var(--color-border-strong)";
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f7fafc";
-                          e.currentTarget.style.borderColor = "#e2e8f0";
+                          e.currentTarget.style.backgroundColor = "var(--color-surface-muted)";
+                          e.currentTarget.style.borderColor = "var(--color-border)";
                         }}
                       >
                         <div
@@ -786,7 +785,7 @@ export default function Home() {
                                 </wa-badge>
                               )}
                             </div>
-                            <div style={{ "font-size": "0.875rem", color: "#4a5568" }}>
+                            <div style={{ "font-size": "0.875rem", color: "var(--color-text)" }}>
                               {session.children.map((c: any) => c.firstName).join(", ")}
                             </div>
                           </div>
@@ -795,7 +794,7 @@ export default function Home() {
                               style={{
                                 "font-size": "0.875rem",
                                 "font-weight": "600",
-                                color: isToday ? "#e53e3e" : isTomorrow ? "#ed8936" : "#2d3748",
+                                color: isToday ? "#e53e3e" : isTomorrow ? "#ed8936" : "var(--color-text)",
                               }}
                             >
                               {isToday
@@ -808,7 +807,7 @@ export default function Home() {
                                       day: "numeric",
                                     })}
                             </div>
-                            <div style={{ "font-size": "0.875rem", color: "#718096" }}>
+                            <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)" }}>
                               {formatTimeLocal(sessionDate)}
                             </div>
                           </div>
@@ -831,7 +830,7 @@ export default function Home() {
           <Show
             when={!recentIncidents.loading && recentIncidents()}
             fallback={
-              <div style={{ "text-align": "center", padding: "1.5rem", color: "#718096" }}>
+              <div style={{ "text-align": "center", padding: "1.5rem", color: "var(--color-text-muted)" }}>
                 Loading...
               </div>
             }
@@ -839,7 +838,7 @@ export default function Home() {
             <Show
               when={recentIncidents()?.length}
               fallback={
-                <div style={{ "text-align": "center", padding: "1.5rem", color: "#718096" }}>
+                <div style={{ "text-align": "center", padding: "1.5rem", color: "var(--color-text-muted)" }}>
                   No recent incidents or reports
                 </div>
               }
@@ -851,8 +850,8 @@ export default function Home() {
                       INFO: { bg: "#e6fffa", color: "#234e52", icon: "ℹ️" },
                       MINOR: { bg: "#feebc8", color: "#7c2d12", icon: "⚠️" },
                       MODERATE: { bg: "#fed7aa", color: "#7c2d12", icon: "⚡" },
-                      SEVERE: { bg: "#fed7d7", color: "#c53030", icon: "🚨" },
-                    }[report.severity] || { bg: "#e2e8f0", color: "#2d3748", icon: "📝" };
+                      SEVERE: { bg: "var(--wa-color-danger-fill-normal)", color: "#c53030", icon: "🚨" },
+                    }[report.severity] || { bg: "var(--color-border)", color: "var(--color-text)", icon: "📝" };
 
                     const typeLabels: Record<string, string> = {
                       INCIDENT: "Incident",
@@ -874,8 +873,8 @@ export default function Home() {
                         href={`/families/${report.careSession.family.id}/sessions/${report.careSessionId}`}
                         style={{
                           padding: "0.75rem",
-                          "background-color": "#f7fafc",
-                          border: "1px solid #e2e8f0",
+                          "background-color": "var(--color-surface-muted)",
+                          border: "1px solid var(--color-border)",
                           "border-radius": "6px",
                           "text-decoration": "none",
                           color: "inherit",
@@ -883,12 +882,12 @@ export default function Home() {
                           transition: "all 0.2s",
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = "#edf2f7";
-                          e.currentTarget.style.borderColor = "#cbd5e0";
+                          e.currentTarget.style.backgroundColor = "var(--color-hover)";
+                          e.currentTarget.style.borderColor = "var(--color-border-strong)";
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "#f7fafc";
-                          e.currentTarget.style.borderColor = "#e2e8f0";
+                          e.currentTarget.style.backgroundColor = "var(--color-surface-muted)";
+                          e.currentTarget.style.borderColor = "var(--color-border)";
                         }}
                       >
                         <div
@@ -912,7 +911,7 @@ export default function Home() {
                               <h3
                                 style={{
                                   "font-size": "1rem",
-                                  color: "#2d3748",
+                                  color: "var(--color-text)",
                                   margin: 0,
                                   "font-weight": "600",
                                 }}
@@ -936,7 +935,7 @@ export default function Home() {
                                   style={{
                                     padding: "0.125rem 0.5rem",
                                     "border-radius": "9999px",
-                                    "background-color": "#fed7d7",
+                                    "background-color": "var(--wa-color-danger-fill-normal)",
                                     color: "#c53030",
                                     "font-size": "0.75rem",
                                     "font-weight": "600",
@@ -946,14 +945,14 @@ export default function Home() {
                                 </span>
                               )}
                             </div>
-                            <div style={{ "font-size": "0.875rem", color: "#4a5568" }}>
+                            <div style={{ "font-size": "0.875rem", color: "var(--color-text)" }}>
                               {report.child.firstName} {report.child.lastName} •{" "}
                               {report.careSession.family.familyName}
                             </div>
                             <div
                               style={{
                                 "font-size": "0.875rem",
-                                color: "#718096",
+                                color: "var(--color-text-muted)",
                                 "margin-top": "0.25rem",
                               }}
                             >
@@ -966,7 +965,7 @@ export default function Home() {
                             <div
                               style={{
                                 "font-size": "0.875rem",
-                                color: isToday ? "#e53e3e" : "#718096",
+                                color: isToday ? "#e53e3e" : "var(--color-text-muted)",
                                 "font-weight": isToday ? "600" : "400",
                               }}
                             >
@@ -977,7 +976,7 @@ export default function Home() {
                                     day: "numeric",
                                   })}
                             </div>
-                            <div style={{ "font-size": "0.75rem", color: "#a0aec0" }}>
+                            <div style={{ "font-size": "0.75rem", color: "var(--color-text-subtle)" }}>
                               {formatTimeLocal(reportDate)}
                             </div>
                           </div>
@@ -1084,7 +1083,7 @@ export default function Home() {
                           display: "block",
                           "margin-bottom": "0.5rem",
                           "font-weight": "600",
-                          color: "#2d3748",
+                          color: "var(--color-text)",
                         }}
                       >
                         {(() => {
@@ -1108,7 +1107,7 @@ export default function Home() {
                                 transition: "background-color 0.2s",
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = "#f7fafc";
+                                e.currentTarget.style.backgroundColor = "var(--color-surface-muted)";
                               }}
                               onMouseLeave={(e) => {
                                 e.currentTarget.style.backgroundColor = "transparent";

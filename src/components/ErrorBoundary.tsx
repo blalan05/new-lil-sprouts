@@ -13,8 +13,8 @@ export default function AppErrorBoundary(props: { children: JSX.Element }) {
             "text-align": "center",
           }}
         >
-          <h1 style={{ color: "#2d3748", "font-size": "1.5rem" }}>Something went wrong</h1>
-          <p style={{ color: "#718096" }}>
+          <h1 style={{ color: "var(--color-text)", "font-size": "1.5rem" }}>Something went wrong</h1>
+          <p style={{ color: "var(--color-text-muted)" }}>
             {err instanceof Error ? err.message : "An unexpected error occurred."}
           </p>
           <A
