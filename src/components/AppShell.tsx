@@ -32,8 +32,16 @@ function NavLink(props: { href: string; children: JSX.Element; onClick?: () => v
 export default function AppShell(props: { children: JSX.Element }) {
   const user = createAsync(() => getUser(), { deferStream: true });
   const logoutSubmission = useSubmission(logout);
-  const notifications = createAsync(() => getMyNotifications(10), { deferStream: true });
-  const unreadCount = createAsync(() => getUnreadCount(), { deferStream: true });
+  const notifications = createAsync(async () => {
+    const u = await getUser();
+    if (!u) return [];
+    return getMyNotifications(10);
+  }, { deferStream: true });
+  const unreadCount = createAsync(async () => {
+    const u = await getUser();
+    if (!u) return 0;
+    return getUnreadCount();
+  }, { deferStream: true });
 
   const [navReady, setNavReady] = createSignal(false);
   const [notifOpen, setNotifOpen] = createSignal(false);

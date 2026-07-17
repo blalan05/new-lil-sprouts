@@ -84,7 +84,12 @@ export default defineConfig({
         workbox: {
           navigateFallback: "/",
           // Never use app-shell fallback for server endpoints/assets
-          navigateFallbackDenylist: [/^\/_server\b/, /^\/api\b/, /^\/_build\b/],
+          navigateFallbackDenylist: [
+            /^\/_server\b/,
+            /^\/api\b/,
+            /^\/_build\b/,
+            /^\/login$/,
+          ],
 
           // Keep SW lifecycle predictable across deployments
           clientsClaim: true,

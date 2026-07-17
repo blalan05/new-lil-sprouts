@@ -1,7 +1,7 @@
 import { createMiddleware } from "@solidjs/start/middleware";
 import { clearSession, getCookie, sendRedirect, setCookie, useSession } from "vinxi/http";
 import { db } from "../lib/db";
-import { SESSION_CONFIG } from "../lib/server";
+import { sessionConfig } from "../lib/server";
 import { ROLE_COOKIE, roleCookieValue } from "../lib/role-cookie";
 import {
   shouldSkipRouteGuard,
@@ -54,11 +54,11 @@ async function readUserId(event: { nativeEvent?: unknown }): Promise<string | un
   }
 
   try {
-    const session = await useSession(target, SESSION_CONFIG);
+    const session = await useSession(target, sessionConfig());
     return session.data?.userId as string | undefined;
   } catch {
     try {
-      await clearSession(target, SESSION_CONFIG);
+      await clearSession(target, sessionConfig());
     } catch {
       // Ignore invalid cookie cleanup failures.
     }
@@ -70,7 +70,7 @@ async function clearUserSession(event: { nativeEvent?: unknown }) {
   const target = h3Event(event);
   if (!target) return;
   try {
-    await clearSession(target, SESSION_CONFIG);
+    await clearSession(target, sessionConfig());
   } catch {
     // Ignore if there is no session to clear.
   }

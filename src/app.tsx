@@ -1,6 +1,8 @@
 import { Router, useLocation } from "@solidjs/router";
 import { FileRoutes } from "@solidjs/start/router";
-import { Suspense, Show } from "solid-js";
+import { Suspense, Show, type JSX } from "solid-js";
+import { isServer } from "solid-js/web";
+import { getRequestEvent } from "solid-js/web";
 import AppShell from "./components/AppShell";
 import AppErrorBoundary from "./components/ErrorBoundary";
 import { ConfirmProvider } from "./components/wa/ConfirmProvider";
@@ -12,20 +14,37 @@ if (typeof document !== "undefined") {
   initTheme();
 }
 
-function AppRoot(props: { children: unknown }) {
+function isLoginPath(pathname: string) {
+  return pathname === "/login" || pathname.startsWith("/login?");
+}
+
+function AppRoot(props: { children: JSX.Element }) {
   const location = useLocation();
-  const isLogin = () => location.pathname === "/login";
+
+  // Prefer the real request URL during SSR so we never mount AppShell on /login
+  // (shell queries previously could redirect and stall the HTML stream).
+  const onLogin = () => {
+    if (isServer) {
+      try {
+        const url = getRequestEvent()?.request?.url;
+        if (url) return isLoginPath(new URL(url).pathname);
+      } catch {
+        // fall through to router location
+      }
+    }
+    return isLoginPath(location.pathname);
+  };
 
   return (
-    <ConfirmProvider>
-      <Show
-        when={!isLogin()}
-        fallback={
-          <AppErrorBoundary>
-            <Suspense>{props.children}</Suspense>
-          </AppErrorBoundary>
-        }
-      >
+    <Show
+      when={!onLogin()}
+      fallback={
+        <AppErrorBoundary>
+          <Suspense>{props.children}</Suspense>
+        </AppErrorBoundary>
+      }
+    >
+      <ConfirmProvider>
         <AppShell>
           <AppErrorBoundary>
             <Suspense fallback={<div class="page-loading">Loading...</div>}>
@@ -33,8 +52,8 @@ function AppRoot(props: { children: unknown }) {
             </Suspense>
           </AppErrorBoundary>
         </AppShell>
-      </Show>
-    </ConfirmProvider>
+      </ConfirmProvider>
+    </Show>
   );
 }
 

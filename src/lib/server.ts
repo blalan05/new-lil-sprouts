@@ -12,7 +12,12 @@ function getSessionSecret() {
   return secret;
 }
 
-/** Lazy so importing this module during tooling/build does not require env yet. */
+/** Always return a plain `{ password }` object for vinxi/h3 session APIs. */
+export function sessionConfig(): { password: string } {
+  return { password: getSessionSecret() };
+}
+
+/** @deprecated Prefer sessionConfig() so the password is a real own-property. */
 export const SESSION_CONFIG = {
   get password() {
     return getSessionSecret();
@@ -58,7 +63,7 @@ export async function logout(event?: unknown) {
     (event as Parameters<typeof clearSession>[0] | undefined) ??
     getRequestEvent()?.nativeEvent;
   if (target) {
-    await clearSession(target, SESSION_CONFIG);
+    await clearSession(target, sessionConfig());
     setCookie(target, ROLE_COOKIE, "", { path: "/", maxAge: 0 });
     return;
   }
@@ -88,8 +93,9 @@ export async function register(username: string, email: string, password: string
 }
 
 export async function getSession(event?: unknown) {
+  const config = sessionConfig();
   if (event) {
-    return await useSession(event as Parameters<typeof useSession>[0], SESSION_CONFIG);
+    return await useSession(event as Parameters<typeof useSession>[0], config);
   }
-  return await useSession(SESSION_CONFIG);
+  return await useSession(config);
 }
