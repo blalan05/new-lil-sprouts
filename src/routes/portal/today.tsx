@@ -1,6 +1,7 @@
 import { ensureParent } from "~/lib/route-guards";
-import { createAsync, type RouteDefinition, A } from "@solidjs/router";
-import { createSignal, For, Show } from "solid-js";
+import { createAsync, type RouteDefinition, A, useNavigate } from "@solidjs/router";
+import { createSignal, For, Show, createEffect } from "solid-js";
+import { getUser } from "~/lib";
 import { getMyDailyDigest } from "~/lib/portal";
 import { formatTimeLocal } from "~/lib/datetime";
 import { hoursDisplay } from "~/lib/money-display";
@@ -8,15 +9,23 @@ import { hoursDisplay } from "~/lib/money-display";
 export const route = {
   preload() {
     ensureParent();
+    getUser();
     getMyDailyDigest();
   },
 } satisfies RouteDefinition;
 
 export default function PortalToday() {
+  const navigate = useNavigate();
+  const user = createAsync(() => getUser());
   const today = new Date();
   const [selectedDate, setSelectedDate] = createSignal(
     today.toISOString().slice(0, 10),
   );
+
+  createEffect(() => {
+    const u = user();
+    if (u?.isOwner) navigate("/", { replace: true });
+  });
 
   const digest = createAsync(() => {
     const [y, m, d] = selectedDate().split("-").map(Number);

@@ -42,10 +42,15 @@ function getPublicOrigin(): string {
 }
 
 export function serverRedirect(location: string, init?: RedirectInit) {
-  const absolute =
-    /^https?:\/\//i.test(location) ? location : new URL(location, getPublicOrigin()).toString();
+  // Prefer relative paths so client-side navigations stay on the current origin.
+  // Absolute URLs are only used when a full URL was passed in.
+  const target = /^https?:\/\//i.test(location)
+    ? location
+    : location.startsWith("/")
+      ? location
+      : new URL(location, getPublicOrigin()).toString();
 
   // `redirect` supports multiple init shapes across Solid Router versions.
-  return solidRedirect(absolute, init as any);
+  return solidRedirect(target, init as any);
 }
 

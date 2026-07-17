@@ -3,6 +3,7 @@ import { For, Show, createSignal, createEffect, onCleanup, onMount, JSX } from "
 import { getUser, logout } from "~/lib";
 import { readRoleCookie } from "~/lib/role-cookie";
 import { getStoredTheme, initTheme, resolveTheme, setTheme, type Theme } from "~/lib/theme";
+import { authenticatedHomePath } from "~/lib/route-access";
 import { getMyNotifications, getUnreadCount, markNotificationRead } from "~/lib/notifications";
 
 const OWNER_NAV_LINKS = [
@@ -61,7 +62,10 @@ export default function AppShell(props: { children: JSX.Element }) {
   };
 
   const navLinks = () => (isOwner() ? OWNER_NAV_LINKS : PARENT_NAV_LINKS);
-  const homeHref = () => (isOwner() ? "/" : "/portal");
+  // Only resolve after mount (navReady) so SSR doesn't stamp href="/portal" for owners
+  // when user()/role cookie aren't available on the server.
+  const homeHref = () =>
+    authenticatedHomePath(isOwner(), user()?.familyId);
 
   const cycleTheme = () => {
     const order: Theme[] = ["light", "dark", "system"];
@@ -106,10 +110,20 @@ export default function AppShell(props: { children: JSX.Element }) {
     <wa-page class="app-shell no-print">
       <header slot="header" class="app-header wa-split wa-align-items-center">
         <div class="wa-cluster wa-gap-m wa-align-items-center">
-          <A href={homeHref()} class="brand-link wa-cluster wa-gap-s wa-align-items-center">
-            <img src="/icons/icon-96x96.png" alt="Lil Sprouts" width="32" height="32" />
-            <span class="wa-heading-m">Lil Sprouts</span>
-          </A>
+          <Show
+            when={navReady()}
+            fallback={
+              <span class="brand-link wa-cluster wa-gap-s wa-align-items-center">
+                <img src="/icons/icon-96x96.png" alt="Lil Sprouts" width="32" height="32" />
+                <span class="wa-heading-m">Lil Sprouts</span>
+              </span>
+            }
+          >
+            <A href={homeHref()} class="brand-link wa-cluster wa-gap-s wa-align-items-center">
+              <img src="/icons/icon-96x96.png" alt="Lil Sprouts" width="32" height="32" />
+              <span class="wa-heading-m">Lil Sprouts</span>
+            </A>
+          </Show>
           <Show when={navReady()}>
             <nav class="desktop-nav wa-cluster wa-gap-xs">
               <For each={navLinks()}>{(link) => <NavLink href={link.href}>{link.label}</NavLink>}</For>

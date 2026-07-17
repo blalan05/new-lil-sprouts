@@ -1,6 +1,6 @@
 import { ensureParent } from "~/lib/route-guards";
-import { createAsync, type RouteDefinition, A, useAction } from "@solidjs/router";
-import { createSignal, For, Show } from "solid-js";
+import { createAsync, type RouteDefinition, A, useAction, useNavigate } from "@solidjs/router";
+import { createSignal, For, Show, createEffect } from "solid-js";
 import { getUser } from "~/lib";
 import {
   getMyFamily,
@@ -21,11 +21,19 @@ export const route = {
 } satisfies RouteDefinition;
 
 export default function ParentPortal() {
+  const navigate = useNavigate();
+  const user = createAsync(() => getUser());
   const family = createAsync(() => getMyFamily());
   const sessions = createAsync(() => getMyUpcomingSessions());
   const reports = createAsync(() => getMyChildReports());
   const confirmSession = useAction(confirmMySession);
   const [confirmingId, setConfirmingId] = createSignal<string | null>(null);
+
+  // Belt-and-suspenders: owners should never stay on the parent portal
+  createEffect(() => {
+    const u = user();
+    if (u?.isOwner) navigate("/", { replace: true });
+  });
 
   const handleConfirm = async (sessionId: string) => {
     setConfirmingId(sessionId);
