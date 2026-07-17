@@ -1,7 +1,9 @@
 // @refresh reload
 import { createHandler, StartServer } from "@solidjs/start/server";
+import { ssr } from "solid-js/web";
 import { config } from "dotenv";
 import { resolve } from "path";
+import { themeInitScript } from "./lib/theme";
 
 // Load .env file in production (PM2 might not load it automatically)
 if (process.env.NODE_ENV === "production") {
@@ -11,6 +13,8 @@ if (process.env.NODE_ENV === "production") {
   console.log(`[ENV] DATABASE_URL loaded: ${!!process.env.DATABASE_URL}`);
 }
 
+const themeBootScript = ssr(`<script>${themeInitScript}</script>`);
+
 export default createHandler(() => (
   <StartServer
     document={({ assets, children, scripts }) => (
@@ -18,6 +22,7 @@ export default createHandler(() => (
         <head>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes" />
+          {themeBootScript as unknown as any}
           
           {/* PWA Meta Tags */}
           <meta name="theme-color" content="#2d3748" />
