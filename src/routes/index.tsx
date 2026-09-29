@@ -1,4 +1,5 @@
-import { createAsync, type RouteDefinition, A, useSubmission } from "@solidjs/router";
+
+import { useSubmission } from "~/lib/use-submission";
 import { Show, For, createSignal, createEffect } from "solid-js";
 import Modal from "~/components/Modal";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
@@ -39,17 +40,17 @@ export const route = {
   info: {
     ssr: false, // Disable SSR to prevent timezone mismatch between server and client
   },
-} satisfies RouteDefinition;
+};
 
 export default function Home() {
-  const user = createAsync(() => getUser(), { deferStream: true });
+  const user = createMemo(() => getUser());
   const isOwner = () => user()?.isOwner ?? false;
-  const upcomingSessions = createAsync(() => getUpcomingSessions(10));
-  const recentIncidents = createAsync(() => getRecentReports(10));
-  const families = createAsync(() => getFamilies());
-  const services = createAsync(() => getServices());
-  const weeklyStats = createAsync(() => getWeeklyStats());
-  const dashboardStats = createAsync(() => getDashboardStats());
+  const upcomingSessions = createMemo(() => getUpcomingSessions(10));
+  const recentIncidents = createMemo(() => getRecentReports(10));
+  const families = createMemo(() => getFamilies());
+  const services = createMemo(() => getServices());
+  const weeklyStats = createMemo(() => getWeeklyStats());
+  const dashboardStats = createMemo(() => getDashboardStats());
 
   // Time period selection for hours and money widgets
   const [hoursPeriod, setHoursPeriod] = createSignal<"lastWeek" | "thisWeek" | "month" | "ytd">(
@@ -59,8 +60,8 @@ export default function Home() {
     "thisWeek",
   );
 
-  const hoursStats = createAsync(() => getStatsForPeriod(hoursPeriod()));
-  const moneyStats = createAsync(() => getStatsForPeriod(moneyPeriod()));
+  const hoursStats = createMemo(() => getStatsForPeriod(hoursPeriod()));
+  const moneyStats = createMemo(() => getStatsForPeriod(moneyPeriod()));
   const [showQuickAddModal, setShowQuickAddModal] = createSignal(false);
   const [selectedFamilyId, setSelectedFamilyId] = createSignal<string>("");
   const [selectedDate, setSelectedDate] = createSignal<string>("");
@@ -73,12 +74,12 @@ export default function Home() {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const yesterdaySessions = createAsync(() => getSessionsForDay(yesterday));
-  const todaySessions = createAsync(() => getSessionsForDay(today));
-  const tomorrowSessions = createAsync(() => getSessionsForDay(tomorrow));
+  const yesterdaySessions = createMemo(() => getSessionsForDay(yesterday));
+  const todaySessions = createMemo(() => getSessionsForDay(today));
+  const tomorrowSessions = createMemo(() => getSessionsForDay(tomorrow));
 
   // Default service ID based on selected family's assigned services
-  const selectedFamily = createAsync(() => {
+  const selectedFamily = createMemo(() => {
     const id = selectedFamilyId();
     return id ? getFamily(id) : null;
   });
@@ -220,7 +221,7 @@ export default function Home() {
       <Show when={user() && !isOwner() && user()!.familyId}>
         <wa-callout variant="brand">
           View your family&apos;s schedule, sessions, and updates on the{" "}
-          <A href={`/families/${user()!.familyId}`}>family page</A>.
+          <a href={`/families/${user()!.familyId}`}>family page</a>.
         </wa-callout>
       </Show>
 
@@ -353,7 +354,7 @@ export default function Home() {
             <div style={{ display: "flex", "flex-direction": "column", gap: "0.375rem" }}>
               <For each={yesterdaySessions()}>
                 {(session) => (
-                  <A
+                  <a
                     href={`/families/${session.family.id}/sessions/${session.id}`}
                     style={{
                       padding: "0.5rem 0.75rem",
@@ -395,7 +396,7 @@ export default function Home() {
                       {session.children.length > 0 &&
                         ` • ${session.children.length} child${session.children.length > 1 ? "ren" : ""}`}
                     </div>
-                  </A>
+                  </a>
                 )}
               </For>
             </div>
@@ -428,7 +429,7 @@ export default function Home() {
             <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem" }}>
               <For each={todaySessions()}>
                 {(session) => (
-                  <A
+                  <a
                     href={`/families/${session.family.id}/sessions/${session.id}`}
                     style={{
                       padding: "0.5rem",
@@ -470,7 +471,7 @@ export default function Home() {
                       {session.children.length > 0 &&
                         ` • ${session.children.length} child${session.children.length > 1 ? "ren" : ""}`}
                     </div>
-                  </A>
+                  </a>
                 )}
               </For>
             </div>
@@ -503,7 +504,7 @@ export default function Home() {
             <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem" }}>
               <For each={tomorrowSessions()}>
                 {(session) => (
-                  <A
+                  <a
                     href={`/families/${session.family.id}/sessions/${session.id}`}
                     style={{
                       padding: "0.5rem",
@@ -545,7 +546,7 @@ export default function Home() {
                       {session.children.length > 0 &&
                         ` • ${session.children.length} child${session.children.length > 1 ? "ren" : ""}`}
                     </div>
-                  </A>
+                  </a>
                 )}
               </For>
             </div>
@@ -710,7 +711,7 @@ export default function Home() {
         <wa-card>
           <div class="wa-flank wa-gap-s" style={{ "margin-bottom": "var(--wa-space-s)" }}>
             <h2 class="wa-heading-m">Upcoming Sessions</h2>
-            <A href="/schedule">View All →</A>
+            <a href="/schedule">View All →</a>
           </div>
           <Show
             when={!upcomingSessions.loading && upcomingSessions()}
@@ -739,7 +740,7 @@ export default function Home() {
                     const isTomorrow = isSameDay(sessionDate, tomorrow);
 
                     return (
-                      <A
+                      <a
                         href={`/families/${session.familyId}/sessions/${session.id}`}
                         style={{
                           padding: "0.75rem",
@@ -812,7 +813,7 @@ export default function Home() {
                             </div>
                           </div>
                         </div>
-                      </A>
+                      </a>
                     );
                   }}
                 </For>
@@ -825,7 +826,7 @@ export default function Home() {
         <wa-card>
           <div class="wa-flank wa-gap-s" style={{ "margin-bottom": "var(--wa-space-s)" }}>
             <h2 class="wa-heading-m">Recent Incidents & Reports</h2>
-            <A href="/reports">View All →</A>
+            <a href="/reports">View All →</a>
           </div>
           <Show
             when={!recentIncidents.loading && recentIncidents()}
@@ -869,7 +870,7 @@ export default function Home() {
                     const isToday = reportDate.toDateString() === new Date().toDateString();
 
                     return (
-                      <A
+                      <a
                         href={`/families/${report.careSession.family.id}/sessions/${report.careSessionId}`}
                         style={{
                           padding: "0.75rem",
@@ -981,7 +982,7 @@ export default function Home() {
                             </div>
                           </div>
                         </div>
-                      </A>
+                      </a>
                     );
                   }}
                 </For>
@@ -1048,7 +1049,7 @@ export default function Home() {
                 >
                   <p class="wa-body-s wa-color-text-quiet">
                     No services assigned to this family.{" "}
-                    <A href={`/families/${selectedFamilyId()}/edit`}>Assign services</A> to default
+                    <a href={`/families/${selectedFamilyId()}/edit`}>Assign services</a> to default
                     this selection.
                   </p>
                 </Show>

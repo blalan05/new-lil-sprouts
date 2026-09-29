@@ -1,16 +1,15 @@
 // PM2 Ecosystem configuration file
-// This loads environment variables from .env file in production
 // Usage: pm2 start ecosystem.config.js
 
 export default {
   apps: [
     {
       name: "lilsprouts",
-      script: ".output/server/index.mjs",
+      script: "server.js",
       cwd: "/root/new-lil-sprouts",
       instances: 1,
       exec_mode: "fork",
-      env_file: ".env", // Load .env file from project root
+      env_file: ".env",
       env: {
         NODE_ENV: "production",
       },
@@ -24,5 +23,3 @@ export default {
     },
   ],
 };
-
-

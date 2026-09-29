@@ -1,4 +1,4 @@
-import { createAsync, type RouteDefinition, useParams } from "@solidjs/router";
+import { useParams } from "@solidjs/router";
 import { Show, For } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { SessionStatusBadge } from "~/components/wa/StatusBadge";
@@ -10,11 +10,11 @@ export const route = {
       getChild(params.childId);
     }
   },
-} satisfies RouteDefinition;
+};
 
 export default function ChildDetailPage() {
   const params = useParams();
-  const child = createAsync(() => getChild(params.childId!));
+  const child = createMemo(() => getChild(params.childId!));
 
   const formatDate = (date: string | Date) => {
     return new Date(date).toLocaleDateString("en-US", {

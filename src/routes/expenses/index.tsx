@@ -1,4 +1,5 @@
-import { createAsync, type RouteDefinition, A, useSubmission } from "@solidjs/router";
+
+import { useSubmission } from "~/lib/use-submission";
 import { Show, For, createSignal } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { useConfirm } from "~/components/wa/ConfirmProvider";
@@ -16,7 +17,7 @@ export const route = {
     getFamilies();
     getExpenses();
   },
-} satisfies RouteDefinition;
+};
 
 type SortField = "date" | "description" | "amount" | "category" | "family";
 type SortDirection = "asc" | "desc";
@@ -32,9 +33,9 @@ const EXPENSE_CATEGORIES = [
 
 export default function ExpensesPage() {
   const { confirm } = useConfirm();
-  const families = createAsync(() => getFamilies());
+  const families = createMemo(() => getFamilies());
   const [selectedFamilyId, setSelectedFamilyId] = createSignal<string>("");
-  const expenses = createAsync(() => {
+  const expenses = createMemo(() => {
     const familyId = selectedFamilyId();
     return getExpenses(familyId || undefined);
   });
@@ -256,7 +257,7 @@ export default function ExpensesPage() {
                       </td>
                       <td style={{ padding: "1rem" }}>
                         <Show when={expense.family} fallback={<span class="wa-color-text-quiet">General</span>}>
-                          <A href={`/families/${expense.family!.id}`}>{expense.family!.familyName}</A>
+                          <a href={`/families/${expense.family!.id}`}>{expense.family!.familyName}</a>
                         </Show>
                       </td>
                       <td style={{ padding: "1rem", "text-align": "right", "font-weight": "600" }}>

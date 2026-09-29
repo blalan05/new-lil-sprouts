@@ -1,4 +1,5 @@
-import { useSubmission, createAsync } from "@solidjs/router";
+
+import { useSubmission } from "~/lib/use-submission";
 import { Show, createSignal, For } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { createFamily } from "~/lib/families";
@@ -13,7 +14,7 @@ type ChildData = {
 
 export default function NewFamily() {
   const submission = useSubmission(createFamily);
-  const services = createAsync(() => getServices());
+  const services = createMemo(() => getServices());
   const [includeSpouse, setIncludeSpouse] = createSignal(false);
   const [includeChildren, setIncludeChildren] = createSignal(false);
   const [children, setChildren] = createSignal<ChildData[]>([

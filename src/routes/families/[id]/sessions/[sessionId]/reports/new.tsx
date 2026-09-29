@@ -1,4 +1,5 @@
-import { useSubmission, useParams, createAsync } from "@solidjs/router";
+import { useParams } from "@solidjs/router";
+import { useSubmission } from "~/lib/use-submission";
 import { Show, For, createSignal } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { createSessionReport } from "~/lib/session-reports";
@@ -6,7 +7,7 @@ import { getFamily } from "~/lib/families";
 
 export default function NewSessionReport() {
   const params = useParams();
-  const family = createAsync(() => getFamily(params.id!));
+  const family = createMemo(() => getFamily(params.id!));
   const submission = useSubmission(createSessionReport);
   const [reportType, setReportType] = createSignal<string>("GENERAL");
 

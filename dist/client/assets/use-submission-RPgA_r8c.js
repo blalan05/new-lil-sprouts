@@ -1,0 +1,1 @@
+import{R as e}from"./web-CMLhSh0a.js";import{i as t}from"./action-eWyNAy9N.js";function n(n){let r=t(n),i=e(()=>{let e=r.at(-1);return{pending:!!e&&e.result===void 0&&e.error===void 0,error:e?.error,result:e?.result}});return{get pending(){return i().pending},get error(){return i().error},get result(){return i().result}}}export{n as t};

@@ -8,7 +8,7 @@ export const route = {
       throw serverRedirect(`/families/${child.familyId}/children/${params.id}/edit`);
     });
   },
-} satisfies RouteDefinition;
+};
 
 export default function ChildEditRedirect() {
   return null;

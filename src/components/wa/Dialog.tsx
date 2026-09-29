@@ -1,4 +1,6 @@
-import { JSX, Show, createEffect, onCleanup } from "solid-js";
+import type { JSX } from "@solidjs/web";
+import { Show, createEffect } from "solid-js";
+
 
 export type DialogProps = {
   open: boolean;
@@ -10,25 +12,29 @@ export type DialogProps = {
 };
 
 export default function Dialog(props: DialogProps) {
-  let dialogEl: HTMLElement & { open: boolean } | undefined;
+  let dialogEl: (HTMLElement & { open: boolean }) | undefined;
 
-  createEffect(() => {
-    if (dialogEl) {
-      dialogEl.open = props.open;
-    }
-  });
+  createEffect(
+    () => props.open,
+    (open) => {
+      if (dialogEl) {
+        dialogEl.open = open;
+      }
+    },
+  );
 
-  createEffect(() => {
-    if (props.open) {
-      document.body.style.overflow = "hidden";
-    } else {
+  createEffect(
+    () => props.open,
+    (open) => {
+      if (open) {
+        document.body.style.overflow = "hidden";
+        return () => {
+          document.body.style.overflow = "";
+        };
+      }
       document.body.style.overflow = "";
-    }
-  });
-
-  onCleanup(() => {
-    document.body.style.overflow = "";
-  });
+    },
+  );
 
   const handleHide = () => {
     props.onClose();

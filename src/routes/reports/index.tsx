@@ -1,9 +1,9 @@
-import { type RouteDefinition, A, createAsync } from "@solidjs/router";
+
 import { Show, For, createSignal, createEffect } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { getUser } from "~/lib";
 import { getAllServices, getService, createService, updateService } from "~/lib/services";
-import { useSubmission } from "@solidjs/router";
+import { useSubmission } from "~/lib/use-submission";
 import { formatMoneyDisplay } from "~/lib/money-display";
 
 export const route = {
@@ -11,17 +11,17 @@ export const route = {
     getUser();
     getAllServices();
   },
-} satisfies RouteDefinition;
+};
 
 export default function Reports() {
-  const allServices = createAsync(() => getAllServices());
+  const allServices = createMemo(() => getAllServices());
   const createSubmission = useSubmission(createService);
   const updateSubmission = useSubmission(updateService);
 
   const [showCreateForm, setShowCreateForm] = createSignal(false);
   const [editingServiceId, setEditingServiceId] = createSignal<string | null>(null);
 
-  const editingService = createAsync(() => {
+  const editingService = createMemo(() => {
     const id = editingServiceId();
     return id ? getService(id) : null;
   });
@@ -64,9 +64,9 @@ export default function Reports() {
                   Generate detailed year-end reports for families including dates, children, hours
                   worked, and money paid. Exportable to PDF.
                 </p>
-                <A href="/reports/year-end">
+                <a href="/reports/year-end">
                   <wa-button variant="brand">View Report</wa-button>
-                </A>
+                </a>
               </div>
             </wa-card>
 
@@ -78,9 +78,9 @@ export default function Reports() {
                   View all care sessions in a calendar format for any month. Perfect for printing
                   to show how busy you were.
                 </p>
-                <A href="/reports/calendar">
+                <a href="/reports/calendar">
                   <wa-button variant="brand">View Report</wa-button>
-                </A>
+                </a>
               </div>
             </wa-card>
 
@@ -92,9 +92,9 @@ export default function Reports() {
                   View gross income, expenses, and net income for your business. Breakdown by family
                   and month. Exportable to PDF and CSV.
                 </p>
-                <A href="/reports/income">
+                <a href="/reports/income">
                   <wa-button variant="brand">View Report</wa-button>
-                </A>
+                </a>
               </div>
             </wa-card>
           </div>

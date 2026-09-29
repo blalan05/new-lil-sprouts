@@ -1,4 +1,5 @@
-import { useSubmission, useParams, createAsync } from "@solidjs/router";
+import { useParams } from "@solidjs/router";
+import { useSubmission } from "~/lib/use-submission";
 import { Show, For, createSignal, createEffect } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { createCareSchedule } from "~/lib/care-schedules";
@@ -7,8 +8,8 @@ import { getServices } from "~/lib/services";
 
 export default function NewCareSchedule() {
   const params = useParams();
-  const family = createAsync(() => getFamily(params.id!));
-  const services = createAsync(() => getServices());
+  const family = createMemo(() => getFamily(params.id!));
+  const services = createMemo(() => getServices());
   const submission = useSubmission(createCareSchedule);
   const [recurrence, setRecurrence] = createSignal<string>("ONCE");
   

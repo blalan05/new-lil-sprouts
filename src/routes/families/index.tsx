@@ -1,4 +1,4 @@
-import { createAsync, type RouteDefinition, A, useNavigate } from "@solidjs/router";
+import { useNavigate } from "@solidjs/router";
 import { For, Show, createSignal, createEffect } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { useConfirm } from "~/components/wa/ConfirmProvider";
@@ -12,7 +12,7 @@ export const route = {
     getFamilies();
     getAllChildren();
   },
-} satisfies RouteDefinition;
+};
 
 type ViewType = "families" | "children";
 
@@ -20,8 +20,8 @@ export default function FamiliesPage() {
   const navigate = useNavigate();
   const { confirm } = useConfirm();
   const [view, setView] = createSignal<ViewType>("families");
-  const families = createAsync(() => getFamilies());
-  const children = createAsync(() => getAllChildren());
+  const families = createMemo(() => getFamilies());
+  const children = createMemo(() => getAllChildren());
   const [searchTerm, setSearchTerm] = createSignal("");
   const [filterFamily, setFilterFamily] = createSignal<string>("");
   const [openDropdown, setOpenDropdown] = createSignal<string | null>(null);
@@ -136,27 +136,27 @@ export default function FamiliesPage() {
   return (
     <PageContent>
       <div class="wa-stack wa-gap-m">
-        <A href="/" class="wa-body-s wa-color-text-quiet">
+        <a href="/" class="wa-body-s wa-color-text-quiet">
           ← Back to Dashboard
-        </A>
+        </a>
         <PageHeader
           title={view() === "families" ? "Manage Families" : "All Children"}
           actions={
             <Show
               when={view() === "families"}
               fallback={
-                <A href="/families">
+                <a href="/families">
                   <wa-button variant="brand" appearance="filled">
                     + Add Child (via Families)
                   </wa-button>
-                </A>
+                </a>
               }
             >
-              <A href="/families/new">
+              <a href="/families/new">
                 <wa-button variant="brand" appearance="filled">
                   + Add New Family
                 </wa-button>
-              </A>
+              </a>
             </Show>
           }
         />
@@ -345,7 +345,7 @@ export default function FamiliesPage() {
                           <div style={{ display: "flex", "flex-wrap": "wrap", gap: "0.25rem" }}>
                             <For each={family.children}>
                               {(child) => (
-                                <A
+                                <a
                                   href={`/families/${family.id}/children/${child.id}`}
                                   onClick={(e) => e.stopPropagation()}
                                   style={{
@@ -360,7 +360,7 @@ export default function FamiliesPage() {
                                       {" "}(allergy)
                                     </span>
                                   )}
-                                </A>
+                                </a>
                               )}
                             </For>
                             {(!family.children || family.children.length === 0) && (
@@ -446,7 +446,7 @@ export default function FamiliesPage() {
                                     "min-width": "120px",
                                   }}
                                 >
-                                <A
+                                <a
                                   href={`/families/${family.id}`}
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -471,8 +471,8 @@ export default function FamiliesPage() {
                                 >
                                   <span>👁️</span>
                                   <span>View</span>
-                                </A>
-                                <A
+                                </a>
+                                <a
                                   href={`/families/${family.id}/edit`}
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -497,7 +497,7 @@ export default function FamiliesPage() {
                                 >
                                   <span>✏️</span>
                                   <span>Edit</span>
-                                </A>
+                                </a>
                                 <wa-button
                                   variant="danger"
                                   appearance="plain"
@@ -663,7 +663,7 @@ export default function FamiliesPage() {
                                       "min-width": "120px",
                                     }}
                                   >
-                                  <A
+                                  <a
                                     href={`/families/${child.familyId}/children/${child.id}`}
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -688,8 +688,8 @@ export default function FamiliesPage() {
                                   >
                                     <span>👁️</span>
                                     <span>View</span>
-                                  </A>
-                                  <A
+                                  </a>
+                                  <a
                                     href={`/families/${child.familyId}/children/${child.id}/edit`}
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -714,7 +714,7 @@ export default function FamiliesPage() {
                                   >
                                     <span>✏️</span>
                                     <span>Edit</span>
-                                  </A>
+                                  </a>
                                   <wa-button
                                     variant="danger"
                                     appearance="plain"

@@ -1,4 +1,4 @@
-import { type RouteDefinition, createAsync } from "@solidjs/router";
+
 import { Show, For, createSignal, createMemo, createEffect } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { getCareSessionsForRange } from "~/lib/schedule";
@@ -11,7 +11,7 @@ export const route = {
     const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59);
     getCareSessionsForRange(lastMonth, endOfLastMonth);
   },
-} satisfies RouteDefinition;
+};
 
 export default function CalendarReport() {
   const today = new Date();
@@ -29,7 +29,7 @@ export default function CalendarReport() {
     return { start, end };
   });
 
-  const sessions = createAsync(() => {
+  const sessions = createMemo(() => {
     const range = dateRange();
     return getCareSessionsForRange(range.start, range.end);
   });

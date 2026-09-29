@@ -1,0 +1,19 @@
+[
+  "src/lib/index.ts",
+  "src/lib/notifications.ts",
+  "src/lib/settings.ts",
+  "src/lib/care-schedules.ts",
+  "src/lib/session-reports.ts",
+  "src/lib/families.ts",
+  "src/lib/schedule.ts",
+  "src/lib/children.ts",
+  "src/lib/services.ts",
+  "src/lib/stats.ts",
+  "src/lib/expenses.ts",
+  "src/lib/payments.ts",
+  "src/lib/portal.ts",
+  "src/lib/reports.ts",
+  "src/lib/unavailability.ts",
+  "src/lib/family-members.ts",
+  "src/lib/route-guards.ts"
+]

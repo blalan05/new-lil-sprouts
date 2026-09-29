@@ -1,5 +1,5 @@
 import { ensureOwner } from "~/lib/route-guards";
-import { createAsync, type RouteDefinition, A } from "@solidjs/router";
+
 import { createSignal, Show, For } from "solid-js";
 import { getUser } from "~/lib";
 import { getAnnualTaxSummary, getAllFamiliesForReports } from "~/lib/reports";
@@ -10,7 +10,7 @@ export const route = {
     getUser();
     getAllFamiliesForReports();
   },
-} satisfies RouteDefinition;
+};
 
 function formatCurrency(amount: number | string) {
   const value = typeof amount === "string" ? parseFloat(amount) : amount;
@@ -25,9 +25,9 @@ export default function TaxSummaryReport() {
   const [selectedYear, setSelectedYear] = createSignal(currentYear);
   const [selectedFamilyId, setSelectedFamilyId] = createSignal<string>("");
 
-  const families = createAsync(() => getAllFamiliesForReports());
+  const families = createMemo(() => getAllFamiliesForReports());
 
-  const summary = createAsync(() => {
+  const summary = createMemo(() => {
     const year = selectedYear();
     const familyId = selectedFamilyId();
     return getAnnualTaxSummary(year, familyId || undefined);
@@ -39,7 +39,7 @@ export default function TaxSummaryReport() {
     <main class="page">
       <header style={{ "margin-bottom": "1.5rem" }}>
         <p style={{ margin: 0 }}>
-          <A href="/reports">← Back to reports</A>
+          <a href="/reports">← Back to reports</a>
         </p>
         <h1 class="page-title" style={{ margin: "0.5rem 0 0" }}>
           Annual tax summary

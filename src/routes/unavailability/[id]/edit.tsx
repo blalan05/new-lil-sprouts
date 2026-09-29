@@ -1,4 +1,5 @@
-import { createAsync, useSubmission, useParams, type RouteDefinition } from "@solidjs/router";
+import { useParams } from "@solidjs/router";
+import { useSubmission } from "~/lib/use-submission";
 import { Show, createSignal, createEffect } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { getUnavailability, updateUnavailability } from "~/lib/unavailability";
@@ -7,7 +8,7 @@ export const route = {
   preload({ params }) {
     return getUnavailability(params.id);
   },
-} satisfies RouteDefinition;
+};
 
 function toDateInput(value: string | Date) {
   return new Date(value).toISOString().split("T")[0];
@@ -15,7 +16,7 @@ function toDateInput(value: string | Date) {
 
 export default function EditUnavailability() {
   const params = useParams();
-  const unavailability = createAsync(() => getUnavailability(params.id));
+  const unavailability = createMemo(() => getUnavailability(params.id));
   const submission = useSubmission(updateUnavailability);
   const [allDay, setAllDay] = createSignal(true);
 

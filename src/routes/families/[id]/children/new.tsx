@@ -1,4 +1,5 @@
-import { useSubmission, useParams } from "@solidjs/router";
+import { useParams } from "@solidjs/router";
+import { useSubmission } from "~/lib/use-submission";
 import { Show } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { createChild } from "~/lib/children";

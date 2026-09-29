@@ -6,11 +6,11 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "jsx": "preserve",
-    "jsxImportSource": "solid-js",
+    "jsxImportSource": "@solidjs/web",
     "allowJs": true,
     "strict": true,
     "noEmit": true,
-    "types": ["vinxi/types/client", "node"],
+    "types": ["node"],
     "typeRoots": ["./node_modules/@types", "./src/types"],
     "isolatedModules": true,
     "paths": {

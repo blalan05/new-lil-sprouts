@@ -5,7 +5,7 @@ export const route = {
   preload() {
     throw serverRedirect("/reports");
   },
-} satisfies RouteDefinition;
+};
 
 export default function ServicesRedirect() {
   return null;

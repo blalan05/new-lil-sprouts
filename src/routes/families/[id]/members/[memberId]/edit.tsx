@@ -1,4 +1,5 @@
-import { createAsync, useSubmission, useParams, type RouteDefinition } from "@solidjs/router";
+import { useParams } from "@solidjs/router";
+import { useSubmission } from "~/lib/use-submission";
 import { Show } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { getFamilyMember, updateFamilyMember } from "~/lib/family-members";
@@ -7,11 +8,11 @@ export const route = {
   preload({ params }) {
     return getFamilyMember(params.memberId);
   },
-} satisfies RouteDefinition;
+};
 
 export default function EditFamilyMember() {
   const params = useParams();
-  const member = createAsync(() => getFamilyMember(params.memberId));
+  const member = createMemo(() => getFamilyMember(params.memberId));
   const submission = useSubmission(updateFamilyMember);
 
   return (

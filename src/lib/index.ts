@@ -1,12 +1,11 @@
 import { action, query, revalidate } from "@solidjs/router";
-import { getRequestEvent } from "solid-js/web";
-import { setCookie } from "vinxi/http";
 import { db } from "./db";
 import { requireUser } from "./auth";
 import { hashPassword, verifyPassword } from "./password";
 import { serverRedirect } from "./server-redirect";
 import { authenticatedHomePath } from "./route-access";
-import { ROLE_COOKIE, roleCookieValue } from "./role-cookie";
+import { roleCookieValue } from "./role-cookie";
+import { setRoleCookie } from "~/server/role-cookie";
 import {
   getSession,
   login,
@@ -51,7 +50,6 @@ export const updateUser = action(async (formData: FormData) => {
   const user = await requireUser();
   const userId = user.id;
   try {
-
     const firstName = String(formData.get("firstName") || "");
     const lastName = String(formData.get("lastName") || "");
     const email = String(formData.get("email") || "");
@@ -61,7 +59,6 @@ export const updateUser = action(async (formData: FormData) => {
       return new Error("Email is required");
     }
 
-    // Check if email is already taken by another user
     const existingUser = await db.user.findUnique({ where: { email } });
     if (existingUser && existingUser.id !== userId) {
       return new Error("Email is already in use");
@@ -82,14 +79,13 @@ export const updateUser = action(async (formData: FormData) => {
     console.error("Error updating user:", err);
     return new Error(err instanceof Error ? err.message : "Failed to update user");
   }
-});
+}, "update-user");
 
 export const updatePassword = action(async (formData: FormData) => {
   "use server";
   const sessionUser = await requireUser();
   const userId = sessionUser.id;
   try {
-
     const currentPassword = String(formData.get("currentPassword"));
     const newPassword = String(formData.get("newPassword"));
     const confirmPassword = String(formData.get("confirmPassword"));
@@ -105,7 +101,6 @@ export const updatePassword = action(async (formData: FormData) => {
     const passwordError = validatePassword(newPassword);
     if (passwordError) return new Error(passwordError);
 
-    // Verify current password
     const user = await db.user.findUnique({ where: { id: userId } });
     if (!user || !verifyPassword(currentPassword, user.password)) {
       return new Error("Current password is incorrect");
@@ -123,7 +118,7 @@ export const updatePassword = action(async (formData: FormData) => {
     console.error("Error updating password:", err);
     return new Error(err instanceof Error ? err.message : "Failed to update password");
   }
-});
+}, "update-password");
 
 export const loginOrRegister = action(async (formData: FormData) => {
   "use server";
@@ -153,15 +148,8 @@ export const loginOrRegister = action(async (formData: FormData) => {
     await session.update((d) => {
       d.userId = user.id;
     });
-    const reqEvent = getRequestEvent()?.nativeEvent;
-    if (reqEvent) {
-      setCookie(reqEvent, ROLE_COOKIE, roleCookieValue(user.isOwner), {
-        path: "/",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 365,
-      });
-    }
-    revalidate("user");
+    await setRoleCookie(roleCookieValue(user.isOwner));
+    revalidate(getUser.key);
     if (!user.isOwner) {
       const member = await db.familyMember.findUnique({
         where: { userId: user.id },
@@ -173,11 +161,11 @@ export const loginOrRegister = action(async (formData: FormData) => {
     return err as Error;
   }
   return serverRedirect("/");
-});
+}, "login-or-register");
 
 export const logout = action(async () => {
   "use server";
   await logoutSession();
-  revalidate("user");
+  revalidate(getUser.key);
   return serverRedirect("/login");
-});
+}, "logout");

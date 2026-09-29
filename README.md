@@ -34,12 +34,16 @@ works well on a phone in the field.
 
 ## Tech stack
 
-- [SolidStart](https://start.solidjs.com) (Solid + Vinxi) for the full-stack app
+- **Solid 2.0 RC** with `@solidjs/vite-plugin` start mode (SSR + server functions)
+- **Solid Router 2** with filesystem routing
 - [Prisma 7](https://www.prisma.io/) ORM with the `@prisma/adapter-pg` driver
   adapter
 - PostgreSQL database
 - `vite-plugin-pwa` / Workbox for the PWA service worker
 - TypeScript
+
+Production uses `server.js` to serve `dist/client` and delegate requests to the
+start-mode `handleRequest` handler in `dist/server/server.js`.
 
 ## Prerequisites
 
@@ -100,10 +104,11 @@ works well on a phone in the field.
 
 | Script | Description |
 | --- | --- |
-| `pnpm dev` | Start the Vinxi dev server |
+| `pnpm dev` | Start the Vite dev server (Solid start mode) |
 | `pnpm build` | Check deps, generate Prisma client, build for production |
 | `pnpm check-deps` | Verify private Web Awesome package is installed |
-| `pnpm start` | Run the built production server |
+| `pnpm start` | Run the built production server (`server.js`) |
+| `pnpm serve` | Preview the production build locally |
 | `pnpm prisma:generate` | Generate the Prisma client into `src/generated/prisma-client` |
 | `pnpm prisma:migrate` | Create/apply a dev migration (`prisma migrate dev`) |
 | `pnpm prisma:migrate:deploy` | Apply migrations in production (`scripts/migrate.js deploy`) |
@@ -125,10 +130,13 @@ works well on a phone in the field.
 prisma/
   schema.prisma          # Data model (families, children, sessions, payments, …)
 src/
-  app.tsx                # Root component / router shell
-  middleware/            # Request middleware (URL normalization for Nitro/Vinxi)
-  components/            # Shared UI (Topbar, ClientTime, …)
-  routes/                # File-based routes (families, schedule, payments, …)
+  App.tsx                # Application root (router + shell)
+  Document.tsx           # HTML document shell (meta, PWA, theme boot)
+  router.tsx             # Solid Router 2 instance
+  middleware/            # Fetch-style auth middleware
+  server/                # Signed cookie sessions
+  components/            # Shared UI
+  routes/                # File-based routes
   lib/                   # Server data layer (queries/actions) + helpers
     db.ts                # Prisma client + pg pool setup
     server.ts            # Auth helpers (login/register/session)
@@ -139,7 +147,9 @@ src/
 public/
   manifest.json          # PWA manifest
   icons/                 # PWA icons
-app.config.ts            # SolidStart + PWA + Prisma externalization config
+vite.config.ts           # Solid start mode + PWA + Prisma SSR externals
+env.ts                   # Typed server/client environment schema
+server.js                # Production Node adapter for handleRequest
 prisma.config.ts         # Prisma datasource/migrations config
 ecosystem.config.js      # PM2 process config for production
 ```

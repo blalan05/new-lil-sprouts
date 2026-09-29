@@ -1,14 +1,14 @@
-import { Router, useLocation } from "@solidjs/router";
-import { FileRoutes } from "@solidjs/start/router";
-import { Suspense, Show, type JSX } from "solid-js";
-import { isServer } from "solid-js/web";
-import { getRequestEvent } from "solid-js/web";
-import AppShell from "./components/AppShell";
-import AppErrorBoundary from "./components/ErrorBoundary";
-import { ConfirmProvider } from "./components/wa/ConfirmProvider";
-import { initTheme } from "./lib/theme";
-import "./app.css";
-import "./styles/responsive.css";
+import { useLocation } from "@solidjs/router";
+import { Loading, Show } from "solid-js";
+import type { JSX } from "@solidjs/web";
+import { getRequestEvent, isServer } from "@solidjs/web";
+import AppShell from "~/components/AppShell";
+import AppErrorBoundary from "~/components/ErrorBoundary";
+import { ConfirmProvider } from "~/components/wa/ConfirmProvider";
+import { initTheme } from "~/lib/theme";
+import { Router } from "~/router";
+import "~/app.css";
+import "~/styles/responsive.css";
 
 if (typeof document !== "undefined") {
   initTheme();
@@ -21,8 +21,6 @@ function isLoginPath(pathname: string) {
 function AppRoot(props: { children: JSX.Element }) {
   const location = useLocation();
 
-  // Prefer the real request URL during SSR so we never mount AppShell on /login
-  // (shell queries previously could redirect and stall the HTML stream).
   const onLogin = () => {
     if (isServer) {
       try {
@@ -40,16 +38,16 @@ function AppRoot(props: { children: JSX.Element }) {
       when={!onLogin()}
       fallback={
         <AppErrorBoundary>
-          <Suspense>{props.children}</Suspense>
+          <Loading>{props.children}</Loading>
         </AppErrorBoundary>
       }
     >
       <ConfirmProvider>
         <AppShell>
           <AppErrorBoundary>
-            <Suspense fallback={<div class="page-loading">Loading...</div>}>
+            <Loading fallback={<div class="page-loading">Loading...</div>}>
               {props.children}
-            </Suspense>
+            </Loading>
           </AppErrorBoundary>
         </AppShell>
       </ConfirmProvider>
@@ -58,9 +56,5 @@ function AppRoot(props: { children: JSX.Element }) {
 }
 
 export default function App() {
-  return (
-    <Router root={(props) => <AppRoot>{props.children}</AppRoot>}>
-      <FileRoutes />
-    </Router>
-  );
+  return <Router>{(props) => <AppRoot>{props.children}</AppRoot>}</Router>;
 }

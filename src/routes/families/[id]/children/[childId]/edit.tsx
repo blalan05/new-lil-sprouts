@@ -1,4 +1,5 @@
-import { createAsync, type RouteDefinition, useParams, useSubmission } from "@solidjs/router";
+import { useParams } from "@solidjs/router";
+import { useSubmission } from "~/lib/use-submission";
 import { Show } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { getChild, updateChild } from "~/lib/children";
@@ -9,11 +10,11 @@ export const route = {
       getChild(params.childId);
     }
   },
-} satisfies RouteDefinition;
+};
 
 export default function EditChild() {
   const params = useParams();
-  const child = createAsync(() => getChild(params.childId!));
+  const child = createMemo(() => getChild(params.childId!));
   const submission = useSubmission(updateChild);
 
   const formatDateForInput = (date: Date | string) => {

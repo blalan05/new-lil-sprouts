@@ -1,5 +1,5 @@
 import { ensureParent } from "~/lib/route-guards";
-import { createAsync, type RouteDefinition, A, useAction, useNavigate } from "@solidjs/router";
+import { useAction, useNavigate } from "@solidjs/router";
 import { createSignal, For, Show, createEffect } from "solid-js";
 import { getUser } from "~/lib";
 import {
@@ -18,14 +18,14 @@ export const route = {
     getMyUpcomingSessions();
     getMyChildReports();
   },
-} satisfies RouteDefinition;
+};
 
 export default function ParentPortal() {
   const navigate = useNavigate();
-  const user = createAsync(() => getUser());
-  const family = createAsync(() => getMyFamily());
-  const sessions = createAsync(() => getMyUpcomingSessions());
-  const reports = createAsync(() => getMyChildReports());
+  const user = createMemo(() => getUser());
+  const family = createMemo(() => getMyFamily());
+  const sessions = createMemo(() => getMyUpcomingSessions());
+  const reports = createMemo(() => getMyChildReports());
   const confirmSession = useAction(confirmMySession);
   const [confirmingId, setConfirmingId] = createSignal<string | null>(null);
 
@@ -99,9 +99,9 @@ export default function ParentPortal() {
       <section class="card" style={{ "margin-bottom": "1.5rem" }}>
         <div style={{ display: "flex", "justify-content": "space-between", "align-items": "center", gap: "1rem" }}>
           <h2 style={{ margin: 0 }}>Today's summary</h2>
-          <A href="/portal/today" class="btn" style={{ "font-size": "0.875rem" }}>
+          <a href="/portal/today" class="btn" style={{ "font-size": "0.875rem" }}>
             View full day →
-          </A>
+          </a>
         </div>
         <p class="text-muted" style={{ margin: "0.75rem 0 0", "font-size": "0.875rem" }}>
           See meals, sessions, and reports for today on the daily digest page.
@@ -129,7 +129,7 @@ export default function ParentPortal() {
       </section>
 
       <p style={{ "margin-top": "1.5rem" }}>
-        <A href="/account">Account settings</A>
+        <a href="/account">Account settings</a>
       </p>
     </main>
   );

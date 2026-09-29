@@ -1,5 +1,4 @@
 import { Show } from "solid-js";
-import { A } from "@solidjs/router";
 
 type EmptyStateProps = {
   icon?: string;
@@ -20,9 +19,9 @@ export default function EmptyState(props: EmptyStateProps) {
       <p class="empty-state-message">{props.message}</p>
       <Show when={props.actionLabel && (props.actionHref || props.onAction)}>
         {props.actionHref ? (
-          <A href={props.actionHref} class="btn btn-success">
+          <a href={props.actionHref} class="btn btn-success">
             {props.actionLabel}
-          </A>
+          </a>
         ) : (
           <button type="button" class="btn btn-success" onClick={props.onAction}>
             {props.actionLabel}

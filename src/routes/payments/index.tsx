@@ -1,5 +1,6 @@
-import { createAsync, type RouteDefinition, A, useSubmission, useSearchParams } from "@solidjs/router";
-import { Show, For, createSignal, createEffect, onMount } from "solid-js";
+import { useSearchParams } from "@solidjs/router";
+import { useSubmission } from "~/lib/use-submission";
+import { Show, For, createSignal, createEffect, onSettled } from "solid-js";
 import Modal from "~/components/Modal";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { PaymentStatusBadge } from "~/components/wa/StatusBadge";
@@ -14,14 +15,14 @@ export const route = {
     const currentYear = new Date().getFullYear();
     getPayments(currentYear);
   },
-} satisfies RouteDefinition;
+};
 
 type SortField = "date" | "family" | "amount" | "method" | "status";
 type SortDirection = "asc" | "desc";
 
 export default function PaymentsPage() {
   const [searchParams] = useSearchParams();
-  const families = createAsync(() => getFamilies());
+  const families = createMemo(() => getFamilies());
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = createSignal<number>(currentYear);
   const [searchTerm, setSearchTerm] = createSignal<string>("");
@@ -29,12 +30,12 @@ export default function PaymentsPage() {
   const [sortDirection, setSortDirection] = createSignal<SortDirection>("desc");
   const [showRecordPayment, setShowRecordPayment] = createSignal(false);
   
-  const allPayments = createAsync(() => {
+  const allPayments = createMemo(() => {
     const year = selectedYear();
     return getPayments(year);
   });
   const [selectedFamilyId, setSelectedFamilyId] = createSignal<string>("");
-  const unpaidSessions = createAsync(async () => {
+  const unpaidSessions = createMemo(async () => {
     const familyId = selectedFamilyId();
     if (!familyId) {
       return [];
@@ -42,7 +43,7 @@ export default function PaymentsPage() {
     return getUnpaidSessions(familyId);
   });
 
-  onMount(() => {
+  onSettled(() => {
     const familyId = searchParams.familyId;
     if (typeof familyId === "string" && familyId) {
       setSelectedFamilyId(familyId);

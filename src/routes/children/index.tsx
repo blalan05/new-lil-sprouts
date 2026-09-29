@@ -5,7 +5,7 @@ export const route = {
   preload() {
     throw serverRedirect("/families");
   },
-} satisfies RouteDefinition;
+};
 
 export default function ChildrenRedirect() {
   return null;

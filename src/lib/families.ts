@@ -1,4 +1,5 @@
-import { query, action, reload } from "@solidjs/router";
+import { query, action } from "@solidjs/router";
+import { reload } from "@solidjs/web";
 import { db } from "./db";
 import { requireOwner, requireFamilyAccess } from "./auth";
 import { calculateHours, calculateSessionCost, sumMoney, roundMoney, serializeMoneyDeep } from "./money";

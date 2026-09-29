@@ -1,4 +1,5 @@
-import { action, query, reload } from "@solidjs/router";
+import { action, query } from "@solidjs/router";
+import { reload } from "@solidjs/web";
 import { db } from "./db";
 import { requireOwner, assertFamilyExists, requireFamilyMemberAccess, assertFamilyMemberInFamily } from "./auth";
 import { hashPassword } from "./password";

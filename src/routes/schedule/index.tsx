@@ -1,5 +1,5 @@
-import { createAsync, type RouteDefinition, A, useSubmission } from "@solidjs/router";
-import { createSignal, Show, For, createMemo, createResource, createEffect } from "solid-js";
+import { useSubmission } from "~/lib/use-submission";
+import { createSignal, Show, For, createMemo, createEffect } from "solid-js";
 import Modal from "~/components/Modal";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { useConfirm } from "~/components/wa/ConfirmProvider";
@@ -17,7 +17,7 @@ export const route = {
   info: {
     ssr: false, // Disable SSR to prevent timezone mismatch between server and client
   },
-} satisfies RouteDefinition;
+};
 
 type ViewType = "month" | "week" | "day" | "list";
 
@@ -26,7 +26,7 @@ export default function SchedulePage() {
   const [view, setView] = createSignal<ViewType>("month");
   const [currentDate, setCurrentDate] = createSignal(new Date());
   const [searchTerm, setSearchTerm] = createSignal<string>("");
-  const services = createAsync(() => getServices());
+  const services = createMemo(() => getServices());
   const [serviceFilter, setServiceFilter] = createSignal<string>("ALL");
   const [sortField, setSortField] = createSignal<"date" | "family" | "status">("date");
   const [sortDirection, setSortDirection] = createSignal<"asc" | "desc">("asc");
@@ -79,24 +79,24 @@ export default function SchedulePage() {
     return { start: range.start, end: range.end, key: `${date.getTime()}-${currentView}` };
   });
 
-  // Use createResource which properly tracks reactive dependencies
-  const [sessions] = createResource(dateRangeSource, async (source) => {
-    // Data is already serialized as ISO strings in getCareSessionsForRange
+  const sessions = createMemo(() => {
+    const source = dateRangeSource();
     return getCareSessionsForRange(source.start, source.end);
   });
 
-  const [unavailabilities] = createResource(dateRangeSource, async (source) => {
+  const unavailabilities = createMemo(() => {
+    const source = dateRangeSource();
     return getUnavailabilitiesForRange(source.start, source.end);
   });
-  const upcomingUnavailabilities = createAsync(() => getUpcomingUnavailabilities());
+  const upcomingUnavailabilities = createMemo(() => getUpcomingUnavailabilities());
   const [showUnavailabilityPanel, setShowUnavailabilityPanel] = createSignal(false);
   const [showAddSessionModal, setShowAddSessionModal] = createSignal(false);
   const [selectedDate, setSelectedDate] = createSignal<string>("");
   const [selectedFamilyId, setSelectedFamilyId] = createSignal<string>("");
-  const families = createAsync(() => getFamilies());
+  const families = createMemo(() => getFamilies());
   const submission = useSubmission(createCareSchedule);
 
-  const selectedFamily = createAsync(() => {
+  const selectedFamily = createMemo(() => {
     const id = selectedFamilyId();
     return id ? getFamily(id) : null;
   });
@@ -529,7 +529,7 @@ export default function SchedulePage() {
                 >
                   <p class="wa-body-s wa-color-text-quiet">
                     No services assigned to this family.{" "}
-                    <A href={`/families/${selectedFamilyId()}/edit`}>Assign services</A> to default
+                    <a href={`/families/${selectedFamilyId()}/edit`}>Assign services</a> to default
                     this selection.
                   </p>
                 </Show>
@@ -837,7 +837,7 @@ function ListView(props: {
                 const isPast = endTime < new Date();
 
                 return (
-                  <A
+                  <a
                     href={`/families/${session.familyId}/sessions/${session.id}`}
                     style={{
                       display: "block",
@@ -919,7 +919,7 @@ function ListView(props: {
                         </div>
                       </Show>
                     </div>
-                  </A>
+                  </a>
                 );
               }}
             </For>
@@ -1089,7 +1089,7 @@ function MonthView(props: {
                       const isRecurring = !!session.scheduleId;
 
                       return (
-                        <A
+                        <a
                           href={`/families/${session.familyId}/sessions/${session.id}`}
                           onClick={(e) => e.stopPropagation()}
                           style={{
@@ -1110,7 +1110,7 @@ function MonthView(props: {
                         >
                           {isConfirmed && "✓ "}
                           <ClientTime date={session.scheduledStart} /> - {session.family.familyName}
-                        </A>
+                        </a>
                       );
                     }}
                   </For>
@@ -1274,7 +1274,7 @@ function WeekView(props: { currentDate: Date; sessions: any[]; unavailabilities:
                           const isRecurring = !!session.scheduleId;
 
                           return (
-                            <A
+                            <a
                               href={`/families/${session.familyId}/sessions/${session.id}`}
                               style={{
                                 display: "block",
@@ -1297,7 +1297,7 @@ function WeekView(props: { currentDate: Date; sessions: any[]; unavailabilities:
                             >
                               {isConfirmed && "✓ "}
                               {session.family.familyName}
-                            </A>
+                            </a>
                           );
                         }}
                       </For>
@@ -1454,7 +1454,7 @@ function DayView(props: { currentDate: Date; sessions: any[]; unavailabilities: 
                       const height = Math.max(60, (duration / 30) * 60);
 
                       return (
-                        <A
+                        <a
                           href={`/families/${session.familyId}/sessions/${session.id}`}
                           style={{
                             display: "block",
@@ -1488,7 +1488,7 @@ function DayView(props: { currentDate: Date; sessions: any[]; unavailabilities: 
                           <div style={{ "font-size": "0.75rem", "margin-top": "0.25rem" }}>
                             {session.children.map((c: any) => c.firstName).join(", ")}
                           </div>
-                        </A>
+                        </a>
                       );
                     }}
                   </For>

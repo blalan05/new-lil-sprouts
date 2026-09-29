@@ -1,4 +1,5 @@
-import { createAsync, type RouteDefinition, useParams, useSubmission } from "@solidjs/router";
+import { useParams } from "@solidjs/router";
+import { useSubmission } from "~/lib/use-submission";
 import { Show, For } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { getCareSession } from "~/lib/schedule";
@@ -13,12 +14,12 @@ export const route = {
       getChildren(params.id);
     }
   },
-} satisfies RouteDefinition;
+};
 
 export default function EditCareSession() {
   const params = useParams();
-  const session = createAsync(() => getCareSession(params.sessionId!));
-  const children = createAsync(() => getChildren(params.id!));
+  const session = createMemo(() => getCareSession(params.sessionId!));
+  const children = createMemo(() => getChildren(params.id!));
   const editSubmission = useSubmission(editCareSessionFull);
 
   const isChildSelected = (childId: string): boolean => {

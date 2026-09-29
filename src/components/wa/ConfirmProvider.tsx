@@ -1,4 +1,6 @@
-import { JSX, createContext, createSignal, useContext } from "solid-js";
+import type { JSX } from "@solidjs/web";
+import { createContext, createSignal, useContext } from "solid-js";
+
 import ConfirmDialog from "./ConfirmDialog";
 
 type ConfirmOptions = {
@@ -43,7 +45,7 @@ export function ConfirmProvider(props: { children: JSX.Element }) {
   };
 
   return (
-    <ConfirmContext.Provider value={{ confirm }}>
+    <ConfirmContext value={{ confirm }}>
       {props.children}
       <ConfirmDialog
         open={open()}
@@ -55,6 +57,6 @@ export function ConfirmProvider(props: { children: JSX.Element }) {
         onConfirm={() => close(true)}
         onCancel={() => close(false)}
       />
-    </ConfirmContext.Provider>
+    </ConfirmContext>
   );
 }

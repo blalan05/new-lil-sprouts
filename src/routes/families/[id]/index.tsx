@@ -1,4 +1,5 @@
-import { createAsync, type RouteDefinition, A, useParams, useSubmission } from "@solidjs/router";
+import { useParams } from "@solidjs/router";
+import { useSubmission } from "~/lib/use-submission";
 import { Show, For, createSignal, createEffect } from "solid-js";
 import Modal from "~/components/Modal";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
@@ -38,17 +39,17 @@ export const route = {
   info: {
     ssr: false, // Disable SSR for authenticated pages
   },
-} satisfies RouteDefinition;
+};
 
 export default function FamilyDetailPage() {
   const params = useParams();
   const { confirm } = useConfirm();
-  const family = createAsync(() => getFamily(params.id!));
-  const familyMembers = createAsync(() => getFamilyMembers(params.id!));
-  const schedules = createAsync(() => getCareSchedules(params.id!));
-  const children = createAsync(() => getChildren(params.id!));
-  const services = createAsync(() => getServices());
-  const caregiver = createAsync(() => getUser());
+  const family = createMemo(() => getFamily(params.id!));
+  const familyMembers = createMemo(() => getFamilyMembers(params.id!));
+  const schedules = createMemo(() => getCareSchedules(params.id!));
+  const children = createMemo(() => getChildren(params.id!));
+  const services = createMemo(() => getServices());
+  const caregiver = createMemo(() => getUser());
 
   const [showInviteModal, setShowInviteModal] = createSignal<string | null>(null);
   const [showScheduleDialog, setShowScheduleDialog] = createSignal<
@@ -198,17 +199,17 @@ export default function FamilyDetailPage() {
         }
       >
         <div class="wa-stack wa-gap-l">
-          <A href="/families" class="wa-body-s wa-color-text-quiet">
+          <a href="/families" class="wa-body-s wa-color-text-quiet">
             ← Back to Families
-          </A>
+          </a>
           <PageHeader
             title={family()!.familyName}
             actions={
-              <A href={`/families/${params.id}/edit`}>
+              <a href={`/families/${params.id}/edit`}>
                 <wa-button variant="brand" appearance="filled">
                   Edit Family
                 </wa-button>
-              </A>
+              </a>
             }
           />
 
@@ -312,7 +313,7 @@ export default function FamilyDetailPage() {
             <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)" }}>
               Children ({family()?.children?.length || 0})
             </h2>
-            <A
+            <a
               href={`/families/${params.id}/children/new`}
               style={{
                 padding: "0.5rem 1rem",
@@ -325,7 +326,7 @@ export default function FamilyDetailPage() {
               }}
             >
               + Add Child
-            </A>
+            </a>
           </div>
 
           <Show
@@ -435,7 +436,7 @@ export default function FamilyDetailPage() {
                           "margin-left": "1rem",
                         }}
                       >
-                        <A
+                        <a
                           href={`/families/${params.id}/children/${child.id}`}
                           style={{
                             padding: "0.5rem 1rem",
@@ -449,8 +450,8 @@ export default function FamilyDetailPage() {
                           }}
                         >
                           View Details
-                        </A>
-                        <A
+                        </a>
+                        <a
                           href={`/families/${params.id}/children/${child.id}/edit`}
                           style={{
                             padding: "0.5rem 1rem",
@@ -464,7 +465,7 @@ export default function FamilyDetailPage() {
                           }}
                         >
                           Edit
-                        </A>
+                        </a>
                       </div>
                     </div>
                   </div>
@@ -610,7 +611,7 @@ export default function FamilyDetailPage() {
                           </td>
                           <td style={{ padding: "0.75rem" }}>
                             <div style={{ display: "flex", gap: "0.5rem" }}>
-                              <A
+                              <a
                                 href={`/families/${params.id}/sessions/${session.id}`}
                                 style={{
                                   padding: "0.25rem 0.75rem",
@@ -622,8 +623,8 @@ export default function FamilyDetailPage() {
                                 }}
                               >
                                 View
-                              </A>
-                              <A
+                              </a>
+                              <a
                                 href={`/families/${params.id}/sessions/${session.id}/edit`}
                                 style={{
                                   padding: "0.25rem 0.75rem",
@@ -635,7 +636,7 @@ export default function FamilyDetailPage() {
                                 }}
                               >
                                 Edit
-                              </A>
+                              </a>
                               <wa-button
                                 variant="danger"
                                 appearance="filled"
@@ -854,7 +855,7 @@ export default function FamilyDetailPage() {
             <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)" }}>
               Family Members & Contacts ({familyMembers()?.length || 0})
             </h2>
-            <A
+            <a
               href={`/families/${params.id}/members/new`}
               style={{
                 padding: "0.5rem 1rem",
@@ -867,7 +868,7 @@ export default function FamilyDetailPage() {
               }}
             >
               + Add Member
-            </A>
+            </a>
           </div>
 
           <Show
@@ -989,7 +990,7 @@ export default function FamilyDetailPage() {
                           "margin-left": "1rem",
                         }}
                       >
-                        <A
+                        <a
                           href={`/families/${params.id}/members/${member.id}/edit`}
                           style={{
                             padding: "0.5rem 1rem",
@@ -1003,7 +1004,7 @@ export default function FamilyDetailPage() {
                           }}
                         >
                           Edit
-                        </A>
+                        </a>
                         <Show
                           when={!member.user && member.email}
                           fallback={
@@ -1084,7 +1085,7 @@ export default function FamilyDetailPage() {
             <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)" }}>
               Children ({family()?.children?.length || 0})
             </h2>
-            <A
+            <a
               href={`/families/${params.id}/children/new`}
               style={{
                 padding: "0.5rem 1rem",
@@ -1097,7 +1098,7 @@ export default function FamilyDetailPage() {
               }}
             >
               + Add Child
-            </A>
+            </a>
           </div>
 
           <Show
@@ -1146,7 +1147,7 @@ export default function FamilyDetailPage() {
                           </p>
                         </Show>
                       </div>
-                      <A
+                      <a
                         href={`/families/${params.id}/children/${child.id}/edit`}
                         style={{
                           padding: "0.5rem 1rem",
@@ -1160,7 +1161,7 @@ export default function FamilyDetailPage() {
                         }}
                       >
                         Edit
-                      </A>
+                      </a>
                     </div>
                   </div>
                 )}
@@ -1188,7 +1189,7 @@ export default function FamilyDetailPage() {
             }}
           >
             <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)" }}>Recent Care Sessions</h2>
-            <A
+            <a
               href={`/families/${params.id}/schedules/new`}
               style={{
                 padding: "0.5rem 1rem",
@@ -1201,7 +1202,7 @@ export default function FamilyDetailPage() {
               }}
             >
               + Schedule Session
-            </A>
+            </a>
           </div>
 
           <Show
@@ -1297,7 +1298,7 @@ export default function FamilyDetailPage() {
             }}
           >
             <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)" }}>Recent Payments</h2>
-            <A
+            <a
               href={`/payments?familyId=${params.id}&record=1`}
               style={{
                 padding: "0.5rem 1rem",
@@ -1310,7 +1311,7 @@ export default function FamilyDetailPage() {
               }}
             >
               + Add Payment
-            </A>
+            </a>
           </div>
 
           <Show

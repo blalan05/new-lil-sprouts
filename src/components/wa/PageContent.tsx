@@ -1,4 +1,5 @@
-import { JSX } from "solid-js";
+import type { JSX } from "@solidjs/web";
+
 
 type PageContentProps = {
   children: JSX.Element;
@@ -8,8 +9,7 @@ type PageContentProps = {
 export default function PageContent(props: PageContentProps) {
   return (
     <main
-      class="page-content wa-stack wa-gap-l"
-      classList={{ "page-content--narrow": !!props.narrow }}
+      class={["page-content wa-stack wa-gap-l", { "page-content--narrow": !!props.narrow }]}
     >
       {props.children}
     </main>

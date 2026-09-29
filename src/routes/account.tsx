@@ -1,4 +1,5 @@
-import { createAsync, type RouteDefinition, useSubmission } from "@solidjs/router";
+
+import { useSubmission } from "~/lib/use-submission";
 import { Show, createSignal, createEffect } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { getUser, updateUser, updatePassword } from "~/lib";
@@ -10,16 +11,16 @@ export const route = {
     getDefaultHourlyRate();
     getDefaultPianoLessonRate();
   },
-} satisfies RouteDefinition;
+};
 
 export default function AccountPage() {
-  const user = createAsync(() => getUser());
+  const user = createMemo(() => getUser());
   const updateSubmission = useSubmission(updateUser);
   const passwordSubmission = useSubmission(updatePassword);
   const settingSubmission = useSubmission(setSetting);
 
-  const defaultHourlyRate = createAsync(() => getDefaultHourlyRate());
-  const defaultPianoLessonRate = createAsync(() => getDefaultPianoLessonRate());
+  const defaultHourlyRate = createMemo(() => getDefaultHourlyRate());
+  const defaultPianoLessonRate = createMemo(() => getDefaultPianoLessonRate());
   const [hourlyRateValue, setHourlyRateValue] = createSignal<string>("");
   const [pianoLessonRateValue, setPianoLessonRateValue] = createSignal<string>("");
 

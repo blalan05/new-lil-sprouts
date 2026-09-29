@@ -1,4 +1,4 @@
-import { useSubmission } from "@solidjs/router";
+import { useSubmission } from "~/lib/use-submission";
 import { Show, createSignal } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { createUnavailability } from "~/lib/unavailability";

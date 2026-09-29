@@ -1,4 +1,4 @@
-import { redirect as solidRedirect } from "@solidjs/router";
+import { redirect } from "@solidjs/web";
 
 type RedirectInit = number | ResponseInit | undefined;
 
@@ -16,7 +16,7 @@ function getPublicOrigin(): string {
     process.env.PUBLIC_ORIGIN,
     process.env.APP_ORIGIN,
     process.env.SITE_URL,
-    process.env.URL, // Netlify
+    process.env.URL,
   ];
 
   for (const candidate of direct) {
@@ -25,9 +25,9 @@ function getPublicOrigin(): string {
   }
 
   const hostOnly = [
-    process.env.VERCEL_URL, // host only
-    process.env.RENDER_EXTERNAL_HOSTNAME, // host only
-    process.env.RAILWAY_PUBLIC_DOMAIN, // host only
+    process.env.VERCEL_URL,
+    process.env.RENDER_EXTERNAL_HOSTNAME,
+    process.env.RAILWAY_PUBLIC_DOMAIN,
   ];
 
   for (const candidate of hostOnly) {
@@ -35,22 +35,16 @@ function getPublicOrigin(): string {
     if (normalized) return normalized;
   }
 
-  // Last-resort fallbacks to avoid crashing on missing Host headers.
-  // Prefer setting PUBLIC_ORIGIN in production instead of relying on this.
   if (process.env.NODE_ENV === "production") return "https://lilsprouts.io";
   return "http://localhost:3000";
 }
 
 export function serverRedirect(location: string, init?: RedirectInit) {
-  // Prefer relative paths so client-side navigations stay on the current origin.
-  // Absolute URLs are only used when a full URL was passed in.
   const target = /^https?:\/\//i.test(location)
     ? location
     : location.startsWith("/")
       ? location
       : new URL(location, getPublicOrigin()).toString();
 
-  // `redirect` supports multiple init shapes across Solid Router versions.
-  return solidRedirect(target, init as any);
+  return redirect(target, init as ResponseInit | undefined);
 }
-

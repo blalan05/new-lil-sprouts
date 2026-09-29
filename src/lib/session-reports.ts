@@ -1,4 +1,5 @@
-import { action, query, reload } from "@solidjs/router";
+import { action, query } from "@solidjs/router";
+import { reload } from "@solidjs/web";
 import { db } from "./db";
 import { requireOwner, requireSessionFamilyAccess, requireChildAccess, assertFamilyExists } from "./auth";
 import type { ReportType, ReportSeverity } from "../generated/prisma-client/client.js";

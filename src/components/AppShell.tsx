@@ -1,5 +1,8 @@
-import { A, useSubmission, createAsync, revalidate } from "@solidjs/router";
-import { For, Show, createSignal, createEffect, onCleanup, onMount, JSX } from "solid-js";
+import { revalidate } from "@solidjs/router";
+import type { JSX } from "@solidjs/web";
+import { createMemo, For, Show, createSignal, createEffect, onSettled } from "solid-js";
+
+import { useSubmission } from "~/lib/use-submission";
 import { getUser, logout } from "~/lib";
 import { readRoleCookie } from "~/lib/role-cookie";
 import { getStoredTheme, initTheme, resolveTheme, setTheme, type Theme } from "~/lib/theme";
@@ -22,33 +25,33 @@ const PARENT_NAV_LINKS = [
 
 function NavLink(props: { href: string; children: JSX.Element; onClick?: () => void }) {
   return (
-    <A href={props.href} onClick={props.onClick}>
+    <a href={props.href} onClick={props.onClick}>
       <wa-button appearance="plain" class="nav-link">
         {props.children}
       </wa-button>
-    </A>
+    </a>
   );
 }
 
 export default function AppShell(props: { children: JSX.Element }) {
-  const user = createAsync(() => getUser(), { deferStream: true });
+  const user = createMemo(() => getUser());
   const logoutSubmission = useSubmission(logout);
-  const notifications = createAsync(async () => {
+  const notifications = createMemo(async () => {
     const u = await getUser();
     if (!u) return [];
     return getMyNotifications(10);
-  }, { deferStream: true });
-  const unreadCount = createAsync(async () => {
+  });
+  const unreadCount = createMemo(async () => {
     const u = await getUser();
     if (!u) return 0;
     return getUnreadCount();
-  }, { deferStream: true });
+  });
 
   const [navReady, setNavReady] = createSignal(false);
   const [notifOpen, setNotifOpen] = createSignal(false);
   const [theme, setThemeState] = createSignal<Theme>("system");
 
-  onMount(() => {
+  onSettled(() => {
     initTheme();
     setThemeState(getStoredTheme());
     setNavReady(true);
@@ -62,10 +65,7 @@ export default function AppShell(props: { children: JSX.Element }) {
   };
 
   const navLinks = () => (isOwner() ? OWNER_NAV_LINKS : PARENT_NAV_LINKS);
-  // Only resolve after mount (navReady) so SSR doesn't stamp href="/portal" for owners
-  // when user()/role cookie aren't available on the server.
-  const homeHref = () =>
-    authenticatedHomePath(isOwner(), user()?.familyId);
+  const homeHref = () => authenticatedHomePath(isOwner(), user()?.familyId);
 
   const cycleTheme = () => {
     const order: Theme[] = ["light", "dark", "system"];
@@ -80,16 +80,19 @@ export default function AppShell(props: { children: JSX.Element }) {
     return `Theme: ${t}`;
   };
 
-  createEffect(() => {
-    if (!notifOpen()) return;
-    const onDocClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (target?.closest?.(".notif-menu")) return;
-      setNotifOpen(false);
-    };
-    document.addEventListener("click", onDocClick);
-    onCleanup(() => document.removeEventListener("click", onDocClick));
-  });
+  createEffect(
+    () => notifOpen(),
+    (open) => {
+      if (!open) return;
+      const onDocClick = (e: MouseEvent) => {
+        const target = e.target as HTMLElement | null;
+        if (target?.closest?.(".notif-menu")) return;
+        setNotifOpen(false);
+      };
+      document.addEventListener("click", onDocClick);
+      return () => document.removeEventListener("click", onDocClick);
+    },
+  );
 
   const handleNotificationClick = async (notification: {
     id: string;
@@ -97,7 +100,8 @@ export default function AppShell(props: { children: JSX.Element }) {
     familyId: string | null;
   }) => {
     await markNotificationRead(notification.id);
-    await revalidate(["my-notifications", "unread-notification-count"]);
+    revalidate(getMyNotifications.key);
+    revalidate(getUnreadCount.key);
     setNotifOpen(false);
     if (notification.careSessionId && isOwner() && notification.familyId) {
       window.location.href = `/families/${notification.familyId}/sessions/${notification.careSessionId}`;
@@ -119,10 +123,10 @@ export default function AppShell(props: { children: JSX.Element }) {
               </span>
             }
           >
-            <A href={homeHref()} class="brand-link wa-cluster wa-gap-s wa-align-items-center">
+            <a href={homeHref()} class="brand-link wa-cluster wa-gap-s wa-align-items-center">
               <img src="/icons/icon-96x96.png" alt="Lil Sprouts" width="32" height="32" />
               <span class="wa-heading-m">Lil Sprouts</span>
-            </A>
+            </a>
           </Show>
           <Show when={navReady()}>
             <nav class="desktop-nav wa-cluster wa-gap-xs">
@@ -161,8 +165,7 @@ export default function AppShell(props: { children: JSX.Element }) {
                     {(n) => (
                       <button
                         type="button"
-                        class="notif-item"
-                        classList={{ unread: !n.read }}
+                        class={["notif-item", { unread: !n.read }]}
                         onClick={() => handleNotificationClick(n)}
                       >
                         <strong>{n.title}</strong>
@@ -176,9 +179,9 @@ export default function AppShell(props: { children: JSX.Element }) {
           </div>
 
           <Show when={user()}>
-            <A href="/account">
+            <a href="/account">
               <wa-button appearance="plain">{user()?.firstName || user()?.username}</wa-button>
-            </A>
+            </a>
           </Show>
           <form action={logout} method="post">
             <wa-button

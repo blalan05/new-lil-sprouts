@@ -1,5 +1,5 @@
 import { ensureParent } from "~/lib/route-guards";
-import { createAsync, type RouteDefinition, A, useNavigate } from "@solidjs/router";
+import { useNavigate } from "@solidjs/router";
 import { createSignal, For, Show, createEffect } from "solid-js";
 import { getUser } from "~/lib";
 import { getMyDailyDigest } from "~/lib/portal";
@@ -12,11 +12,11 @@ export const route = {
     getUser();
     getMyDailyDigest();
   },
-} satisfies RouteDefinition;
+};
 
 export default function PortalToday() {
   const navigate = useNavigate();
-  const user = createAsync(() => getUser());
+  const user = createMemo(() => getUser());
   const today = new Date();
   const [selectedDate, setSelectedDate] = createSignal(
     today.toISOString().slice(0, 10),
@@ -27,7 +27,7 @@ export default function PortalToday() {
     if (u?.isOwner) navigate("/", { replace: true });
   });
 
-  const digest = createAsync(() => {
+  const digest = createMemo(() => {
     const [y, m, d] = selectedDate().split("-").map(Number);
     return getMyDailyDigest(new Date(y, m - 1, d));
   });
@@ -38,7 +38,7 @@ export default function PortalToday() {
     <main class="page">
       <header style={{ "margin-bottom": "1.5rem" }}>
         <p style={{ margin: 0 }}>
-          <A href="/portal">← Back to portal</A>
+          <a href="/portal">← Back to portal</a>
         </p>
         <h1 style={{ margin: "0.5rem 0 0" }}>{isToday() ? "Today" : "Daily summary"}</h1>
         <p class="text-muted" style={{ margin: "0.5rem 0 0" }}>

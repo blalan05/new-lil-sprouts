@@ -1,28 +1,8 @@
-import { useSession, clearSession, setCookie } from "vinxi/http";
-import { getRequestEvent } from "solid-js/web";
+import { getRequestEvent } from "@solidjs/web";
 import { db } from "./db";
 import { hashPassword, needsRehash, verifyPassword } from "./password";
-import { ROLE_COOKIE, roleCookieValue } from "./role-cookie";
-
-function getSessionSecret() {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret) {
-    throw new Error("SESSION_SECRET environment variable is required");
-  }
-  return secret;
-}
-
-/** Always return a plain `{ password }` object for vinxi/h3 session APIs. */
-export function sessionConfig(): { password: string } {
-  return { password: getSessionSecret() };
-}
-
-/** @deprecated Prefer sessionConfig() so the password is a real own-property. */
-export const SESSION_CONFIG = {
-  get password() {
-    return getSessionSecret();
-  },
-};
+import { clearRoleCookie } from "~/server/role-cookie";
+import { getSession } from "~/server/session";
 
 export function validateUsername(username: unknown) {
   if (typeof username !== "string" || username.length < 3) {
@@ -58,19 +38,10 @@ export async function login(usernameOrEmail: string, password: string) {
   return user;
 }
 
-export async function logout(event?: unknown) {
-  const target =
-    (event as Parameters<typeof clearSession>[0] | undefined) ??
-    getRequestEvent()?.nativeEvent;
-  if (target) {
-    await clearSession(target, sessionConfig());
-    setCookie(target, ROLE_COOKIE, "", { path: "/", maxAge: 0 });
-    return;
-  }
+export async function logout() {
   const session = await getSession();
-  await session.update((d) => {
-    d.userId = undefined;
-  });
+  await session.destroy();
+  await clearRoleCookie();
 }
 
 export async function register(username: string, email: string, password: string) {
@@ -92,10 +63,4 @@ export async function register(username: string, email: string, password: string
   });
 }
 
-export async function getSession(event?: unknown) {
-  const config = sessionConfig();
-  if (event) {
-    return await useSession(event as Parameters<typeof useSession>[0], config);
-  }
-  return await useSession(config);
-}
+export { getSession } from "~/server/session";

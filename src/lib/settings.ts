@@ -88,8 +88,8 @@ export const setSetting = action(async (formData: FormData) => {
       });
     }
 
-    revalidate("defaultHourlyRate");
-    revalidate("defaultPianoLessonRate");
+    revalidate(getDefaultHourlyRate.key);
+    revalidate(getDefaultPianoLessonRate.key);
     return serverRedirect("/account");
   } catch (err) {
     console.error("Error setting setting:", err);
@@ -107,8 +107,8 @@ export const saveBusinessSettings = action(async (formData: FormData) => {
     await upsertNumberSetting("defaultHourlyRate", hourlyRate);
     await upsertNumberSetting("defaultPianoLessonRate", pianoRate);
 
-    revalidate("defaultHourlyRate");
-    revalidate("defaultPianoLessonRate");
+    revalidate(getDefaultHourlyRate.key);
+    revalidate(getDefaultPianoLessonRate.key);
     return serverRedirect("/account");
   } catch (err) {
     console.error("Error saving business settings:", err);

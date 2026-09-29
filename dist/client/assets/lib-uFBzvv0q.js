@@ -1,0 +1,1 @@
+import{a as e,r as t}from"./query-BvfhWW-6.js";import{t as n}from"./action-eWyNAy9N.js";var r=t(e(`734af9b4-0`),`user`),i=n(e(`734af9b4-1`),`update-user`),a=n(e(`734af9b4-2`),`update-password`),o=n(e(`734af9b4-3`),`login-or-register`),s=n(e(`734af9b4-4`),`logout`);export{i as a,a as i,o as n,s as r,r as t};

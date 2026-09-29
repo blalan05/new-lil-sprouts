@@ -1,4 +1,4 @@
-import { createAsync, type RouteDefinition } from "@solidjs/router";
+
 import { createSignal, Show, For } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { getUser } from "~/lib";
@@ -8,7 +8,7 @@ export const route = {
   preload() {
     getUser();
   },
-} satisfies RouteDefinition;
+};
 
 export default function IncomeReport() {
   const currentYear = new Date().getFullYear();
@@ -17,7 +17,7 @@ export default function IncomeReport() {
   const [selectedMonth, setSelectedMonth] = createSignal<number | null>(null);
   const [viewMode, setViewMode] = createSignal<"year" | "month">("year");
 
-  const incomeReport = createAsync(() => {
+  const incomeReport = createMemo(() => {
     const year = selectedYear();
     const month = viewMode() === "month" ? (selectedMonth() || currentMonth) : null;
     return getIncomeReport(year, month || undefined);

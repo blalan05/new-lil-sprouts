@@ -1,4 +1,4 @@
-import { createAsync, type RouteDefinition, A } from "@solidjs/router";
+
 import { createSignal, Show, For } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { getUser } from "~/lib";
@@ -12,7 +12,7 @@ export const route = {
     getUser();
     getAllFamiliesForReports();
   },
-} satisfies RouteDefinition;
+};
 
 export default function YearEndReports() {
   const currentYear = new Date().getFullYear();
@@ -20,9 +20,9 @@ export default function YearEndReports() {
   const [selectedFamilyId, setSelectedFamilyId] = createSignal<string>("");
   const [viewMode, setViewMode] = createSignal<"all" | "single">("all");
 
-  const families = createAsync(() => getAllFamiliesForReports());
+  const families = createMemo(() => getAllFamiliesForReports());
   
-  const singleReport = createAsync(() => {
+  const singleReport = createMemo(() => {
     const familyId = selectedFamilyId();
     const year = selectedYear();
     if (familyId && year) {
@@ -31,7 +31,7 @@ export default function YearEndReports() {
     return null;
   });
 
-  const allReports = createAsync(() => {
+  const allReports = createMemo(() => {
     const year = selectedYear();
     if (viewMode() === "all" && year) {
       return getAllYearEndReports(year);
@@ -808,7 +808,7 @@ export default function YearEndReports() {
                       </h3>
                       <div style={{ "font-size": "0.875rem", color: "var(--color-text-muted)" }}>{report.parentName}</div>
                     </div>
-                    <A
+                    <a
                       href={`/reports/year-end?family=${report.familyId}&year=${selectedYear()}`}
                       style={{
                         padding: "0.5rem 1rem",
@@ -827,7 +827,7 @@ export default function YearEndReports() {
                       }}
                     >
                       View Full Report
-                    </A>
+                    </a>
                   </div>
                   <div style={{ display: "grid", "grid-template-columns": "repeat(auto-fit, minmax(150px, 1fr))", gap: "1rem" }}>
                     <div>

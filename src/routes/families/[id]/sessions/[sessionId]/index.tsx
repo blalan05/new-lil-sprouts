@@ -1,4 +1,5 @@
-import { createAsync, type RouteDefinition, useParams, useSubmission } from "@solidjs/router";
+import { useParams } from "@solidjs/router";
+import { useSubmission } from "~/lib/use-submission";
 import { Show, For, createSignal, createMemo, createEffect } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { useConfirm } from "~/components/wa/ConfirmProvider";
@@ -37,16 +38,16 @@ export const route = {
   info: {
     ssr: false, // Disable SSR for authenticated pages
   },
-} satisfies RouteDefinition;
+};
 
 export default function CareSessionDetail() {
   const params = useParams();
   const { confirm } = useConfirm();
-  const session = createAsync(() => getCareSession(params.sessionId!));
-  const reports = createAsync(() => getSessionReports(params.sessionId!));
-  const expenses = createAsync(() => getSessionExpenses(params.sessionId!));
-  const expenseTotal = createAsync(() => getSessionExpenseTotal(params.sessionId!));
-  const familyMembers = createAsync(() => getFamilyMembers(params.id!));
+  const session = createMemo(() => getCareSession(params.sessionId!));
+  const reports = createMemo(() => getSessionReports(params.sessionId!));
+  const expenses = createMemo(() => getSessionExpenses(params.sessionId!));
+  const expenseTotal = createMemo(() => getSessionExpenseTotal(params.sessionId!));
+  const familyMembers = createMemo(() => getFamilyMembers(params.id!));
 
   // Create combined list of primary parent + family members for drop-off/pickup
   const allPeople = createMemo(() => {
