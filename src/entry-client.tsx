@@ -7,7 +7,7 @@ import "~/client-init";
 
 import { hydrate } from "@solidjs/web";
 import Document from "~/Document";
-import App from "~/App";
+import App from "~/app";
 
 hydrate(
   () => (
