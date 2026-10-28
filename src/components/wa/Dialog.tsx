@@ -17,9 +17,13 @@ export default function Dialog(props: DialogProps) {
   createEffect(
     () => props.open,
     (open) => {
-      if (dialogEl) {
-        dialogEl.open = open;
-      }
+      const el = dialogEl;
+      if (!el) return;
+      el.open = open;
+      if (!open) return;
+      const onHide = () => props.onClose();
+      el.addEventListener("wa-hide", onHide);
+      return () => el.removeEventListener("wa-hide", onHide);
     },
   );
 
@@ -36,10 +40,6 @@ export default function Dialog(props: DialogProps) {
     },
   );
 
-  const handleHide = () => {
-    props.onClose();
-  };
-
   return (
     <Show when={props.open}>
       <wa-dialog
@@ -48,7 +48,6 @@ export default function Dialog(props: DialogProps) {
         label={props.title}
         light-dismiss
         style={{ "--width": props.maxWidth ?? "500px" }}
-        on:wa-hide={handleHide}
       >
         {props.children}
         <Show when={props.footer}>

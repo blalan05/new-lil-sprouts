@@ -34,8 +34,7 @@ function NavLink(props: { href: string; children: JSX.Element; onClick?: () => v
   return (
     <a
       href={props.href}
-      class="nav-anchor"
-      classList={{ "is-active": active() }}
+      class={["nav-anchor", { "is-active": active() }]}
       aria-current={active() ? "page" : undefined}
       onClick={props.onClick}
     >
