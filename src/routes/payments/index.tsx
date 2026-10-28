@@ -1,39 +1,49 @@
 import { useSearchParams } from "@solidjs/router";
 import { useSubmission } from "~/lib/use-submission";
-import { Show, For, createSignal, createEffect, onSettled } from "solid-js";
+import { Show, For, createSignal, createEffect, createMemo, onSettled } from "solid-js";
 import Modal from "~/components/Modal";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
-import { PaymentStatusBadge } from "~/components/wa/StatusBadge";
+import EmptyState from "~/components/EmptyState";
+import ListToolbar from "~/components/ListToolbar";
+import { PaymentStatusBadge, SessionStatusBadge } from "~/components/wa/StatusBadge";
 import { getFamilies } from "~/lib/families";
-import { getUnpaidSessions, createPayment, getPayments } from "~/lib/payments";
+import { getUnpaidSessions, getUnpaidQueue, createPayment, getPayments } from "~/lib/payments";
 import { formatTimeLocal } from "~/lib/datetime";
 import { formatMoneyDisplay, moneyDisplay } from "~/lib/money-display";
+import {
+  compareSort,
+  matchesQuery,
+  moneyNumber,
+  paymentSearchParts,
+  sessionSearchParts,
+} from "~/lib/list-query";
+import { useListQuery } from "~/lib/use-list-query";
 
 export const route = {
   preload() {
     getFamilies();
     const currentYear = new Date().getFullYear();
     getPayments(currentYear);
+    getUnpaidQueue();
   },
 };
 
-type SortField = "date" | "family" | "amount" | "method" | "status";
-type SortDirection = "asc" | "desc";
+type SortField = "date" | "family" | "amount" | "method";
 
 export default function PaymentsPage() {
   const [searchParams] = useSearchParams();
+  const list = useListQuery({ sort: "date", dir: "desc" });
   const families = createMemo(() => getFamilies());
   const currentYear = new Date().getFullYear();
-  const [selectedYear, setSelectedYear] = createSignal<number>(currentYear);
-  const [searchTerm, setSearchTerm] = createSignal<string>("");
-  const [sortField, setSortField] = createSignal<SortField>("date");
-  const [sortDirection, setSortDirection] = createSignal<SortDirection>("desc");
+  const selectedYear = () => {
+    const parsed = Number(list.year());
+    const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+    return years.includes(parsed) ? parsed : currentYear;
+  };
   const [showRecordPayment, setShowRecordPayment] = createSignal(false);
   
-  const allPayments = createMemo(() => {
-    const year = selectedYear();
-    return getPayments(year);
-  });
+  const allPayments = createMemo(() => getPayments(selectedYear()));
+  const unpaidQueue = createMemo(() => getUnpaidQueue());
   const [selectedFamilyId, setSelectedFamilyId] = createSignal<string>("");
   const unpaidSessions = createMemo(async () => {
     const familyId = selectedFamilyId();
@@ -44,13 +54,14 @@ export default function PaymentsPage() {
   });
 
   onSettled(() => {
-    const familyId = searchParams.familyId;
-    if (typeof familyId === "string" && familyId) {
-      setSelectedFamilyId(familyId);
-    }
     if (searchParams.record === "1" || searchParams.record === "true") {
       setShowRecordPayment(true);
     }
+  });
+
+  createEffect(() => {
+    const familyId = list.family();
+    if (familyId !== selectedFamilyId()) setSelectedFamilyId(familyId);
   });
   const [selectedSessionIds, setSelectedSessionIds] = createSignal<string[]>([]);
   const [tips, setTips] = createSignal<string>("0");
@@ -125,77 +136,81 @@ export default function PaymentsPage() {
 
   // Reset selections when family changes
   createEffect(() => {
+    selectedFamilyId();
     setSelectedSessionIds([]);
     setTips("0");
   });
 
-  // Filter and sort payments
+  const sortMark = (field: SortField) => {
+    if (list.sort() !== field) return "";
+    return list.dir() === "asc" ? " (asc)" : " (desc)";
+  };
+
   const filteredAndSortedPayments = () => {
-    let payments = allPayments() || [];
-    const search = searchTerm().toLowerCase();
-
-    // Filter by search term
-    if (search) {
-      payments = payments.filter(
-        (p) =>
-          p.family?.familyName.toLowerCase().includes(search) ||
-          p.invoiceNumber?.toLowerCase().includes(search) ||
-          p.method?.toLowerCase().includes(search) ||
-          p.notes?.toLowerCase().includes(search) ||
-          p.status.toLowerCase().includes(search)
-      );
-    }
-
-    // Sort payments
-    payments = [...payments].sort((a, b) => {
-      let aVal: any;
-      let bVal: any;
-
-      switch (sortField()) {
-        case "date":
-          aVal = a.paidDate || a.createdAt;
-          bVal = b.paidDate || b.createdAt;
-          break;
-        case "family":
-          aVal = a.family?.familyName || "";
-          bVal = b.family?.familyName || "";
-          break;
-        case "amount":
-          aVal = a.amount;
-          bVal = b.amount;
-          break;
-        case "method":
-          aVal = a.method || "";
-          bVal = b.method || "";
-          break;
-        case "status":
-          aVal = a.status;
-          bVal = b.status;
-          break;
-        default:
-          return 0;
+    let payments = (allPayments() || []).filter((payment) => {
+      if (list.family() && payment.family?.id !== list.family() && payment.familyId !== list.family()) {
+        return false;
       }
+      return matchesQuery(list.q(), paymentSearchParts(payment));
+    });
 
-      if (aVal < bVal) return sortDirection() === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortDirection() === "asc" ? 1 : -1;
-      return 0;
+    const field = (list.sort() || "date") as SortField;
+    const dir = list.dir();
+    payments = [...payments].sort((a, b) => {
+      switch (field) {
+        case "family":
+          return compareSort(
+            (a.family?.familyName || "").toLowerCase(),
+            (b.family?.familyName || "").toLowerCase(),
+            dir,
+          );
+        case "amount":
+          return compareSort(moneyNumber(a.amount), moneyNumber(b.amount), dir);
+        case "method":
+          return compareSort((a.method || "").toLowerCase(), (b.method || "").toLowerCase(), dir);
+        default:
+          return compareSort(
+            new Date(a.paidDate || a.createdAt).getTime(),
+            new Date(b.paidDate || b.createdAt).getTime(),
+            dir,
+          );
+      }
     });
 
     return payments;
   };
 
-  const handleSort = (field: SortField) => {
-    if (sortField() === field) {
-      setSortDirection(sortDirection() === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
+  const sessionAmount = (session: {
+    scheduledStart: string | Date;
+    scheduledEnd: string | Date;
+    hourlyRate: unknown;
+    expenses?: { amount: unknown }[];
+  }) => {
+    const hours =
+      (new Date(session.scheduledEnd).getTime() - new Date(session.scheduledStart).getTime()) / (1000 * 60 * 60);
+    const expenses = (session.expenses ?? []).reduce((sum, expense) => sum + moneyNumber(expense.amount as never), 0);
+    return hours * moneyNumber(session.hourlyRate as never) + expenses;
   };
 
-  const getSortIcon = (field: SortField) => {
-    if (sortField() !== field) return "↕️";
-    return sortDirection() === "asc" ? "↑" : "↓";
+  const filteredUnpaid = () => {
+    let sessions = unpaidQueue() || [];
+    sessions = sessions.filter((session) => {
+      if (list.family() && session.familyId !== list.family() && session.family?.id !== list.family()) return false;
+      return matchesQuery(list.q(), sessionSearchParts(session));
+    });
+    const field = list.sort() || "date";
+    const dir = list.dir();
+    return [...sessions].sort((a, b) => {
+      if (field === "family") {
+        return compareSort(
+          (a.family?.familyName || "").toLowerCase(),
+          (b.family?.familyName || "").toLowerCase(),
+          dir,
+        );
+      }
+      if (field === "amount") return compareSort(sessionAmount(a), sessionAmount(b), dir);
+      return compareSort(new Date(a.scheduledStart).getTime(), new Date(b.scheduledStart).getTime(), dir);
+    });
   };
 
   // Watch for successful submission
@@ -215,6 +230,7 @@ export default function PaymentsPage() {
     <PageContent>
       <PageHeader
         title="Payments"
+        description="Recorded payments are stored as paid. Unpaid sessions are confirmed care that does not have a paid payment yet."
         actions={
           <wa-button
             variant="success"
@@ -226,28 +242,135 @@ export default function PaymentsPage() {
         }
       />
 
-      <wa-card>
-        <div class="wa-grid wa-gap-m" style={{ "--min-column-size": "200px", "margin-bottom": "var(--wa-space-m)" }}>
+      <ListToolbar
+        query={list}
+        searchPlaceholder="Search family, invoice, method, notes, or status"
+        families={families() ?? []}
+        chipGroups={[
+          {
+            param: "queue",
+            label: "Show",
+            options: [{ value: "unpaid", label: "Unpaid sessions" }],
+          },
+        ]}
+        sortOptions={
+          list.queue() === "unpaid"
+            ? [
+                { value: "date", label: "Date" },
+                { value: "family", label: "Family" },
+                { value: "amount", label: "Amount" },
+              ]
+            : [
+                { value: "date", label: "Date" },
+                { value: "family", label: "Family" },
+                { value: "amount", label: "Amount" },
+                { value: "method", label: "Method" },
+              ]
+        }
+        sortValue={
+          (list.queue() === "unpaid" ? ["date", "family", "amount"] : ["date", "family", "amount", "method"]).includes(
+            list.sort(),
+          )
+            ? list.sort()
+            : "date"
+        }
+        total={list.queue() === "unpaid" ? (unpaidQueue()?.length ?? 0) : (allPayments()?.length ?? 0)}
+        visible={list.queue() === "unpaid" ? filteredUnpaid().length : filteredAndSortedPayments().length}
+      >
+        <Show when={list.queue() !== "unpaid"}>
           <wa-select
             label="Year"
             value={String(selectedYear())}
             onChange={(e) =>
-              setSelectedYear(parseInt((e.currentTarget as HTMLSelectElement & { value: string }).value))
+              list.setYear((e.currentTarget as HTMLSelectElement & { value: string }).value)
             }
           >
             {Array.from({ length: 5 }, (_, i) => currentYear - i).map((year) => (
               <wa-option value={String(year)}>{year}</wa-option>
             ))}
           </wa-select>
-          <wa-input
-            label="Search"
-            type="search"
-            placeholder="Search by family, invoice, method..."
-            value={searchTerm()}
-            onInput={(e) => setSearchTerm((e.currentTarget as HTMLInputElement & { value: string }).value)}
-          />
-        </div>
+        </Show>
+      </ListToolbar>
 
+      <Show
+        when={list.queue() !== "unpaid"}
+        fallback={
+          <wa-card>
+            <Show
+              when={unpaidQueue()}
+              fallback={<p class="wa-body-m wa-color-text-quiet" style={{ "text-align": "center" }}>Loading unpaid sessions...</p>}
+            >
+              <Show
+                when={filteredUnpaid().length > 0}
+                fallback={
+                  <EmptyState
+                    message={
+                      (unpaidQueue()?.length ?? 0) === 0
+                        ? "No unpaid sessions. Confirmed sessions without a paid payment show up here."
+                        : "No unpaid sessions match these filters."
+                    }
+                    actionLabel={(unpaidQueue()?.length ?? 0) > 0 && list.hasFilters() ? "Clear filters" : undefined}
+                    onAction={() => list.clearFilters()}
+                  />
+                }
+              >
+                <div style={{ overflow: "auto" }} class="table-responsive">
+                  <table style={{ width: "100%", "border-collapse": "collapse" }}>
+                    <thead style={{ "background-color": "var(--color-surface-muted)" }}>
+                      <tr>
+                        <th style={{ padding: "0.75rem", "text-align": "left" }}>Date</th>
+                        <th style={{ padding: "0.75rem", "text-align": "left" }}>Family</th>
+                        <th style={{ padding: "0.75rem", "text-align": "left" }}>Children</th>
+                        <th style={{ padding: "0.75rem", "text-align": "left" }}>Status</th>
+                        <th style={{ padding: "0.75rem", "text-align": "right" }}>Estimated</th>
+                        <th style={{ padding: "0.75rem", "text-align": "right" }}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <For each={filteredUnpaid()}>
+                        {(session) => (
+                          <tr style={{ "border-bottom": "1px solid var(--color-border)" }}>
+                            <td style={{ padding: "0.75rem" }}>
+                              <a href={`/families/${session.familyId}/sessions/${session.id}`}>
+                                {formatDate(session.scheduledStart)}
+                              </a>
+                              <div class="wa-body-s wa-color-text-quiet">{formatTime(session.scheduledStart)}</div>
+                            </td>
+                            <td style={{ padding: "0.75rem" }}>{session.family?.familyName || "N/A"}</td>
+                            <td style={{ padding: "0.75rem" }}>
+                              {session.children?.map((child) => child.firstName).join(", ") || "—"}
+                            </td>
+                            <td style={{ padding: "0.75rem" }}>
+                              <SessionStatusBadge status={session.status} />
+                            </td>
+                            <td style={{ padding: "0.75rem", "text-align": "right", "font-weight": "600" }}>
+                              {formatMoneyDisplay(sessionAmount(session))}
+                            </td>
+                            <td style={{ padding: "0.75rem", "text-align": "right" }}>
+                              <wa-button
+                                size="small"
+                                variant="success"
+                                appearance="filled"
+                                onClick={() => {
+                                  list.setFamily(session.familyId);
+                                  setShowRecordPayment(true);
+                                }}
+                              >
+                                Record
+                              </wa-button>
+                            </td>
+                          </tr>
+                        )}
+                      </For>
+                    </tbody>
+                  </table>
+                </div>
+              </Show>
+            </Show>
+          </wa-card>
+        }
+      >
+      <wa-card>
         <Show
           when={allPayments()}
           fallback={
@@ -259,9 +382,15 @@ export default function PaymentsPage() {
           <Show
             when={filteredAndSortedPayments().length > 0}
             fallback={
-              <div style={{ "text-align": "center", padding: "2rem", color: "var(--color-text-muted)" }}>
-                No payments found for {selectedYear()}.
-              </div>
+              <EmptyState
+                message={
+                  (allPayments()?.length ?? 0) === 0
+                    ? `No payments recorded for ${selectedYear()}.`
+                    : "No payments match these filters."
+                }
+                actionLabel={(allPayments()?.length ?? 0) > 0 && list.hasFilters() ? "Clear filters" : undefined}
+                onAction={() => list.clearFilters()}
+              />
             }
           >
             <div style={{ overflow: "auto" }} class="table-responsive">
@@ -276,9 +405,9 @@ export default function PaymentsPage() {
                         cursor: "pointer",
                         "user-select": "none",
                       }}
-                      onClick={() => handleSort("date")}
+                      onClick={() => list.toggleSort("date")}
                     >
-                      Date {getSortIcon("date")}
+                      Date {sortMark("date")}
                     </th>
                     <th
                       style={{
@@ -288,9 +417,9 @@ export default function PaymentsPage() {
                         cursor: "pointer",
                         "user-select": "none",
                       }}
-                      onClick={() => handleSort("family")}
+                      onClick={() => list.toggleSort("family")}
                     >
-                      Family {getSortIcon("family")}
+                      Family {sortMark("family")}
                     </th>
                     <th
                       style={{
@@ -309,9 +438,9 @@ export default function PaymentsPage() {
                         cursor: "pointer",
                         "user-select": "none",
                       }}
-                      onClick={() => handleSort("amount")}
+                      onClick={() => list.toggleSort("amount")}
                     >
-                      Amount {getSortIcon("amount")}
+                      Amount {sortMark("amount")}
                     </th>
                     <th
                       style={{
@@ -321,21 +450,18 @@ export default function PaymentsPage() {
                         cursor: "pointer",
                         "user-select": "none",
                       }}
-                      onClick={() => handleSort("method")}
+                      onClick={() => list.toggleSort("method")}
                     >
-                      Method {getSortIcon("method")}
+                      Method {sortMark("method")}
                     </th>
                     <th
                       style={{
                         padding: "0.75rem",
                         "text-align": "left",
                         "border-bottom": "2px solid var(--color-border)",
-                        cursor: "pointer",
-                        "user-select": "none",
                       }}
-                      onClick={() => handleSort("status")}
                     >
-                      Status {getSortIcon("status")}
+                      Status
                     </th>
                   </tr>
                 </thead>
@@ -414,6 +540,7 @@ export default function PaymentsPage() {
           </Show>
         </Show>
       </wa-card>
+      </Show>
 
       <Modal
         open={showRecordPayment()}

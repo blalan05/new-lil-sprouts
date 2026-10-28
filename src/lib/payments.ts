@@ -5,68 +5,78 @@ import { getSessionExpenseTotal } from "./expenses";
 import { calculateHours, calculateSessionCost, sumMoney, addMoney, roundMoney, parseMoney, isPositiveMoney, serializeMoneyDeep } from "./money";
 import { serverRedirect } from "./server-redirect";
 
+function unpaidSessionWhere(familyId?: string) {
+  return {
+    ...(familyId ? { familyId } : {}),
+    isConfirmed: true,
+    status: {
+      in: ["SCHEDULED", "IN_PROGRESS", "COMPLETED"] as ("SCHEDULED" | "IN_PROGRESS" | "COMPLETED")[],
+    },
+    payments: {
+      none: {
+        status: "PAID" as const,
+      },
+    },
+  };
+}
+
+const unpaidSessionInclude = {
+  service: {
+    select: {
+      id: true,
+      name: true,
+      code: true,
+    },
+  },
+  children: true,
+  expenses: {
+    select: {
+      amount: true,
+    },
+  },
+  family: {
+    select: {
+      id: true,
+      familyName: true,
+    },
+  },
+};
+
 // Get unpaid confirmed sessions for a family
 export const getUnpaidSessions = query(async (familyId: string) => {
   "use server";
   await requireOwner();
   await assertFamilyExists(familyId);
 
-  console.log("[getUnpaidSessions] ========== START ==========");
-  console.log("[getUnpaidSessions] familyId:", familyId);
-
-  // Get all confirmed sessions for the family
-  const allSessions = await db.careSession.findMany({
-    where: {
-      familyId,
-      isConfirmed: true,
-      status: {
-        in: ["SCHEDULED", "IN_PROGRESS", "COMPLETED"],
-      },
-    },
-    include: {
-      service: {
-        select: {
-          id: true,
-          name: true,
-          code: true,
-        },
-      },
-      children: true,
-      expenses: {
-        select: {
-          amount: true,
-        },
-      },
-      payments: {
-        where: {
-          status: "PAID",
-        },
-      },
-    },
+  const unpaidSessions = await db.careSession.findMany({
+    where: unpaidSessionWhere(familyId),
+    include: unpaidSessionInclude,
     orderBy: {
       scheduledStart: "asc",
     },
   });
 
-  console.log("[getUnpaidSessions] allSessions count:", allSessions.length);
-  allSessions.forEach((s, i) => {
-    console.log(`[getUnpaidSessions] Session ${i}:`, {
-      id: s.id,
-      status: s.status,
-      isConfirmed: s.isConfirmed,
-      scheduledStart: s.scheduledStart,
-      paymentsCount: s.payments.length,
-    });
-  });
-
-  // Filter out sessions that already have a PAID payment
-  const unpaidSessions = allSessions.filter((session) => session.payments.length === 0);
-
-  console.log("[getUnpaidSessions] unpaidSessions count:", unpaidSessions.length);
-  console.log("[getUnpaidSessions] ========== END ==========");
-
   return serializeMoneyDeep(unpaidSessions);
 }, "unpaidSessions");
+
+// Confirmed sessions with no paid payment, optionally limited to one family.
+export const getUnpaidQueue = query(async (familyId?: string) => {
+  "use server";
+  await requireOwner();
+  if (familyId) {
+    await assertFamilyExists(familyId);
+  }
+
+  const unpaidSessions = await db.careSession.findMany({
+    where: unpaidSessionWhere(familyId),
+    include: unpaidSessionInclude,
+    orderBy: {
+      scheduledStart: "asc",
+    },
+  });
+
+  return serializeMoneyDeep(unpaidSessions);
+}, "unpaidQueue");
 
 // Create a payment for multiple sessions
 export const createPayment = action(async (formData: FormData) => {

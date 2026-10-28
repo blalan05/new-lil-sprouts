@@ -1,4 +1,4 @@
-import { revalidate } from "@solidjs/router";
+import { revalidate, useLocation } from "@solidjs/router";
 import type { JSX } from "@solidjs/web";
 import { createMemo, For, Show, createSignal, createEffect, onSettled } from "solid-js";
 
@@ -23,9 +23,22 @@ const PARENT_NAV_LINKS = [
   { href: "/portal/today", label: "Today" },
 ] as const;
 
+function pathActive(href: string, path: string) {
+  if (href === "/" || href === "/portal") return path === href;
+  return path === href || path.startsWith(`${href}/`);
+}
+
 function NavLink(props: { href: string; children: JSX.Element; onClick?: () => void }) {
+  const location = useLocation();
+  const active = () => pathActive(props.href, location.pathname);
   return (
-    <a href={props.href} onClick={props.onClick}>
+    <a
+      href={props.href}
+      class="nav-anchor"
+      classList={{ "is-active": active() }}
+      aria-current={active() ? "page" : undefined}
+      onClick={props.onClick}
+    >
       <wa-button appearance="plain" class="nav-link">
         {props.children}
       </wa-button>
@@ -112,8 +125,8 @@ export default function AppShell(props: { children: JSX.Element }) {
 
   return (
     <wa-page class="app-shell no-print">
-      <header slot="header" class="app-header wa-split wa-align-items-center">
-        <div class="wa-cluster wa-gap-m wa-align-items-center">
+      <header slot="header" class="app-header">
+        <div class="app-header-start">
           <Show
             when={navReady()}
             fallback={
@@ -134,7 +147,7 @@ export default function AppShell(props: { children: JSX.Element }) {
             </nav>
           </Show>
         </div>
-        <div class="desktop-nav wa-cluster wa-gap-s wa-align-items-center">
+        <div class="app-header-end desktop-nav">
           <wa-button appearance="plain" onClick={cycleTheme} title={themeLabel()} aria-label={themeLabel()}>
             <wa-icon name={resolveTheme(theme()) === "dark" ? "moon" : "sun"} />
           </wa-button>
@@ -186,8 +199,8 @@ export default function AppShell(props: { children: JSX.Element }) {
           <form action={logout} method="post">
             <wa-button
               type="submit"
-              variant="danger"
-              appearance="filled"
+              variant="neutral"
+              appearance="plain"
               disabled={logoutSubmission.pending || undefined}
             >
               {logoutSubmission.pending ? "Logging out..." : "Logout"}
@@ -209,8 +222,8 @@ export default function AppShell(props: { children: JSX.Element }) {
         <form action={logout} method="post">
           <wa-button
             type="submit"
-            variant="danger"
-            appearance="filled"
+            variant="neutral"
+            appearance="plain"
             disabled={logoutSubmission.pending || undefined}
             style={{ width: "100%" }}
           >

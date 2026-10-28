@@ -1,6 +1,6 @@
 
 import { useSubmission } from "~/lib/use-submission";
-import { Show, For, createSignal, createEffect } from "solid-js";
+import { Show, For, createSignal, createEffect, createMemo } from "solid-js";
 import Modal from "~/components/Modal";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { SessionStatusBadge } from "~/components/wa/StatusBadge";
@@ -293,7 +293,7 @@ export default function Home() {
                       : isCurrentMonthDay
                         ? "var(--color-surface)" : "var(--color-surface-muted)",
                     color: isCurrentMonthDay ? "var(--color-text)" : "var(--color-text-subtle)",
-                    border: isTodayDay ? "2px solid #4299e1" : "1px solid var(--color-border)",
+                    border: isTodayDay ? "2px solid var(--color-primary)" : "1px solid var(--color-border)",
                     "border-radius": "4px",
                     cursor: isOwner() ? "pointer" : "default",
                     "font-size": "0.75rem",
@@ -313,7 +313,7 @@ export default function Home() {
                   onMouseLeave={(e) => {
                     if (isCurrentMonthDay) {
                       e.currentTarget.style.backgroundColor = isTodayDay ? "var(--wa-color-brand-fill-normal)" : "var(--color-surface)";
-                      e.currentTarget.style.borderColor = isTodayDay ? "#4299e1" : "var(--color-border)";
+                      e.currentTarget.style.borderColor = isTodayDay ? "var(--color-primary)" : "var(--color-border)";
                     }
                   }}
                 >
@@ -678,13 +678,15 @@ export default function Home() {
           </wa-card>
 
           <Show when={isOwner()}>
+            <a href="/payments?queue=unpaid" style={{ "text-decoration": "none", color: "inherit" }}>
             <wa-card>
               <div class="wa-body-s wa-color-text-quiet">Unpaid Sessions</div>
               <div class="wa-heading-xl" style={{ color: "var(--wa-color-warning-40)" }}>
                 {dashboardStats()?.unpaidSessions || 0}
               </div>
-              <div class="wa-body-s wa-color-text-quiet">Awaiting payment</div>
+              <div class="wa-body-s wa-color-text-quiet">View unpaid sessions</div>
             </wa-card>
+            </a>
 
             <wa-card>
               <div class="wa-body-s wa-color-text-quiet">Active Families</div>
@@ -826,7 +828,7 @@ export default function Home() {
         <wa-card>
           <div class="wa-flank wa-gap-s" style={{ "margin-bottom": "var(--wa-space-s)" }}>
             <h2 class="wa-heading-m">Recent Incidents & Reports</h2>
-            <a href="/reports">View All →</a>
+            <a href="/reports/activity">View All →</a>
           </div>
           <Show
             when={!recentIncidents.loading && recentIncidents()}

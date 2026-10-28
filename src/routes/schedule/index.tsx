@@ -2,6 +2,8 @@ import { useSubmission } from "~/lib/use-submission";
 import { createSignal, Show, For, createMemo, createEffect } from "solid-js";
 import Modal from "~/components/Modal";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
+import EmptyState from "~/components/EmptyState";
+import ListToolbar from "~/components/ListToolbar";
 import { useConfirm } from "~/components/wa/ConfirmProvider";
 import { SessionStatusBadge } from "~/components/wa/StatusBadge";
 import { getCareSessionsForRange, getUnavailabilitiesForRange } from "~/lib/schedule";
@@ -11,6 +13,17 @@ import { createCareSchedule } from "~/lib/care-schedules";
 import { getFamilies, getFamily } from "~/lib/families";
 import { formatTimeLocal, ensureDate, isSameDay } from "~/lib/datetime";
 import ClientTime from "~/components/ClientTime";
+import {
+  SESSION_STATUS_OPTIONS,
+  SESSION_STATUS_ORDER,
+  compareSort,
+  compareStatus,
+  formatDateInput,
+  matchesQuery,
+  parseDateParam,
+  sessionSearchParts,
+} from "~/lib/list-query";
+import { useListQuery } from "~/lib/use-list-query";
 
 export const route = {
   // Remove preload entirely - let the component handle data fetching client-side only
@@ -23,13 +36,19 @@ type ViewType = "month" | "week" | "day" | "list";
 
 export default function SchedulePage() {
   const { confirm } = useConfirm();
-  const [view, setView] = createSignal<ViewType>("month");
-  const [currentDate, setCurrentDate] = createSignal(new Date());
-  const [searchTerm, setSearchTerm] = createSignal<string>("");
+  const list = useListQuery({ view: "month", sort: "date", dir: "asc" });
+  const view = (): ViewType => {
+    const value = list.view();
+    if (value === "week" || value === "day" || value === "list" || value === "month") return value;
+    return "month";
+  };
+  const [currentDate, setCurrentDate] = createSignal(parseDateParam(list.date()) ?? new Date());
+  createEffect(() => {
+    const parsed = parseDateParam(list.date());
+    if (!parsed) return;
+    if (formatDateInput(parsed) !== formatDateInput(currentDate())) setCurrentDate(parsed);
+  });
   const services = createMemo(() => getServices());
-  const [serviceFilter, setServiceFilter] = createSignal<string>("ALL");
-  const [sortField, setSortField] = createSignal<"date" | "family" | "status">("date");
-  const [sortDirection, setSortDirection] = createSignal<"asc" | "desc">("asc");
 
   // Calculate date range based on view
   const getDateRange = () => {
@@ -38,7 +57,7 @@ export default function SchedulePage() {
     const month = date.getMonth();
     const day = date.getDate();
 
-    if (view() === "month") {
+    if (view() === "month" || view() === "list") {
       const start = new Date(year, month, 1);
       const end = new Date(year, month + 1, 0, 23, 59, 59);
       return { start, end };
@@ -50,20 +69,11 @@ export default function SchedulePage() {
       end.setDate(start.getDate() + 6);
       end.setHours(23, 59, 59, 999);
       return { start, end };
-    } else if (view() === "day") {
+    } else {
       // day view
       const start = new Date(year, month, day);
       start.setHours(0, 0, 0, 0);
       const end = new Date(year, month, day);
-      end.setHours(23, 59, 59, 999);
-      return { start, end };
-    } else {
-      // list view - show past 30 days and next 90 days for comprehensive view
-      const start = new Date();
-      start.setDate(start.getDate() - 30);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date();
-      end.setDate(end.getDate() + 90);
       end.setHours(23, 59, 59, 999);
       return { start, end };
     }
@@ -168,7 +178,7 @@ export default function SchedulePage() {
 
   const navigateDate = (direction: "prev" | "next") => {
     const date = new Date(currentDate());
-    if (view() === "month") {
+    if (view() === "month" || view() === "list") {
       date.setMonth(date.getMonth() + (direction === "next" ? 1 : -1));
     } else if (view() === "week") {
       date.setDate(date.getDate() + (direction === "next" ? 7 : -7));
@@ -176,20 +186,22 @@ export default function SchedulePage() {
       date.setDate(date.getDate() + (direction === "next" ? 1 : -1));
     }
     setCurrentDate(date);
+    list.setDate(formatDateInput(date));
   };
 
   const goToToday = () => {
-    setCurrentDate(new Date());
+    const today = new Date();
+    setCurrentDate(today);
+    list.setDate(formatDateInput(today));
   };
 
-  // Handle view change
   const handleViewChange = (newView: ViewType) => {
-    setView(newView);
+    list.setView(newView);
   };
 
   const formatDateHeader = () => {
     const date = currentDate();
-    if (view() === "month") {
+    if (view() === "month" || view() === "list") {
       return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
     } else if (view() === "week") {
       const range = getDateRange();
@@ -221,6 +233,32 @@ export default function SchedulePage() {
     const ampm = hour >= 12 ? "PM" : "AM";
     const displayHour = hour % 12 || 12;
     return `${displayHour}:${minutes} ${ampm}`;
+  };
+
+  const filteredSessions = () => {
+    const rows = (sessions() ?? []).filter((session) => {
+      if (list.family() && session.familyId !== list.family() && session.family?.id !== list.family()) return false;
+      if (list.service() && session.service?.id !== list.service()) return false;
+      if (list.status() && session.status !== list.status()) return false;
+      return matchesQuery(list.q(), sessionSearchParts(session));
+    });
+    return rows;
+  };
+
+  const sortedSessions = () => {
+    const field = list.sort() === "family" || list.sort() === "status" ? list.sort() : "date";
+    const dir = list.dir();
+    return [...filteredSessions()].sort((a, b) => {
+      if (field === "family") {
+        return compareSort(
+          (a.family?.familyName || "").toLowerCase(),
+          (b.family?.familyName || "").toLowerCase(),
+          dir,
+        );
+      }
+      if (field === "status") return compareStatus(a.status || "", b.status || "", dir, SESSION_STATUS_ORDER);
+      return compareSort(new Date(a.scheduledStart).getTime(), new Date(b.scheduledStart).getTime(), dir);
+    });
   };
 
   const handleDeleteUnavailability = async (id: string) => {
@@ -301,8 +339,7 @@ export default function SchedulePage() {
               List
             </wa-button>
           </div>
-          <Show when={view() !== "list"}>
-            <div class="wa-cluster wa-gap-s">
+          <div class="wa-cluster wa-gap-s">
               <wa-button appearance="outlined" onClick={() => navigateDate("prev")}>
                 ←
               </wa-button>
@@ -313,8 +350,10 @@ export default function SchedulePage() {
                 →
               </wa-button>
               <span class="wa-body-m">{formatDateHeader()}</span>
+              <Show when={view() === "list"}>
+                <span class="wa-body-s wa-color-text-quiet">List uses this month</span>
+              </Show>
             </div>
-          </Show>
         </div>
 
       <Show when={showUnavailabilityPanel()}>
@@ -429,16 +468,46 @@ export default function SchedulePage() {
         </wa-card>
       </Show>
 
+      <ListToolbar
+        query={list}
+        searchPlaceholder="Search family, child, service, or status"
+        families={families() ?? []}
+        services={services() ?? []}
+        chipGroups={[{ param: "status", label: "Status", options: SESSION_STATUS_OPTIONS }]}
+        sortOptions={[
+          { value: "date", label: "Date" },
+          { value: "family", label: "Family" },
+          { value: "status", label: "Status" },
+        ]}
+        total={sessions()?.length ?? 0}
+        visible={filteredSessions().length}
+      />
+
       <Show
-        when={!sessions.loading && !unavailabilities.loading}
+        when={sessions() && unavailabilities()}
         fallback={
           <div style={{ "text-align": "center", padding: "3rem" }}>Loading schedule...</div>
         }
       >
+        <Show when={filteredSessions().length === 0 && ((sessions()?.length ?? 0) > 0 || view() === "list")}>
+          <EmptyState
+            message={
+              (sessions()?.length ?? 0) === 0
+                ? view() === "week"
+                  ? "No sessions this week."
+                  : view() === "day"
+                    ? "No sessions on this day."
+                    : "No sessions in this month."
+                : "No sessions match these filters."
+            }
+            actionLabel={(sessions()?.length ?? 0) > 0 ? "Clear filters" : undefined}
+            onAction={() => list.clearFilters()}
+          />
+        </Show>
         {view() === "month" && (
           <MonthView
             currentDate={currentDate()}
-            sessions={sessions() || []}
+            sessions={filteredSessions()}
             unavailabilities={unavailabilities() || []}
             onDateClick={handleDateClick}
           />
@@ -446,30 +515,19 @@ export default function SchedulePage() {
         {view() === "week" && (
           <WeekView
             currentDate={currentDate()}
-            sessions={sessions() || []}
+            sessions={filteredSessions()}
             unavailabilities={unavailabilities() || []}
           />
         )}
         {view() === "day" && (
           <DayView
             currentDate={currentDate()}
-            sessions={sessions() || []}
+            sessions={filteredSessions()}
             unavailabilities={unavailabilities() || []}
           />
         )}
-        {view() === "list" && (
-          <ListView
-            sessions={sessions() || []}
-            searchTerm={searchTerm()}
-            onSearchChange={setSearchTerm}
-            serviceFilter={serviceFilter()}
-            onServiceFilterChange={setServiceFilter}
-            services={services()}
-            sortField={sortField()}
-            onSortFieldChange={setSortField}
-            sortDirection={sortDirection()}
-            onSortDirectionChange={setSortDirection}
-          />
+        {view() === "list" && filteredSessions().length > 0 && (
+          <ListView sessions={sortedSessions()} />
         )}
       </Show>
 
@@ -659,18 +717,7 @@ export default function SchedulePage() {
   );
 }
 
-function ListView(props: {
-  sessions: any[];
-  searchTerm: string;
-  onSearchChange: (term: string) => void;
-  serviceFilter: string;
-  onServiceFilterChange: (filter: string) => void;
-  services?: Array<{ id: string; name: string; code: string }>;
-  sortField: "date" | "family" | "status";
-  onSortFieldChange: (field: "date" | "family" | "status") => void;
-  sortDirection: "asc" | "desc";
-  onSortDirectionChange: (dir: "asc" | "desc") => void;
-}) {
+function ListView(props: { sessions: any[] }) {
   const formatDate = (date: string | Date) => {
     return new Date(date).toLocaleDateString("en-US", {
       year: "numeric",
@@ -679,158 +726,16 @@ function ListView(props: {
     });
   };
 
-  const formatTime = (date: string | Date) => {
-    return formatTimeLocal(date);
-  };
-
   const formatDuration = (start: Date, end: Date) => {
     const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
     return `${hours.toFixed(1)}h`;
   };
 
-  const filteredSessions = () => {
-    let filtered = props.sessions;
-
-    // Filter by service if provided
-    if (props.serviceFilter && props.serviceFilter !== "ALL") {
-      filtered = filtered.filter((session) => session.service?.id === props.serviceFilter);
-    }
-
-    // Filter by search term
-    const search = props.searchTerm.toLowerCase();
-    if (!search) return filtered;
-
-    return filtered.filter(
-      (session) =>
-        session.family?.familyName?.toLowerCase().includes(search) ||
-        session.children?.some((c: any) =>
-          `${c.firstName} ${c.lastName}`.toLowerCase().includes(search),
-        ) ||
-        session.status?.toLowerCase().includes(search) ||
-        formatDate(session.scheduledStart).toLowerCase().includes(search) ||
-        session.service?.name?.toLowerCase().includes(search) ||
-        session.service?.code?.toLowerCase().includes(search),
-    );
-  };
-
-  // Sort sessions
-  const sortedSessions = () => {
-    const filtered = filteredSessions();
-    return [...filtered].sort((a, b) => {
-      let aVal: any;
-      let bVal: any;
-
-      switch (props.sortField) {
-        case "date":
-          aVal = new Date(a.scheduledStart).getTime();
-          bVal = new Date(b.scheduledStart).getTime();
-          break;
-        case "family":
-          aVal = a.family?.familyName || "";
-          bVal = b.family?.familyName || "";
-          break;
-        case "status":
-          aVal = a.status || "";
-          bVal = b.status || "";
-          break;
-        default:
-          return 0;
-      }
-
-      if (aVal < bVal) return props.sortDirection === "asc" ? -1 : 1;
-      if (aVal > bVal) return props.sortDirection === "asc" ? 1 : -1;
-      return 0;
-    });
-  };
-
-  const handleSort = (field: "date" | "family" | "status") => {
-    if (props.sortField === field) {
-      props.onSortDirectionChange(props.sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      props.onSortFieldChange(field);
-      props.onSortDirectionChange("asc");
-    }
-  };
-
-  const getSortIcon = (field: "date" | "family" | "status") => {
-    if (props.sortField !== field) return "↕️";
-    return props.sortDirection === "asc" ? "↑" : "↓";
-  };
-
   return (
     <wa-card style={{ overflow: "hidden", padding: 0 }}>
-      {/* Search and Sort Controls */}
-      <div
-        style={{
-          padding: "1.5rem",
-          "border-bottom": "1px solid var(--color-border)",
-          "background-color": "var(--color-surface-muted)",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            gap: "1rem",
-            "flex-wrap": "wrap",
-            "align-items": "center",
-            "margin-bottom": "1rem",
-          }}
-        >
-          <div style={{ flex: "1", "min-width": "200px" }}>
-            <wa-input
-              type="search"
-              placeholder="Search by family, child, status, or date..."
-              value={props.searchTerm}
-              onInput={(e) =>
-                props.onSearchChange((e.currentTarget as HTMLInputElement & { value: string }).value)
-              }
-            />
-          </div>
-          <div class="wa-cluster wa-gap-s">
-            <wa-button
-              appearance={props.sortField === "date" ? "filled" : "outlined"}
-              variant={props.sortField === "date" ? "brand" : "neutral"}
-              size="small"
-              onClick={() => handleSort("date")}
-            >
-              Date {getSortIcon("date")}
-            </wa-button>
-            <wa-button
-              appearance={props.sortField === "family" ? "filled" : "outlined"}
-              variant={props.sortField === "family" ? "brand" : "neutral"}
-              size="small"
-              onClick={() => handleSort("family")}
-            >
-              Family {getSortIcon("family")}
-            </wa-button>
-            <wa-button
-              appearance={props.sortField === "status" ? "filled" : "outlined"}
-              variant={props.sortField === "status" ? "brand" : "neutral"}
-              size="small"
-              onClick={() => handleSort("status")}
-            >
-              Status {getSortIcon("status")}
-            </wa-button>
-          </div>
-        </div>
-        <div style={{ color: "var(--color-text-muted)", "font-size": "0.875rem" }}>
-          Showing {sortedSessions().length} session{sortedSessions().length !== 1 ? "s" : ""}
-          {props.searchTerm && ` matching "${props.searchTerm}"`}
-        </div>
-      </div>
-
-      {/* Sessions List */}
       <div style={{ "max-height": "70vh", overflow: "auto" }}>
-        <Show
-          when={sortedSessions().length > 0}
-          fallback={
-            <div style={{ padding: "3rem", "text-align": "center", color: "var(--color-text-muted)" }}>
-              No sessions found.
-            </div>
-          }
-        >
-          <div style={{ display: "flex", "flex-direction": "column" }}>
-            <For each={sortedSessions()}>
+        <div style={{ display: "flex", "flex-direction": "column" }}>
+            <For each={props.sessions}>
               {(session) => {
                 const startTime = new Date(session.scheduledStart);
                 const endTime = new Date(session.scheduledEnd);
@@ -924,7 +829,6 @@ function ListView(props: {
               }}
             </For>
           </div>
-        </Show>
       </div>
     </wa-card>
   );

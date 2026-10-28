@@ -1,60 +1,38 @@
-/* Web Awesome */
+/* Web Awesome — Matter is the Material Design theme. Mild is its palette. */
 @import "@web.awesome.me/webawesome-pro/dist/styles/themes/default.css";
+@import "@web.awesome.me/webawesome-pro/dist/styles/themes/matter.css";
+@import "@web.awesome.me/webawesome-pro/dist/styles/color/palettes/mild.css";
 @import "@web.awesome.me/webawesome-pro/dist/styles/native.css";
 @import "@web.awesome.me/webawesome-pro/dist/styles/utilities.css";
 
+/* Older pages still read these names. Point them at Matter's semantic tokens. */
 :root {
-  /* Lil Sprouts brand — slate header + green accent */
-  --wa-color-brand-05: #1a202c;
-  --wa-color-brand-10: #2d3748;
-  --wa-color-brand-20: #4a5568;
-  --wa-color-brand-30: #276749;
-  --wa-color-brand-40: #38a169;
-  --wa-color-brand-50: #48bb78;
-  --wa-color-brand-60: #68d391;
-  --wa-color-brand-70: #9ae6b4;
-  --wa-color-brand-80: #c6f6d5;
-  --wa-color-brand-90: #f0fff4;
-  --wa-color-brand-95: #f7fafc;
+  --color-bg: var(--wa-color-surface-default);
+  --color-surface: var(--wa-color-surface-raised);
+  --color-surface-muted: var(--wa-color-surface-lowered);
+  --color-border: var(--wa-color-surface-border);
+  --color-border-strong: var(--wa-color-neutral-border-normal);
+  --color-text: var(--wa-color-text-normal);
+  --color-text-muted: var(--wa-color-text-quiet);
+  --color-text-subtle: var(--wa-color-text-quiet);
+  --color-nav-bg: var(--wa-color-surface-raised);
+  --color-nav-text: var(--wa-color-text-normal);
+  --color-primary: var(--wa-color-brand);
+  --color-success: var(--wa-color-success);
+  --color-danger: var(--wa-color-danger);
+  --color-warning: var(--wa-color-warning);
+  --color-hover: var(--wa-color-neutral-fill-quiet);
+  --color-overlay: var(--wa-color-overlay-modal);
 
-  /* Legacy tokens used by portal / older pages */
-  --color-bg: #f7fafc;
-  --color-surface: #ffffff;
-  --color-surface-muted: #f7fafc;
-  --color-border: #e2e8f0;
-  --color-border-strong: #cbd5e0;
-  --color-text: #2d3748;
-  --color-text-muted: #718096;
-  --color-text-subtle: #a0aec0;
-  --color-nav-bg: #2d3748;
-  --color-nav-text: #ffffff;
-  --color-primary: #4299e1;
-  --color-success: #48bb78;
-  --color-danger: #e53e3e;
-  --color-warning: #ed8936;
-  --color-hover: #edf2f7;
-  --color-overlay: rgba(0, 0, 0, 0.5);
-}
-
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --color-bg: #1a202c;
-  --color-surface: #2d3748;
-  --color-surface-muted: #252d3a;
-  --color-border: #4a5568;
-  --color-border-strong: #718096;
-  --color-text: #e2e8f0;
-  --color-text-muted: #a0aec0;
-  --color-text-subtle: #718096;
-  --color-nav-bg: #171923;
-  --color-nav-text: #e2e8f0;
-  --color-hover: #3d4a5c;
+  --wa-font-family-body: "Roboto", system-ui, sans-serif;
+  --wa-font-family-heading: "Roboto", system-ui, sans-serif;
 }
 
 body {
   margin: 0;
-  color: var(--wa-color-text-normal, var(--color-text));
-  background-color: var(--wa-color-surface-lowered, var(--color-bg));
+  color: var(--wa-color-text-normal);
+  background-color: var(--wa-color-surface-default);
+  font-family: var(--wa-font-family-body);
 }
 
 /* Native controls inherit theme tokens (many forms still use plain inputs) */
@@ -103,26 +81,48 @@ a {
   text-decoration: none;
 }
 
-/* App shell */
+/* App shell — Material top app bar */
 .app-shell {
   min-height: 100dvh;
 }
 
 .app-header {
-  background-color: var(--color-nav-bg);
-  color: var(--color-nav-text);
-  padding: var(--wa-space-s) var(--wa-space-l);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wa-space-m);
+  min-height: 64px;
+  padding: 0 var(--wa-space-m);
+  background-color: var(--wa-color-surface-raised);
+  color: var(--wa-color-text-normal);
   box-shadow: var(--wa-shadow-s);
 }
 
-.app-header .brand-link {
-  color: var(--color-nav-text);
-  font-weight: 700;
+.app-header-start,
+.app-header-end {
+  display: flex;
+  align-items: center;
+  gap: var(--wa-space-s);
+  min-width: 0;
 }
 
-.app-header wa-button.nav-link::part(base),
+.app-header .brand-link {
+  color: var(--wa-color-text-normal);
+  font-weight: 500;
+  font-size: 1.25rem;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+}
+
+.nav-anchor wa-button::part(base),
 .app-header wa-button::part(base) {
-  color: var(--color-nav-text);
+  color: var(--wa-color-text-normal);
+}
+
+.nav-anchor.is-active wa-button::part(base) {
+  background: var(--wa-color-brand-fill-quiet);
+  color: var(--wa-color-brand-on-quiet);
+  border-radius: 999px;
 }
 
 .page-content {
@@ -193,6 +193,54 @@ a {
 
 .notif-item:hover {
   background: var(--color-hover);
+}
+
+/* Native fields and tables still carry inline styles. These keep them on the Material surface. */
+.page-content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]):not([type="hidden"]),
+.page-content select,
+.page-content textarea {
+  font-family: inherit;
+  color: var(--wa-color-text-normal) !important;
+  background-color: var(--wa-color-surface-raised) !important;
+  border: 1px solid var(--wa-color-surface-border) !important;
+  border-radius: var(--wa-form-control-border-radius, 4px) !important;
+}
+
+.page-content input:focus,
+.page-content select:focus,
+.page-content textarea:focus {
+  outline: 2px solid var(--wa-color-focus);
+  outline-offset: 1px;
+  border-color: var(--wa-color-brand) !important;
+}
+
+.page-content table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--wa-color-surface-raised);
+}
+
+.page-content th {
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wa-color-text-quiet) !important;
+  background: var(--wa-color-surface-lowered) !important;
+  border-bottom: 1px solid var(--wa-color-surface-border) !important;
+}
+
+.page-content td {
+  color: var(--wa-color-text-normal);
+  border-bottom: 1px solid var(--wa-color-surface-border) !important;
+}
+
+.page-content tbody tr {
+  background: var(--wa-color-surface-raised) !important;
+}
+
+.page-content tbody tr:hover {
+  background: var(--wa-color-neutral-fill-quiet) !important;
 }
 
 @media print {

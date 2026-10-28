@@ -338,3 +338,41 @@ export const getRecentReports = query(async (limit: number = 10) => {
   });
   return reports;
 }, "recent-reports");
+
+// Full report log for filtering by type and severity.
+export const getReportLog = query(async () => {
+  "use server";
+  await requireOwner();
+  const reports = await db.sessionReport.findMany({
+    include: {
+      child: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+        },
+      },
+      careSession: {
+        include: {
+          family: {
+            select: {
+              id: true,
+              familyName: true,
+            },
+          },
+        },
+      },
+      reportedBy: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+        },
+      },
+    },
+    orderBy: {
+      timestamp: "desc",
+    },
+  });
+  return reports;
+}, "report-log");

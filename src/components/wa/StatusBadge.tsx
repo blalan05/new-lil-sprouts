@@ -1,4 +1,9 @@
-import { formatPaymentStatus, formatSessionStatus } from "~/lib/display";
+import {
+  formatPaymentStatus,
+  formatReportSeverity,
+  formatReportType,
+  formatSessionStatus,
+} from "~/lib/display";
 
 type BadgeVariant = "brand" | "neutral" | "success" | "warning" | "danger";
 
@@ -44,6 +49,34 @@ export function PaymentStatusBadge(props: { status: string }) {
   return (
     <wa-badge variant={paymentVariant(props.status)} appearance="filled-outlined" pill>
       {formatPaymentStatus(props.status)}
+    </wa-badge>
+  );
+}
+
+function severityVariant(severity: string): BadgeVariant {
+  switch (severity) {
+    case "SEVERE":
+      return "danger";
+    case "MODERATE":
+    case "MINOR":
+      return "warning";
+    default:
+      return "neutral";
+  }
+}
+
+export function ReportTypeBadge(props: { type: string }) {
+  return (
+    <wa-badge variant="neutral" appearance="filled-outlined" pill>
+      {formatReportType(props.type)}
+    </wa-badge>
+  );
+}
+
+export function ReportSeverityBadge(props: { severity: string }) {
+  return (
+    <wa-badge variant={severityVariant(props.severity)} appearance="filled-outlined" pill>
+      {formatReportSeverity(props.severity)}
     </wa-badge>
   );
 }

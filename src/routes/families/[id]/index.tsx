@@ -1,14 +1,27 @@
 import { useParams } from "@solidjs/router";
 import { useSubmission } from "~/lib/use-submission";
-import { Show, For, createSignal, createEffect } from "solid-js";
+import { Show, For, createSignal, createEffect, createMemo } from "solid-js";
 import Modal from "~/components/Modal";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
+import EmptyState from "~/components/EmptyState";
+import ListToolbar from "~/components/ListToolbar";
 import { useConfirm } from "~/components/wa/ConfirmProvider";
 import { SessionStatusBadge, PaymentStatusBadge } from "~/components/wa/StatusBadge";
 import { getFamily, formatParentNames } from "~/lib/families";
 import { getUser } from "~/lib";
 import { formatCaregiverName } from "~/lib/display";
 import { formatMoneyDisplay } from "~/lib/money-display";
+import {
+  SESSION_STATUS_OPTIONS,
+  SESSION_STATUS_ORDER,
+  compareSort,
+  compareStatus,
+  matchesQuery,
+  moneyNumber,
+  paymentSearchParts,
+  sessionSearchParts,
+} from "~/lib/list-query";
+import { useListQuery } from "~/lib/use-list-query";
 import {
   getFamilyMembers,
   deleteFamilyMember,
@@ -50,6 +63,40 @@ export default function FamilyDetailPage() {
   const children = createMemo(() => getChildren(params.id!));
   const services = createMemo(() => getServices());
   const caregiver = createMemo(() => getUser());
+  const sessionList = useListQuery({ prefix: "sessions", sort: "date", dir: "desc" });
+  const paymentList = useListQuery({ prefix: "payments", sort: "date", dir: "desc" });
+
+  const allSessions = () => family()?.careSessions ?? [];
+  const filteredSessions = () => {
+    const rows = allSessions().filter((session) => {
+      if (sessionList.status() && session.status !== sessionList.status()) return false;
+      return matchesQuery(sessionList.q(), sessionSearchParts(session));
+    });
+    const field = sessionList.sort() === "status" ? "status" : "date";
+    const dir = sessionList.dir();
+    return [...rows].sort((a, b) => {
+      if (field === "status") return compareStatus(a.status, b.status, dir, SESSION_STATUS_ORDER);
+      return compareSort(new Date(a.scheduledStart).getTime(), new Date(b.scheduledStart).getTime(), dir);
+    });
+  };
+  const upcomingSessions = () => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    return allSessions().filter(
+      (session) => new Date(session.scheduledStart) >= start && session.status !== "CANCELLED",
+    );
+  };
+
+  const allPayments = () => family()?.payments ?? [];
+  const filteredPayments = () => {
+    const rows = allPayments().filter((payment) => matchesQuery(paymentList.q(), paymentSearchParts(payment)));
+    const field = paymentList.sort() === "amount" ? "amount" : "date";
+    const dir = paymentList.dir();
+    return [...rows].sort((a, b) => {
+      if (field === "amount") return compareSort(moneyNumber(a.amount), moneyNumber(b.amount), dir);
+      return compareSort(new Date(a.paidDate || a.createdAt).getTime(), new Date(b.paidDate || b.createdAt).getTime(), dir);
+    });
+  };
 
   const [showInviteModal, setShowInviteModal] = createSignal<string | null>(null);
   const [showScheduleDialog, setShowScheduleDialog] = createSignal<
@@ -440,7 +487,7 @@ export default function FamilyDetailPage() {
                           href={`/families/${params.id}/children/${child.id}`}
                           style={{
                             padding: "0.5rem 1rem",
-                            "background-color": "#4299e1",
+                            "background-color": "var(--color-primary)",
                             color: "white",
                             border: "none",
                             "border-radius": "4px",
@@ -494,8 +541,15 @@ export default function FamilyDetailPage() {
             }}
           >
             <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)" }}>
-              Upcoming Sessions ({family()?.careSessions?.length || 0})
+              Upcoming sessions ({upcomingSessions().length})
             </h2>
+            <div class="wa-cluster wa-gap-s">
+              <a href="#all-sessions" class="wa-body-s">
+                View all
+              </a>
+              <a href={`/schedule?view=list&family=${params.id}`} class="wa-body-s">
+                Open in schedule
+              </a>
             <button
               onClick={() => openScheduleDialog("create")}
               style={{
@@ -511,31 +565,19 @@ export default function FamilyDetailPage() {
             >
               + New Schedule
             </button>
+            </div>
           </div>
 
           <Show
-            when={family()?.careSessions?.length}
+            when={upcomingSessions().length}
             fallback={
-              <div style={{ "text-align": "center", padding: "2rem" }}>
-                <p style={{ color: "var(--color-text-muted)", "margin-bottom": "1rem" }}>
-                  No care sessions scheduled yet. Create one-time or recurring sessions.
-                </p>
-                <button
-                  onClick={() => openScheduleDialog("create")}
-                  style={{
-                    padding: "0.75rem 1.5rem",
-                    "background-color": "#805ad5",
-                    color: "white",
-                    border: "none",
-                    "border-radius": "4px",
-                    cursor: "pointer",
-                    "font-weight": "600",
-                    display: "inline-block",
-                  }}
-                >
-                  Create First Schedule
-                </button>
-              </div>
+              <EmptyState
+                message={
+                  allSessions().length
+                    ? "No upcoming sessions. Earlier sessions are in the full list below."
+                    : "No care sessions scheduled yet. Create one-time or recurring sessions."
+                }
+              />
             }
           >
             <div style={{ "overflow-x": "auto" }}>
@@ -590,7 +632,7 @@ export default function FamilyDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  <For each={family()?.careSessions}>
+                  <For each={upcomingSessions()}>
                     {(session) => (
                         <tr style={{ "border-bottom": "1px solid var(--color-border)" }}>
                           <td style={{ padding: "0.75rem" }}>
@@ -615,7 +657,7 @@ export default function FamilyDetailPage() {
                                 href={`/families/${params.id}/sessions/${session.id}`}
                                 style={{
                                   padding: "0.25rem 0.75rem",
-                                  "background-color": "#4299e1",
+                                  "background-color": "var(--color-primary)",
                                   color: "#fff",
                                   "border-radius": "4px",
                                   "text-decoration": "none",
@@ -772,7 +814,7 @@ export default function FamilyDetailPage() {
                             onClick={() => openScheduleDialog("view", schedule.id)}
                             style={{
                               padding: "0.25rem 0.75rem",
-                              "background-color": "#4299e1",
+                              "background-color": "var(--color-primary)",
                               color: "#fff",
                               border: "none",
                               "border-radius": "4px",
@@ -859,7 +901,7 @@ export default function FamilyDetailPage() {
               href={`/families/${params.id}/members/new`}
               style={{
                 padding: "0.5rem 1rem",
-                "background-color": "#4299e1",
+                "background-color": "var(--color-primary)",
                 color: "white",
                 border: "none",
                 "border-radius": "4px",
@@ -1188,12 +1230,14 @@ export default function FamilyDetailPage() {
               "margin-bottom": "1rem",
             }}
           >
-            <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)" }}>Recent Care Sessions</h2>
+            <h2 id="all-sessions" style={{ "font-size": "1.25rem", color: "var(--color-text)" }}>
+              All care sessions ({filteredSessions().length})
+            </h2>
             <a
               href={`/families/${params.id}/schedules/new`}
               style={{
                 padding: "0.5rem 1rem",
-                "background-color": "#4299e1",
+                "background-color": "var(--color-primary)",
                 color: "white",
                 border: "none",
                 "border-radius": "4px",
@@ -1205,12 +1249,30 @@ export default function FamilyDetailPage() {
             </a>
           </div>
 
+          <ListToolbar
+            query={sessionList}
+            searchPlaceholder="Search child, service, or status"
+            chipGroups={[{ param: "status", label: "Status", options: SESSION_STATUS_OPTIONS }]}
+            sortOptions={[
+              { value: "date", label: "Date" },
+              { value: "status", label: "Status" },
+            ]}
+            total={allSessions().length}
+            visible={filteredSessions().length}
+          />
+
           <Show
-            when={family()?.careSessions?.length}
+            when={filteredSessions().length}
             fallback={
-              <p style={{ color: "var(--color-text-muted)", "text-align": "center", padding: "2rem" }}>
-                No care sessions scheduled yet.
-              </p>
+              <EmptyState
+                message={
+                  allSessions().length === 0
+                    ? "No care sessions scheduled yet."
+                    : "No sessions match these filters."
+                }
+                actionLabel={allSessions().length > 0 ? "Clear filters" : undefined}
+                onAction={() => sessionList.clearFilters()}
+              />
             }
           >
             <div style={{ "overflow-x": "auto" }}>
@@ -1256,7 +1318,7 @@ export default function FamilyDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  <For each={family()?.careSessions}>
+                  <For each={filteredSessions()}>
                     {(session) => (
                         <tr style={{ "border-bottom": "1px solid var(--color-border)" }}>
                           <td style={{ padding: "0.75rem" }}>
@@ -1297,9 +1359,11 @@ export default function FamilyDetailPage() {
               "margin-bottom": "1rem",
             }}
           >
-            <h2 style={{ "font-size": "1.25rem", color: "var(--color-text)" }}>Recent Payments</h2>
+            <h2 id="family-payments" style={{ "font-size": "1.25rem", color: "var(--color-text)" }}>
+              Payments ({filteredPayments().length})
+            </h2>
             <a
-              href={`/payments?familyId=${params.id}&record=1`}
+              href={`/payments?family=${params.id}&record=1`}
               style={{
                 padding: "0.5rem 1rem",
                 "background-color": "#48bb78",
@@ -1314,12 +1378,29 @@ export default function FamilyDetailPage() {
             </a>
           </div>
 
+          <ListToolbar
+            query={paymentList}
+            searchPlaceholder="Search invoice, method, notes, or status"
+            sortOptions={[
+              { value: "date", label: "Date" },
+              { value: "amount", label: "Amount" },
+            ]}
+            total={allPayments().length}
+            visible={filteredPayments().length}
+          />
+
           <Show
-            when={family()?.payments?.length}
+            when={filteredPayments().length}
             fallback={
-              <p style={{ color: "var(--color-text-muted)", "text-align": "center", padding: "2rem" }}>
-                No payment records yet.
-              </p>
+              <EmptyState
+                message={
+                  allPayments().length === 0
+                    ? "No payment records yet."
+                    : "No payments match these filters."
+                }
+                actionLabel={allPayments().length > 0 ? "Clear filters" : undefined}
+                onAction={() => paymentList.clearFilters()}
+              />
             }
           >
             <div style={{ "overflow-x": "auto" }}>
@@ -1374,7 +1455,7 @@ export default function FamilyDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  <For each={family()?.payments}>
+                  <For each={filteredPayments()}>
                     {(payment) => (
                         <tr style={{ "border-bottom": "1px solid var(--color-border)" }}>
                           <td style={{ padding: "0.75rem" }}>{formatDate(payment.createdAt)}</td>

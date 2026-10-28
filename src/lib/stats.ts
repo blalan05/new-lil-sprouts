@@ -269,7 +269,7 @@ export const getDashboardStats = query(async () => {
     where: {
       isConfirmed: true,
       status: {
-        in: ["SCHEDULED", "COMPLETED"],
+        in: ["SCHEDULED", "IN_PROGRESS", "COMPLETED"],
       },
       payments: {
         none: {

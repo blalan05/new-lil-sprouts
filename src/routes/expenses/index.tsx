@@ -1,7 +1,9 @@
 
 import { useSubmission } from "~/lib/use-submission";
-import { Show, For, createSignal } from "solid-js";
+import { Show, For, createSignal, createMemo } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
+import EmptyState from "~/components/EmptyState";
+import ListToolbar from "~/components/ListToolbar";
 import { useConfirm } from "~/components/wa/ConfirmProvider";
 import { getFamilies } from "~/lib/families";
 import {
@@ -11,6 +13,15 @@ import {
   deleteStandaloneExpense,
 } from "~/lib/expenses";
 import { formatDateLocal } from "~/lib/datetime";
+import {
+  EXPENSE_CATEGORY_OPTIONS,
+  compareSort,
+  inDateRange,
+  matchesQuery,
+  moneyNumber,
+  optionLabel,
+} from "~/lib/list-query";
+import { useListQuery } from "~/lib/use-list-query";
 
 export const route = {
   preload() {
@@ -20,28 +31,12 @@ export const route = {
 };
 
 type SortField = "date" | "description" | "amount" | "category" | "family";
-type SortDirection = "asc" | "desc";
-
-const EXPENSE_CATEGORIES = [
-  "FOOD",
-  "ACTIVITY",
-  "SUPPLIES",
-  "TRANSPORTATION",
-  "BUSINESS",
-  "OTHER",
-] as const;
 
 export default function ExpensesPage() {
   const { confirm } = useConfirm();
+  const list = useListQuery({ sort: "date", dir: "desc" });
   const families = createMemo(() => getFamilies());
-  const [selectedFamilyId, setSelectedFamilyId] = createSignal<string>("");
-  const expenses = createMemo(() => {
-    const familyId = selectedFamilyId();
-    return getExpenses(familyId || undefined);
-  });
-  const [searchTerm, setSearchTerm] = createSignal<string>("");
-  const [sortField, setSortField] = createSignal<SortField>("date");
-  const [sortDirection, setSortDirection] = createSignal<SortDirection>("desc");
+  const expenses = createMemo(() => getExpenses());
   const [showNewExpense, setShowNewExpense] = createSignal(false);
   const [editingExpense, setEditingExpense] = createSignal<string | null>(null);
 
@@ -61,70 +56,56 @@ export default function ExpensesPage() {
     const expensesList = expenses();
     if (!expensesList) return [];
 
-    let filtered = expensesList;
+    let filtered = expensesList.filter((expense) => {
+      if (list.family() && expense.familyId !== list.family()) return false;
+      if (list.category() && expense.category !== list.category()) return false;
+      if (!inDateRange(expense.expenseDate, list.from(), list.to())) return false;
+      return matchesQuery(list.q(), [
+        expense.description,
+        expense.category,
+        expense.category ? optionLabel(EXPENSE_CATEGORY_OPTIONS, expense.category) : "",
+        expense.family?.familyName,
+        expense.notes,
+      ]);
+    });
 
-    const term = searchTerm().toLowerCase();
-    if (term) {
-      filtered = filtered.filter(
-        (exp) =>
-          exp.description.toLowerCase().includes(term) ||
-          exp.category?.toLowerCase().includes(term) ||
-          exp.family?.familyName.toLowerCase().includes(term) ||
-          exp.notes?.toLowerCase().includes(term),
-      );
-    }
-
+    const field = (["date", "description", "amount", "category", "family"].includes(list.sort())
+      ? list.sort()
+      : "date") as SortField;
+    const dir = list.dir();
     filtered = [...filtered].sort((a, b) => {
-      let aVal: string | number;
-      let bVal: string | number;
-
-      switch (sortField()) {
-        case "date":
-          aVal = new Date(a.expenseDate).getTime();
-          bVal = new Date(b.expenseDate).getTime();
-          break;
+      switch (field) {
         case "description":
-          aVal = a.description.toLowerCase();
-          bVal = b.description.toLowerCase();
-          break;
+          return compareSort(a.description.toLowerCase(), b.description.toLowerCase(), dir);
         case "amount":
-          aVal = a.amount;
-          bVal = b.amount;
-          break;
+          return compareSort(moneyNumber(a.amount), moneyNumber(b.amount), dir);
         case "category":
-          aVal = a.category || "";
-          bVal = b.category || "";
-          break;
+          return compareSort(
+            optionLabel(EXPENSE_CATEGORY_OPTIONS, a.category).toLowerCase(),
+            optionLabel(EXPENSE_CATEGORY_OPTIONS, b.category).toLowerCase(),
+            dir,
+          );
         case "family":
-          aVal = a.family?.familyName || "";
-          bVal = b.family?.familyName || "";
-          break;
+          return compareSort(
+            (a.family?.familyName || "").toLowerCase(),
+            (b.family?.familyName || "").toLowerCase(),
+            dir,
+          );
         default:
-          return 0;
+          return compareSort(new Date(a.expenseDate).getTime(), new Date(b.expenseDate).getTime(), dir);
       }
-
-      if (aVal < bVal) return sortDirection() === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortDirection() === "asc" ? 1 : -1;
-      return 0;
     });
 
     return filtered;
   };
 
-  const totalExpenses = () => {
-    return filteredExpenses().reduce((sum, exp) => {
-      const amount = Number(String(exp.amount ?? 0).replace(/[$,\s]/g, "")) || 0;
-      return sum + amount;
-    }, 0);
+  const sortMark = (field: SortField) => {
+    if (list.sort() !== field) return "";
+    return list.dir() === "asc" ? " (asc)" : " (desc)";
   };
 
-  const handleSort = (field: SortField) => {
-    if (sortField() === field) {
-      setSortDirection(sortDirection() === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
+  const totalExpenses = () => {
+    return filteredExpenses().reduce((sum, exp) => sum + moneyNumber(exp.amount), 0);
   };
 
   const handleDelete = async (id: string, description: string) => {
@@ -145,6 +126,7 @@ export default function ExpensesPage() {
     <PageContent>
       <PageHeader
         title="Expenses"
+        description="Standalone business expenses. Costs logged during a care session stay on that session."
         actions={
           <wa-button variant="brand" appearance="filled" onClick={() => setShowNewExpense(true)}>
             + Add Expense
@@ -152,29 +134,22 @@ export default function ExpensesPage() {
         }
       />
 
-      <wa-card>
-        <div class="wa-grid wa-gap-m" style={{ "--min-column-size": "200px" }}>
-          <wa-input
-            label="Search"
-            type="search"
-            placeholder="Search expenses..."
-            value={searchTerm()}
-            onInput={(e) => setSearchTerm((e.currentTarget as HTMLInputElement & { value: string }).value)}
-          />
-          <wa-select
-            label="Filter by Family"
-            value={selectedFamilyId()}
-            onChange={(e) =>
-              setSelectedFamilyId((e.currentTarget as HTMLSelectElement & { value: string }).value)
-            }
-          >
-            <wa-option value="">All Families</wa-option>
-            <For each={families()}>
-              {(family) => <wa-option value={family.id}>{family.familyName}</wa-option>}
-            </For>
-          </wa-select>
-        </div>
-      </wa-card>
+      <ListToolbar
+        query={list}
+        searchPlaceholder="Search description, category, family, or notes"
+        families={families() ?? []}
+        chipGroups={[{ param: "category", label: "Category", options: EXPENSE_CATEGORY_OPTIONS }]}
+        sortOptions={[
+          { value: "date", label: "Date" },
+          { value: "description", label: "Description" },
+          { value: "category", label: "Category" },
+          { value: "family", label: "Family" },
+          { value: "amount", label: "Amount" },
+        ]}
+        dateRange
+        total={expenses()?.length ?? 0}
+        visible={filteredExpenses().length}
+      />
 
       <wa-card>
         <div class="wa-cluster wa-gap-xl">
@@ -196,33 +171,33 @@ export default function ExpensesPage() {
               <tr style={{ "background-color": "var(--wa-color-neutral-95)", "border-bottom": "2px solid var(--wa-color-neutral-90)" }}>
                 <th
                   style={{ padding: "0.75rem", "text-align": "left", cursor: "pointer" }}
-                  onClick={() => handleSort("date")}
+                  onClick={() => list.toggleSort("date")}
                 >
-                  Date {sortField() === "date" && (sortDirection() === "asc" ? "↑" : "↓")}
+                  Date {sortMark("date")}
                 </th>
                 <th
                   style={{ padding: "0.75rem", "text-align": "left", cursor: "pointer" }}
-                  onClick={() => handleSort("description")}
+                  onClick={() => list.toggleSort("description")}
                 >
-                  Description {sortField() === "description" && (sortDirection() === "asc" ? "↑" : "↓")}
+                  Description {sortMark("description")}
                 </th>
                 <th
                   style={{ padding: "0.75rem", "text-align": "left", cursor: "pointer" }}
-                  onClick={() => handleSort("category")}
+                  onClick={() => list.toggleSort("category")}
                 >
-                  Category {sortField() === "category" && (sortDirection() === "asc" ? "↑" : "↓")}
+                  Category {sortMark("category")}
                 </th>
                 <th
                   style={{ padding: "0.75rem", "text-align": "left", cursor: "pointer" }}
-                  onClick={() => handleSort("family")}
+                  onClick={() => list.toggleSort("family")}
                 >
-                  Family {sortField() === "family" && (sortDirection() === "asc" ? "↑" : "↓")}
+                  Family {sortMark("family")}
                 </th>
                 <th
                   style={{ padding: "0.75rem", "text-align": "right", cursor: "pointer" }}
-                  onClick={() => handleSort("amount")}
+                  onClick={() => list.toggleSort("amount")}
                 >
-                  Amount {sortField() === "amount" && (sortDirection() === "asc" ? "↑" : "↓")}
+                  Amount {sortMark("amount")}
                 </th>
                 <th style={{ padding: "0.75rem", "text-align": "center" }}>Actions</th>
               </tr>
@@ -232,8 +207,16 @@ export default function ExpensesPage() {
                 when={filteredExpenses().length > 0}
                 fallback={
                   <tr>
-                    <td colSpan={6} style={{ padding: "2rem", "text-align": "center" }} class="wa-color-text-quiet">
-                      No expenses found
+                    <td colSpan={6} style={{ padding: 0 }}>
+                      <EmptyState
+                        message={
+                          (expenses()?.length ?? 0) === 0
+                            ? "No standalone expenses yet."
+                            : "No expenses match these filters."
+                        }
+                        actionLabel={(expenses()?.length ?? 0) > 0 && list.hasFilters() ? "Clear filters" : undefined}
+                        onAction={() => list.clearFilters()}
+                      />
                     </td>
                   </tr>
                 }
@@ -252,7 +235,7 @@ export default function ExpensesPage() {
                       </td>
                       <td style={{ padding: "1rem" }}>
                         <wa-badge variant="success" appearance="filled-outlined" pill>
-                          {expense.category || "Uncategorized"}
+                          {optionLabel(EXPENSE_CATEGORY_OPTIONS, expense.category) || "Uncategorized"}
                         </wa-badge>
                       </td>
                       <td style={{ padding: "1rem" }}>
@@ -327,8 +310,8 @@ export default function ExpensesPage() {
               <wa-input label="Amount *" name="amount" type="number" step="0.01" min="0" required />
               <wa-select label="Category" name="category">
                 <wa-option value="">Select a category</wa-option>
-                <For each={EXPENSE_CATEGORIES}>
-                  {(cat) => <wa-option value={cat}>{cat}</wa-option>}
+                <For each={EXPENSE_CATEGORY_OPTIONS}>
+                  {(cat) => <wa-option value={cat.value}>{cat.label}</wa-option>}
                 </For>
               </wa-select>
               <wa-input
@@ -407,8 +390,8 @@ export default function ExpensesPage() {
                   />
                   <wa-select label="Category" name="category" value={expense.category || ""}>
                     <wa-option value="">Select a category</wa-option>
-                    <For each={EXPENSE_CATEGORIES}>
-                      {(cat) => <wa-option value={cat}>{cat}</wa-option>}
+                    <For each={EXPENSE_CATEGORY_OPTIONS}>
+                      {(cat) => <wa-option value={cat.value}>{cat.label}</wa-option>}
                     </For>
                   </wa-select>
                   <wa-input

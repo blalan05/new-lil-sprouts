@@ -156,17 +156,22 @@ export const getFamily = query(async (id: string) => {
       careSessions: {
         include: {
           children: true,
+          service: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+            },
+          },
         },
         orderBy: {
           scheduledStart: "desc",
         },
-        take: 10,
       },
       payments: {
         orderBy: {
           createdAt: "desc",
         },
-        take: 10,
       },
       services: {
         include: {

@@ -28,6 +28,46 @@ export function formatPaymentStatus(status: string): string {
   }
 }
 
+export function formatReportType(type: string): string {
+  switch (type) {
+    case "INCIDENT":
+      return "Incident";
+    case "ACCIDENT":
+      return "Accident";
+    case "BEHAVIOR":
+      return "Behavior";
+    case "MEAL":
+      return "Meal";
+    case "NAP":
+      return "Nap";
+    case "ACTIVITY":
+      return "Activity";
+    case "MEDICATION":
+      return "Medication";
+    case "MILESTONE":
+      return "Milestone";
+    case "GENERAL":
+      return "General";
+    default:
+      return type;
+  }
+}
+
+export function formatReportSeverity(severity: string): string {
+  switch (severity) {
+    case "INFO":
+      return "Info";
+    case "MINOR":
+      return "Minor";
+    case "MODERATE":
+      return "Moderate";
+    case "SEVERE":
+      return "Severe";
+    default:
+      return severity;
+  }
+}
+
 export function formatCaregiverName(user: {
   firstName?: string | null;
   lastName?: string | null;

@@ -1,11 +1,15 @@
 import { useNavigate } from "@solidjs/router";
-import { For, Show, createSignal, createEffect } from "solid-js";
+import { For, Show, createSignal, createEffect, createMemo } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
+import EmptyState from "~/components/EmptyState";
+import ListToolbar from "~/components/ListToolbar";
 import { useConfirm } from "~/components/wa/ConfirmProvider";
 import { getFamilies, deleteFamily, formatParentNames } from "~/lib/families";
 import { getAllChildren, deleteChild } from "~/lib/children";
 import { allergyLabel } from "~/lib/display";
 import { formatMoneyDisplay, moneyDisplay } from "~/lib/money-display";
+import { compareSort, matchesQuery, moneyNumber } from "~/lib/list-query";
+import { useListQuery } from "~/lib/use-list-query";
 
 export const route = {
   preload() {
@@ -16,48 +20,101 @@ export const route = {
 
 type ViewType = "families" | "children";
 
+const FAMILY_SORTS = [
+  { value: "name", label: "Name" },
+  { value: "children", label: "Children" },
+  { value: "owed", label: "Amount owed" },
+  { value: "since", label: "Watched since" },
+];
+
+const CHILD_SORTS = [
+  { value: "name", label: "Name" },
+  { value: "birthday", label: "Birthday" },
+  { value: "family", label: "Family" },
+];
+
 export default function FamiliesPage() {
   const navigate = useNavigate();
   const { confirm } = useConfirm();
-  const [view, setView] = createSignal<ViewType>("families");
+  const list = useListQuery({ sort: "name", dir: "asc", view: "families" });
+  const view = (): ViewType => (list.view() === "children" ? "children" : "families");
   const families = createMemo(() => getFamilies());
   const children = createMemo(() => getAllChildren());
-  const [searchTerm, setSearchTerm] = createSignal("");
-  const [filterFamily, setFilterFamily] = createSignal<string>("");
   const [openDropdown, setOpenDropdown] = createSignal<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = createSignal<{ top: number; right: number } | null>(null);
 
+  const setPageView = (next: ViewType) => {
+    const allowed = next === "families" ? FAMILY_SORTS : CHILD_SORTS;
+    if (!allowed.some((option) => option.value === list.sort())) {
+      list.patch({ view: next === "families" ? undefined : next, sort: undefined, dir: undefined });
+      return;
+    }
+    list.setView(next);
+  };
+
   const filteredFamilies = () => {
-    const term = searchTerm().toLowerCase();
-    if (!term) return families();
-    return families()?.filter(
-      (f) =>
-        f.familyName.toLowerCase().includes(term) ||
-        f.email.toLowerCase().includes(term) ||
-        f.parentFirstName.toLowerCase().includes(term) ||
-        f.parentLastName.toLowerCase().includes(term),
+    const rows = (families() ?? []).filter((family) =>
+      matchesQuery(list.q(), [
+        family.familyName,
+        family.email,
+        family.parentFirstName,
+        family.parentLastName,
+        family.phone,
+        family.city,
+        family.state,
+        family.zipCode,
+        ...(family.children ?? []).flatMap((child) => [
+          child.firstName,
+          child.lastName,
+          `${child.firstName} ${child.lastName}`,
+        ]),
+      ]),
     );
+    const field = FAMILY_SORTS.some((option) => option.value === list.sort()) ? list.sort() : "name";
+    const dir = list.dir();
+    return [...rows].sort((a, b) => {
+      if (field === "children") return compareSort(a.children?.length ?? 0, b.children?.length ?? 0, dir);
+      if (field === "owed") {
+        return compareSort(moneyNumber((a as { amountOwed?: unknown }).amountOwed as never), moneyNumber((b as { amountOwed?: unknown }).amountOwed as never), dir);
+      }
+      if (field === "since") return compareSort(new Date(a.createdAt).getTime(), new Date(b.createdAt).getTime(), dir);
+      return compareSort(a.familyName.toLowerCase(), b.familyName.toLowerCase(), dir);
+    });
   };
 
   const filteredChildren = () => {
-    const term = searchTerm().toLowerCase();
-    const familyId = filterFamily();
-    let filtered = children();
-    
-    if (familyId) {
-      filtered = filtered?.filter((c) => c.familyId === familyId);
-    }
-    
-    if (!term) return filtered;
-    
-    return filtered?.filter(
-      (c) =>
-        c.firstName.toLowerCase().includes(term) ||
-        c.lastName.toLowerCase().includes(term) ||
-        c.family?.familyName.toLowerCase().includes(term) ||
-        (c.allergies && c.allergies.toLowerCase().includes(term)) ||
-        (c.schoolName && c.schoolName.toLowerCase().includes(term)),
+    let rows = children() ?? [];
+    if (list.family()) rows = rows.filter((child) => child.familyId === list.family());
+    rows = rows.filter((child) =>
+      matchesQuery(list.q(), [
+        child.firstName,
+        child.lastName,
+        `${child.firstName} ${child.lastName}`,
+        child.family?.familyName,
+        child.allergies,
+        child.schoolName,
+        child.schoolGrade,
+      ]),
     );
+    const field = CHILD_SORTS.some((option) => option.value === list.sort()) ? list.sort() : "name";
+    const dir = list.dir();
+    return [...rows].sort((a, b) => {
+      if (field === "birthday") {
+        return compareSort(new Date(a.dateOfBirth).getTime(), new Date(b.dateOfBirth).getTime(), dir);
+      }
+      if (field === "family") {
+        return compareSort(
+          (a.family?.familyName ?? "").toLowerCase(),
+          (b.family?.familyName ?? "").toLowerCase(),
+          dir,
+        );
+      }
+      return compareSort(
+        `${a.lastName} ${a.firstName}`.toLowerCase(),
+        `${b.lastName} ${b.firstName}`.toLowerCase(),
+        dir,
+      );
+    });
   };
 
   const calculateAge = (dateOfBirth: Date) => {
@@ -163,113 +220,44 @@ export default function FamiliesPage() {
       </div>
 
       {/* View Toggle */}
-      <div
-        class="wa-cluster wa-gap-xs"
-        style={{
-          "background-color": "var(--color-surface)",
-          padding: "0.375rem",
-          "border-radius": "8px",
-          border: "1px solid var(--color-border)",
-          width: "fit-content",
-        }}
-      >
-        <button
-          onClick={() => setView("families")}
-          style={{
-            padding: "0.5rem 1rem",
-            "background-color": view() === "families" ? "#4299e1" : "transparent",
-            color: view() === "families" ? "white" : "var(--color-text)",
-            border: "none",
-            "border-radius": "4px",
-            cursor: "pointer",
-            "font-weight": view() === "families" ? "600" : "400",
-          }}
+      <div class="wa-cluster wa-gap-xs">
+        <wa-button
+          appearance={view() === "families" ? "filled" : "outlined"}
+          variant={view() === "families" ? "brand" : "neutral"}
+          onClick={() => setPageView("families")}
         >
           Families
-        </button>
-        <button
-          onClick={() => setView("children")}
-          style={{
-            padding: "0.5rem 1rem",
-            "background-color": view() === "children" ? "#4299e1" : "transparent",
-            color: view() === "children" ? "white" : "var(--color-text)",
-            border: "none",
-            "border-radius": "4px",
-            cursor: "pointer",
-            "font-weight": view() === "children" ? "600" : "400",
-          }}
+        </wa-button>
+        <wa-button
+          appearance={view() === "children" ? "filled" : "outlined"}
+          variant={view() === "children" ? "brand" : "neutral"}
+          onClick={() => setPageView("children")}
         >
           All Children
-        </button>
+        </wa-button>
       </div>
 
-      <div
-        style={{
-          "background-color": "var(--color-surface)",
-          padding: "1rem",
-          "border-radius": "8px",
-          border: "1px solid var(--color-border)",
-          "margin-bottom": "1rem",
-        }}
-      >
-        {view() === "families" ? (
-          <input
-            type="text"
-            placeholder="Search families by name or email..."
-            value={searchTerm()}
-            onInput={(e) => setSearchTerm(e.currentTarget.value)}
-            style={{
-              width: "100%",
-              padding: "0.5rem 0.75rem",
-              border: "1px solid var(--color-border-strong)",
-              "border-radius": "4px",
-              "font-size": "0.875rem",
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              display: "grid",
-              "grid-template-columns": "2fr 1fr",
-              gap: "1rem",
-            }}
-          >
-            <input
-              type="text"
-              placeholder="Search children by name, family, allergies, or school..."
-              value={searchTerm()}
-              onInput={(e) => setSearchTerm(e.currentTarget.value)}
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid var(--color-border-strong)",
-                "border-radius": "4px",
-                "font-size": "1rem",
-              }}
-            />
-            <select
-              value={filterFamily()}
-              onChange={(e) => setFilterFamily(e.currentTarget.value)}
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid var(--color-border-strong)",
-                "border-radius": "4px",
-                "font-size": "1rem",
-              }}
-            >
-              <option value="">All Families</option>
-              <For each={families()}>
-                {(family) => <option value={family.id}>{family.familyName}</option>}
-              </For>
-            </select>
-          </div>
-        )}
-      </div>
+      <ListToolbar
+        query={list}
+        searchPlaceholder={
+          view() === "families"
+            ? "Search name, email, phone, city, or child"
+            : "Search name, family, allergies, or school"
+        }
+        families={view() === "children" ? (families() ?? []) : undefined}
+        sortOptions={view() === "families" ? FAMILY_SORTS : CHILD_SORTS}
+        sortValue={
+          (view() === "families" ? FAMILY_SORTS : CHILD_SORTS).some((option) => option.value === list.sort())
+            ? list.sort()
+            : "name"
+        }
+        total={view() === "families" ? (families()?.length ?? 0) : (children()?.length ?? 0)}
+        visible={view() === "families" ? filteredFamilies().length : filteredChildren().length}
+      />
 
       <Show when={view() === "families"}>
         <Show
-          when={!families.loading && families()}
+          when={families()}
           fallback={
             <div style={{ "text-align": "center", padding: "2rem" }}>Loading families...</div>
           }
@@ -277,18 +265,15 @@ export default function FamiliesPage() {
         <Show
           when={filteredFamilies()?.length}
           fallback={
-              <div
-                style={{
-                  "text-align": "center",
-                  padding: "2rem",
-                  "background-color": "var(--color-surface-muted)",
-                  "border-radius": "8px",
-                }}
-              >
-                <p style={{ color: "var(--color-text-muted)", "font-size": "0.875rem" }}>
-                  No families found. Click "Add New Family" to get started.
-                </p>
-              </div>
+            <EmptyState
+              message={
+                (families()?.length ?? 0) === 0
+                  ? "No families yet. Add a family to get started."
+                  : "No families match these filters."
+              }
+              actionLabel={(families()?.length ?? 0) > 0 && list.hasFilters() ? "Clear filters" : undefined}
+              onAction={() => list.clearFilters()}
+            />
           }
         >
           <div style={{ "background-color": "var(--color-surface)", "border-radius": "8px", border: "1px solid var(--color-border)", overflow: "hidden" }}>
@@ -349,7 +334,7 @@ export default function FamiliesPage() {
                                   href={`/families/${family.id}/children/${child.id}`}
                                   onClick={(e) => e.stopPropagation()}
                                   style={{
-                                    color: "#4299e1",
+                                    color: "var(--color-primary)",
                                     "text-decoration": "none",
                                     "font-size": "0.8125rem",
                                   }}
@@ -528,7 +513,7 @@ export default function FamiliesPage() {
 
       <Show when={view() === "children"}>
         <Show
-          when={!children.loading && children()}
+          when={children()}
           fallback={
             <div style={{ "text-align": "center", padding: "2rem" }}>Loading children...</div>
           }
@@ -536,18 +521,15 @@ export default function FamiliesPage() {
           <Show
             when={filteredChildren()?.length}
             fallback={
-              <div
-                style={{
-                  "text-align": "center",
-                  padding: "2rem",
-                  "background-color": "var(--color-surface-muted)",
-                  "border-radius": "8px",
-                }}
-              >
-                <p style={{ color: "var(--color-text-muted)", "font-size": "0.875rem" }}>
-                  No children found. Add children through the Families page.
-                </p>
-              </div>
+              <EmptyState
+                message={
+                  (children()?.length ?? 0) === 0
+                    ? "No children yet. Add children from a family."
+                    : "No children match these filters."
+                }
+                actionLabel={(children()?.length ?? 0) > 0 && list.hasFilters() ? "Clear filters" : undefined}
+                onAction={() => list.clearFilters()}
+              />
             }
           >
             <div style={{ "background-color": "var(--color-surface)", "border-radius": "8px", border: "1px solid var(--color-border)", overflow: "hidden" }}>

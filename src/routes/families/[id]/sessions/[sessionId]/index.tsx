@@ -433,7 +433,7 @@ export default function CareSessionDetail() {
                 onClick={() => setShowPickUpForm(true)}
                 style={{
                   padding: "0.5rem 1rem",
-                  "background-color": "#4299e1",
+                  "background-color": "var(--color-primary)",
                   color: "white",
                   border: "none",
                   "border-radius": "4px",
@@ -532,7 +532,7 @@ export default function CareSessionDetail() {
                       disabled={pickUpSubmission.pending}
                       style={{
                         padding: "0.5rem 1rem",
-                        "background-color": "#4299e1",
+                        "background-color": "var(--color-primary)",
                         color: "white",
                         border: "none",
                         "border-radius": "4px",

@@ -6,17 +6,23 @@ const themeBootScript = ssr(`<script>${themeInitScript}</script>`);
 
 export default function Document(props: ParentProps) {
   return (
-    <html lang="en">
+    <html lang="en" class="wa-theme-matter wa-palette-mild wa-brand-green">
       <head>
         <meta charset="utf-8" />
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes"
         />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;1,400&display=swap"
+          rel="stylesheet"
+        />
         {themeBootScript as unknown as JSX.Element}
         <HydrationScript />
 
-        <meta name="theme-color" content="var(--color-text)" />
+        <meta name="theme-color" content="#fffbfe" />
         <meta name="description" content="Childcare management system for families and caregivers" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

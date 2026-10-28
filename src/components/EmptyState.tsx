@@ -1,7 +1,6 @@
 import { Show } from "solid-js";
 
 type EmptyStateProps = {
-  icon?: string;
   message: string;
   actionLabel?: string;
   actionHref?: string;
@@ -10,23 +9,23 @@ type EmptyStateProps = {
 
 export default function EmptyState(props: EmptyStateProps) {
   return (
-    <div class="empty-state">
-      <Show when={props.icon}>
-        <div class="empty-state-icon" aria-hidden="true">
-          {props.icon}
+    <div class="wa-stack wa-gap-s" style={{ "text-align": "center", padding: "2rem" }}>
+      <p class="wa-body-m wa-color-text-quiet" style={{ margin: 0 }}>
+        {props.message}
+      </p>
+      <Show when={props.actionLabel && props.onAction}>
+        <div>
+          <wa-button appearance="outlined" onClick={props.onAction}>
+            {props.actionLabel}
+          </wa-button>
         </div>
       </Show>
-      <p class="empty-state-message">{props.message}</p>
-      <Show when={props.actionLabel && (props.actionHref || props.onAction)}>
-        {props.actionHref ? (
-          <a href={props.actionHref} class="btn btn-success">
-            {props.actionLabel}
+      <Show when={props.actionLabel && props.actionHref && !props.onAction}>
+        <div>
+          <a href={props.actionHref}>
+            <wa-button appearance="outlined">{props.actionLabel}</wa-button>
           </a>
-        ) : (
-          <button type="button" class="btn btn-success" onClick={props.onAction}>
-            {props.actionLabel}
-          </button>
-        )}
+        </div>
       </Show>
     </div>
   );

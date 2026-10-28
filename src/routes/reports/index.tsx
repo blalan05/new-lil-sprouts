@@ -1,5 +1,5 @@
 
-import { Show, For, createSignal, createEffect } from "solid-js";
+import { Show, For, createSignal, createEffect, createMemo } from "solid-js";
 import PageContent, { PageHeader } from "~/components/wa/PageContent";
 import { getUser } from "~/lib";
 import { getAllServices, getService, createService, updateService } from "~/lib/services";
@@ -56,6 +56,18 @@ export default function Reports() {
 
         <wa-tab-panel name="reports">
           <div class="wa-grid wa-gap-l" style={{ "--min-column-size": "18rem" }}>
+            <wa-card>
+              <div class="wa-stack wa-gap-m">
+                <h2 class="wa-heading-m">Session reports</h2>
+                <p class="wa-body-s wa-color-text-quiet">
+                  Search and filter incidents, meals, naps, and other notes by type and severity.
+                </p>
+                <a href="/reports/activity">
+                  <wa-button variant="brand">View reports</wa-button>
+                </a>
+              </div>
+            </wa-card>
+
             <wa-card>
               <div class="wa-stack wa-gap-m">
                 <div style={{ "font-size": "2rem" }}>📄</div>
