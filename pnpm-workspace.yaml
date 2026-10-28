@@ -1,5 +1,10 @@
 packages:
   - .
+minimumReleaseAgeExclude:
+  - '@solidjs/signals@2.0.0-rc.19'
+  - '@solidjs/web@2.0.0-rc.19'
+  - filesystem-routing@0.4.2
+  - solid-js@2.0.0-rc.19
 onlyBuiltDependencies:
   - '@parcel/watcher'
   - '@prisma/client'

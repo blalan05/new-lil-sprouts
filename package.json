@@ -18,10 +18,10 @@
     "reset-password": "node --experimental-strip-types scripts/reset-password.js"
   },
   "devDependencies": {
-    "@solidjs/vite-plugin": "^3.0.0-next.29",
+    "@solidjs/vite-plugin": "3.0.0-next.51",
     "@types/node": "^25.9.2",
     "@types/pg": "^8.20.0",
-    "filesystem-routing": "0.2.1",
+    "filesystem-routing": "0.4.2",
     "prisma": "^7.8.0",
     "sharp": "^0.35.5",
     "typescript": "^5.9.2",
@@ -33,12 +33,12 @@
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@remix-run/cookie": "^0.5.4",
-    "@solidjs/router": "^2.0.0-next.16",
-    "@solidjs/web": "^2.0.0-rc.0",
+    "@solidjs/router": "2.0.0-next.42",
+    "@solidjs/web": "2.0.0-rc.19",
     "@web.awesome.me/webawesome-pro": "3.10.0",
     "dotenv": "^17.4.2",
     "pg": "^8.21.0",
-    "solid-js": "^2.0.0-rc.0",
+    "solid-js": "2.0.0-rc.19",
     "valibot": "^1.4.2",
     "workbox-window": "^7.4.1"
   },
